@@ -22,13 +22,14 @@ export interface IEnvironmentSectionState {
   showSelectedEnvModal: boolean;
   showMockConfigModal: boolean;
   tabIndexForEdit: number;
+  prevServiceToAddAction?: string;
 }
 export interface IEnvironmentSectionProps {
   environmentList: IEnvironmentConfig[];
   mockConfigList: IMockConfig[];
   selectedMockConfig: string;
   selectedEnvironment: string;
-  
+  serviceToAddAction?:string;
   dispatch: any;
 }
 
@@ -36,13 +37,25 @@ class EnvironmentSection extends React.Component<
   IEnvironmentSectionProps,
   IEnvironmentSectionState
 > {
-  constructor(props) {
+  constructor(props : IEnvironmentSectionProps) {
     super(props);
     this.state = {
       showSelectedEnvModal: false,
       showMockConfigModal: false,
-      tabIndexForEdit: 0
+      tabIndexForEdit: 0,
+      prevServiceToAddAction: undefined
     };
+  }
+
+  componentDidUpdate(){
+    if(this.props.serviceToAddAction != this.state.prevServiceToAddAction){
+      if(this.props.serviceToAddAction){
+        this.setState({tabIndexForEdit: 1, showMockConfigModal: true, prevServiceToAddAction: this.props.serviceToAddAction});
+        this.props.dispatch(httpClientActions.updateAddToService(undefined))
+      }else{
+        this.setState({prevServiceToAddAction: this.props.serviceToAddAction});
+      }
+    }
   }
 
   renderEnvListDD = () => {
@@ -355,7 +368,8 @@ const mapStateToProps = (state: IStoreState) => {
       environmentList, 
       selectedEnvironment, 
       mockConfigList, 
-      selectedMockConfig 
+      selectedMockConfig,
+      serviceToAddAction 
     },
   } = state;
 
@@ -363,7 +377,8 @@ const mapStateToProps = (state: IStoreState) => {
     environmentList,
     selectedEnvironment,
     mockConfigList,
-    selectedMockConfig
+    selectedMockConfig,
+    serviceToAddAction
   };
 }
 

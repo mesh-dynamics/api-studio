@@ -14,6 +14,7 @@ import {
   ICollectionDetails,
   IStoreState,
   IUserAuthDetails,
+  ITemplateSetNameLabel,
 } from "../../reducers/state.types";
 import { cubeService } from "../../services";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
@@ -30,6 +31,8 @@ export interface IConvertCollectionState {
   message: string;
   isErrorMessage: boolean;
   isLoading: boolean;
+  collTemplateSetName: string;
+  collTemplateSetLabel: string;
 }
 export interface IConvertCollectionProps {
   selectedSource: string;
@@ -40,6 +43,7 @@ export interface IConvertCollectionProps {
   username: string;
   app: string;
   dispatch: any;
+  templateSetNameLabelsList: ITemplateSetNameLabel[];
 }
 
 class ConvertCollection extends Component<
@@ -78,7 +82,7 @@ class ConvertCollection extends Component<
       selectedGoldenName: selectedGolden ? selectedGolden.name : "",
       collTemplateSetName: (isGolden ? selectedGolden?.templateSetName : selectedCollection?.templateSetName) || "",
       collTemplateSetLabel: (isGolden ? selectedGolden?.templateSetLabel : selectedCollection?.templateSetLabel) || "",
-    }
+    };
   }
 
   static getDerivedCollection(props: IConvertCollectionProps) {
@@ -128,7 +132,7 @@ class ConvertCollection extends Component<
       isSelectorVisible: false,
       isErrorMessage: false,
       message: "",
-      newCollection,
+      newCollection: newCollection,
     });
   };
 
@@ -219,6 +223,39 @@ class ConvertCollection extends Component<
       });
   };
 
+  handleTemplateSetNameLabelChange = (e) => {
+    const targetOption = e.target.options[e.target.selectedIndex]
+    const templateSetName = targetOption.getAttribute("data-name")
+    const templateSetLabel = targetOption.getAttribute("data-label")
+
+    const { templateSetNameLabelsList } = this.props;
+    const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name, label}) => (name===templateSetName && label===templateSetLabel)) || {name: "", label: ""}
+    const {name: collTemplateSetName, label: collTemplateSetLabel} = selectedTemplateSetNameLabel
+    this.setState({collTemplateSetName, collTemplateSetLabel})
+  }
+
+  renderTemplateSetNameLabelSelection = () => {
+      const { templateSetNameLabelsList } = this.props;
+      const { collTemplateSetName: name, collTemplateSetLabel: label} = this.state;
+
+      const options = (templateSetNameLabelsList || []).map(({name, label}) => {
+        return <option key={`${name}-${label}`} value={`${name}-${label}`} data-name={name} data-label={label}>{name} {label && label}</option>
+      })
+
+      return (
+        <FormControl
+        componentClass="select"
+        placeholder="Template Set"
+        value={`${name}-${label}`}
+        onChange={this.handleTemplateSetNameLabelChange}
+        className="btn-sm md-env-select"
+        >
+          <option disabled value="-">Select Template Set</option>
+          {options}
+       </FormControl>
+      )
+  }
+
   render() {
     const isGolden = this.isGolden();
     const header = isGolden ? "Convert to collection" : "Save as test suite";
@@ -248,6 +285,7 @@ class ConvertCollection extends Component<
 
         <Modal
           show={this.state.isPopupVisible}
+          // show={true}
           onHide={this.dismissHandler}
           backdrop="static"
         >
@@ -274,6 +312,14 @@ class ConvertCollection extends Component<
                     onChange={this.onChangeCollectionName}
                   />
                 </FormGroup>
+
+                {!isGolden && 
+                  <FormGroup controlId="templateSetSelection">
+                    <ControlLabel>Template Set</ControlLabel>
+                    {this.renderTemplateSetNameLabelSelection()}
+                  </FormGroup>
+                }
+
               </Form>
               <div>
                 <span
@@ -320,6 +366,8 @@ const mapStateToProps = (state: IStoreState) => {
 
   const username = (state.authentication.user as IUserAuthDetails).username;
 
+  const {templateSetNameLabelsList, selectedApp} = state.cube;
+
   return {
     selectedSource,
     selectedCollection,
@@ -327,7 +375,8 @@ const mapStateToProps = (state: IStoreState) => {
     goldenList,
     collectionList,
     username,
-    app: state.cube.selectedApp,
+    app: selectedApp,
+    templateSetNameLabelsList,
   };
 };
 

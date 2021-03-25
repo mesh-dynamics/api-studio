@@ -24,12 +24,7 @@ import { cubeService } from "../../services";
 import api from "../../api";
 import classNames from "classnames";
 import CreateCollection from "./CreateCollection";
-import { extractParamsFromRequestEvent } from '../../utils/http_client/utils';
-import { 
-  applyGrpcDataToRequestObject, 
-  getConnectionSchemaFromMetadataOrApiPath, 
-  setGrpcDataFromDescriptor 
-} from '../../utils/http_client/grpc-utils';
+
 import EditableLabel from "./EditableLabel";
 import { updateGoldenName } from '../../services/golden.service';
 import { IApiCatalogState, IApiTrace, ICollectionDetails, ICubeState, IEventData, IHttpClientStoreState, IHttpClientTabDetails, IKeyValuePairs, IPayloadData, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
@@ -37,6 +32,7 @@ import { IGetEventsApiResponse } from "../../apiResponse.types";
 import gcbrowseActions from "../../actions/gcBrowse.actions";
 import HistoryTabFilter from "../../components/HttpClient/HistoryTabFilter";
 import { sortApiTraceChildren } from "../../utils/http_client/httpClientUtils";
+import TabDataFactory from "../../utils/http_client/TabDataFactory";
 
 interface ITreeNodeHeader<T> {
   node: T,
@@ -67,6 +63,7 @@ export interface ISideBarTabsState {
 }
 class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
   private persistPanelState: IKeyValuePairs<boolean>;
+  private currentSelectedTab: number;
   constructor(props: ISideBarTabsProps) {
     super(props);
     this.state = {
@@ -76,7 +73,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
       editingCollectionName: "",
       loadingCollections: {},
     };
-
+    this.currentSelectedTab = 1;
     this.onToggle = this.onToggle.bind(this);
     this.handlePanelClick = this.handlePanelClick.bind(this);
     this.handleTreeNodeClick = this.handleTreeNodeClick.bind(this);
@@ -333,85 +330,12 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 httpRequestEventTypeIndex === 0 ? 1 : 0;
               const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
               const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
-              const { headers, queryParams, formData, rawData, rawDataType, grpcRawData, multipartData, httpURL } = extractParamsFromRequestEvent(httpRequestEvent);
-
-              /* Notes for understanding: 
-                  grpcRawData from extracted params is actual raw Data for gRPC Requests
-                  grpcData in reqObject event[Tab data] is the IGrpcData type object with package.service.method.data form, 
-                    where valueof(package.service.method.data) = grpcRawData (actual rawData)
-              */
               const collectionDetails = _.find(this.props.httpClient.userCollections, { collec: node.collectionIdAddedFromClient });
               const collectionName = collectionDetails?.name || "";
-              //TODO: Create a separate class to handle below object
-              let reqObject: IHttpClientTabDetails = {
-                httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-                httpURL: httpURL,
-                httpURLShowOnly: httpURL,
-                headers: headers,
-                queryStringParams: queryParams,
-                bodyType:
-                  multipartData && multipartData.length > 0
-                    ? "multipartData"
-                    : formData && formData.length > 0
-                      ? "formData"
-                      : rawData && rawData.length > 0
-                        ? "rawData"
-                        : grpcRawData && grpcRawData.length ? "grpcData" : "formData",
-                formData: formData,
-                multipartData,
-                rawData: rawData,
-                rawDataType: rawDataType,
-                paramsType: grpcRawData && grpcRawData.length ? "showBody" : "showQueryParams",
-                responseStatus: "NA",
-                responseStatusText: "",
-                responseHeaders: "",
-                responseBody: "",
-                responsePayloadState: httpResponseEvent?.payload[1].payloadState!,
-                recordedResponseHeaders: (httpResponseEvent && httpResponseEvent.payload[1].hdrs)
-                  ? JSON.stringify(
-                    httpResponseEvent.payload[1].hdrs,
-                    undefined,
-                    4
-                  )
-                  : "",
-                recordedResponseBody: httpResponseEvent
-                  ? httpResponseEvent.payload[1].body
-                    ? JSON.stringify(
-                      httpResponseEvent.payload[1].body,
-                      undefined,
-                      4
-                    )
-                    : ""
-                  : "",
-                recordedResponseStatus: httpResponseEvent
-                  ? httpResponseEvent.payload[1].status
-                  : "",
-                responseBodyType: "json",
-                requestId: httpRequestEvent.reqId,
-                outgoingRequestIds: node.children
-                  ? node.children.map((eachChild) => eachChild.requestEventId)
-                  : [],
-                eventData: reqResPair,
-                showOutgoingRequestsBtn:
-                  node.children && node.children.length > 0,
-                showSaveBtn: true,
-                recordingIdAddedFromClient: node.recordingIdAddedFromClient,
-                collectionIdAddedFromClient: node.collectionIdAddedFromClient,
-                collectionNameAddedFromClient: collectionName,
-                traceIdAddedFromClient: node.traceIdAddedFromClient,
-                outgoingRequests: [],
-                showCompleteDiff: false,
-                isOutgoingRequest: false,
-                service: httpRequestEvent.service,
-                requestRunning: false,
-                showTrace: null,
-                grpcData: setGrpcDataFromDescriptor(
-                            appGrpcSchema,
-                            applyGrpcDataToRequestObject(grpcRawData, httpRequestEvent.metaData.grpcConnectionSchema),
-                          ),
-                grpcConnectionSchema: getConnectionSchemaFromMetadataOrApiPath(httpRequestEvent.metaData.grpcConnectionSchema, httpRequestEvent.apiPath),
-                  hideInternalHeaders: true
-              };
+              const reqObject = new TabDataFactory(httpRequestEvent, httpResponseEvent).getReqObjectForSidebar(node, collectionName, appGrpcSchema);
+              if(this.currentSelectedTab === 1 && httpRequestEvent.metaData.httpResolvedURL){
+                reqObject.httpURL = httpRequestEvent.metaData.httpResolvedURL;
+              }
               //todo: Test below
               const savedTabId = this.props.onAddTab(
                 null,
@@ -702,6 +626,10 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     });
   }
 
+  handleSelectedTabChange = (changedKey: any) => {
+      this.currentSelectedTab = changedKey;
+  }
+
   render() {
     //Remove unused vars
     const {
@@ -712,7 +640,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
 
     return (
       <>
-        <Tabs defaultActiveKey={1} id="uncontrolled-tab-example">
+        <Tabs defaultActiveKey={1} id="uncontrolled-tab-example"  onSelect={this.handleSelectedTabChange}>
           <Tab eventKey={1} title="History">
             <div className="margin-top-10">
               <div className="value-n"></div>

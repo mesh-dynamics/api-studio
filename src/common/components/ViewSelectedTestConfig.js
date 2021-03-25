@@ -651,8 +651,9 @@ class ViewSelectedTestConfig extends React.Component {
         } = this.props;
         const { recName } = this.state;
         const recLabel = Date.now().toString();
+        const {name: selectedTemplateSetName, label: selectedTemplateSetLabel} = selectedTemplateSetNameLabel
 
-        const recordUrl = `${config.recordBaseUrl}/start/${customer_name}/${selectedApp}/${selectedInstance}/Default${selectedApp}`;
+        const recordUrl = `${config.recordBaseUrl}/start/${customer_name}/${selectedApp}/${selectedInstance}/${selectedTemplateSetName}`;
         const statusUrl = `${config.recordBaseUrl}/status/${customer_name}/${selectedApp}/${recName}/${recLabel}`;
 
         const configForHTTP = {
@@ -670,6 +671,7 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('tag', `default${selectedApp}Record` );
         searchParams.set('resettag', `default${selectedApp}Noop`);
         searchParams.set('ignoreStaticContent', this.state.ignoreStaticContent.toString());
+        searchParams.set("templateSetLabel", selectedTemplateSetLabel);
 
         // axios.post(recordUrl, searchParams, configForHTTP
         api.post(recordUrl, searchParams, configForHTTP)

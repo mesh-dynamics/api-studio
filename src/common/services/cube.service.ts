@@ -99,7 +99,7 @@ const getTestConfigByAppId = async (appId: string) => {
     }
 };
 
-const createUserCollection = async (user: IUserAuthDetails, collectionName: string, app: string) => {
+const createUserCollection = async (user: IUserAuthDetails, collectionName: string, app: string, templateSetName: string, templateSetLabel: string) => {
     const userId = user.username;
     const searchParams = new URLSearchParams();
 
@@ -107,6 +107,7 @@ const createUserCollection = async (user: IUserAuthDetails, collectionName: stri
     searchParams.set("userId", userId);
     searchParams.set("label", userId);
     searchParams.set("recordingType", "UserGolden");
+    searchParams.set("templateSetLabel", templateSetLabel);
 
     const configForHTTP = {
         headers: {
@@ -116,7 +117,7 @@ const createUserCollection = async (user: IUserAuthDetails, collectionName: stri
 
     return api
         .post(
-            `${config.apiBaseUrl}/cs/start/${user.customer_name}/${app}/dev/Default${app}`,
+            `${config.apiBaseUrl}/cs/start/${user.customer_name}/${app}/dev/${templateSetName}`,
             searchParams,
             configForHTTP
         );
@@ -321,8 +322,15 @@ const getTemplateSetNameLabels = async (customerId: string, app: string) => {
         const response = await api.get(`${config.analyzeBaseUrl}/getTemplateSetLabels/${customerId}/${app}`)
         let templateSetList: ITemplateSetNameLabel[] = []
         if (response) {
-            templateSetList = Object.values(response)
-                                .sort((a, b) => a.name.localeCompare(b.name))
+            templateSetList = response.response
+                                .sort((a: ITemplateSetNameLabel, b: ITemplateSetNameLabel) => {
+                                    let compare = a.name.localeCompare(b.name)
+                                    // if strings are equal, compare based on timestamp
+                                    if ((compare == 0) && a.timestamp && b.timestamp) {
+                                        compare = Date.parse(b.timestamp) - Date.parse(a.timestamp)
+                                    }
+                                    return compare
+                                })
         }
         return templateSetList;
     } catch (error) {

@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "react-bootstrap";
+import { Badge, Button } from "react-bootstrap";
 import { filterInternalHeaders } from "../../utils/http_client/utils";
 import { connect } from "react-redux";
 import { IRequestParamData, IStoreState } from "../../reducers/state.types";
@@ -23,9 +23,9 @@ function HideInternalHeadersButton(props: IHideInternalHeadersButtonProps) {
 
   return (
     <div className="pull-right">
-      <Button bsStyle="link" onClick={onButtonClick}>
+      <Button bsStyle="link" onClick={onButtonClick} className="font-12">
         {props.hideInternalHeaders
-          ? "Show all headers"
+          ? <>Show all headers <Badge title="Hidden headers count">+{props.hiddenCount}</Badge></>
           : "Hide internal headers"}
       </Button>
     </div>
@@ -42,7 +42,7 @@ const mapStateToProps = (
   if (hideInternalHeaders && currentTab) {
     hiddenCount =
       props.headers.length -
-      filterInternalHeaders(props.headers, props.hideInternalHeaders).length;
+      filterInternalHeaders(props.headers, hideInternalHeaders).length;
   }
   return {
     hideInternalHeaders,

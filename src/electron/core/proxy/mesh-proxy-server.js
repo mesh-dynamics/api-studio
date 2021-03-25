@@ -17,7 +17,8 @@ const {
 } = require('./proxy-utils');
 const {
     getTraceDetails,
-    generateTraceKeys
+    generateTraceKeys,
+    extractSpanId
 } = require("./trace-utils")
 const { storeReqResEvent } = require("./h2server.utility");
 
@@ -101,11 +102,11 @@ const setupMeshProxy = (mockContext, user) => {
                         spanId,
                         parentSpanId,
                     } = traceDetails;
+                    
 
                     if (spanIdKey && !(spanIdKey in newRequestOptions.headers)) {
                         logger.info(`Setting spanId header (${spanIdKey}): `, spanId);
                         newRequestOptions.headers[spanIdKey] = spanId;
-                        traceIdDetailsMap[spanId] = traceDetails;
                     }
 
                     parentSpanIdKeys.forEach((key) => {
@@ -119,6 +120,14 @@ const setupMeshProxy = (mockContext, user) => {
                         logger.info(`Setting traceId header (${traceIdKey}): `, traceId);
                         newRequestOptions.headers[traceIdKey] = traceId;
                     }
+
+                    if(spanIdKey) {
+                        traceIdDetailsMap[spanId] = traceDetails;
+                    } else {
+                        const extractedSpanId = extractSpanId(mockContext.tracer, newRequestOptions.headers);
+                        if(extractedSpanId) traceIdDetailsMap[extractedSpanId] = traceDetails;
+                    }
+
                     if(isLive === true) {
                         logger.info("Live service");
                         return {
@@ -196,9 +205,9 @@ const setupMeshProxy = (mockContext, user) => {
                     // Only to get trace keys
                     const traceKeys = generateTraceKeys(mockContext.tracer);
                     const service = matchedService;
-                    const {spanIdKey} = traceKeys;
 
-                    const spanId = requestDetail.requestOptions.headers[spanIdKey];
+                    const spanId = extractSpanId(mockContext.tracer, requestDetail.requestOptions.headers),
+                        traceDetailsMapEntry = spanId ? traceIdDetailsMap[spanId] : {};
 
                     let responseBody = Buffer.concat(newResponse.rawBody).toString();
                     logger.info("Response from target : ", responseBody);
@@ -219,10 +228,10 @@ const setupMeshProxy = (mockContext, user) => {
                     const options = {
                         mockContext,
                         user,
-                        traceDetails: traceIdDetailsMap[spanId],
+                        traceDetails: traceDetailsMapEntry,
                         service: responseFields.service,
                         outgoingApiPath: responseFields.outgoingApiPath,
-                        requestData: requestDetail.requestData,
+                        requestData: requestDetail.requestData.toString(),
                         headers: requestDetail.requestOptions.headers, //These are request headers, used to form requestEvent
                     };
                     

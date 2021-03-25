@@ -242,7 +242,6 @@ const extractResponsePayloadDetailsFromProxy = (responseProps, responseBody) => 
         hdrs: extractHeadersToCubeFormat(responseProps.headers),
         body: responseBody,
         status: responseProps.statusCode,
-        method: responseProps.method,
         payloadState: PAYLOAD_STATE.WRAPPED_ENCODED,
         ...additionalProps
     }

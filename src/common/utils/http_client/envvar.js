@@ -26,20 +26,25 @@ const initEnvVars = () => {
   // return method to check and render Mustache template on an input
   return (input) => {
     if (!input) return input;
+    try{
+      // get variables in the input string
+      let inputVariables = Mustache.parse(input)
+              .filter(v => (v[0]==='name') || v[0]==='&' || v[0]==='#')
+              .map(v => v[1]);
 
-    // get variables in the input string
-    let inputVariables = Mustache.parse(input)
-            .filter(v => (v[0]==='name') || v[0]==='&' || v[0]==='#')
-            .map(v => v[1]);
+      // check for the presence of variables in the environment
+      inputVariables.forEach((inputVariable) => {
+          if (!currentEnvVars.hasOwnProperty(inputVariable)) {
+              throw new Error("The variable '" + inputVariable + "' is not defined in the current environment. \nPlease check your environment and the variables being used.")
+          }
+      })
 
-    // check for the presence of variables in the environment
-    inputVariables.forEach((inputVariable) => {
-        if (!currentEnvVars.hasOwnProperty(inputVariable)) {
-            throw new Error("The variable '" + inputVariable + "' is not defined in the current environment. \nPlease check your environment and the variables being used.")
-        }
-    })
-
-    return Mustache.render(input, currentEnvVars);
+      return Mustache.render(input, currentEnvVars);
+    }
+    catch(error){
+      console.error("Error while parsing ", error);
+    }
+    return input;
   }
 }
 

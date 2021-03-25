@@ -138,6 +138,7 @@ function RequestMatchType(props: IRequestMatchTypeProps) {
                 updateBodyOrRawDataType={() => {}}
                 isOutgoingRequest={false}
                 tabId=""
+                service={apiEventsFormatted.service}
                 updateParam={updateParamHandler}
                 readOnly={true}
                 disabled={false}

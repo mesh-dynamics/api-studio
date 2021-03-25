@@ -320,3 +320,6 @@ div.loading, div.loading button{
   content: '\25be';
   padding-left: 5px;
 }
+.margin-left-5{
+  margin-left: 5px;
+}

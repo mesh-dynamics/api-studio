@@ -25,8 +25,9 @@ import _ from 'lodash';
 
 import { getRenderEnvVars,applyEnvVarsToUrl } from "../../utils/http_client/envvar";
 import MockConfigUtils from './mockConfigs.utils';
-import { applyGrpcDataToRequestObject, extractGrpcBody,
-    getRequestUrlFromSchema, getConnectionSchemaFromMetadataOrApiPath } from "../../utils/http_client/grpc-utils"; 
+import { extractGrpcBody, getRequestUrlFromSchema } from "../../utils/http_client/grpc-utils"; 
+import { getDefaultServiceName } from "./httpClientUtils";
+import TabDataFactory from "./TabDataFactory";
 
 export function createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromData) {
     let referenceEventData = toBeCopiedFromData ? toBeCopiedFromData.eventData : null;
@@ -128,7 +129,7 @@ export function createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFrom
         return tabData;
     }
 }
-
+//This type of functions should be moved to typescript utils file so errors/missing params in tabData can be easily found.
 export function copyRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromData) {
     let referenceEventData = toBeCopiedFromData ? toBeCopiedFromData.eventData : null,
         eventData = toBeUpdatedData.eventData; 
@@ -154,6 +155,7 @@ export function copyRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromDa
             requestId: toBeCopiedFromData.requestId,
             httpMethod: toBeCopiedFromData.httpMethod,
             httpURL: toBeCopiedFromData.httpURL,
+            requestPathURL: toBeCopiedFromData.requestPathURL,
             httpURLShowOnly: toBeCopiedFromData.httpURLShowOnly,
             headers: toBeCopiedFromData.headers,
             queryStringParams: toBeCopiedFromData.queryStringParams,
@@ -371,52 +373,8 @@ export function formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutg
     const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
     const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
     const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
-    const httpResponseEventPayload  = httpResponseEvent && httpResponseEvent.payload ?  httpResponseEvent.payload[1] : {};
     
-    const { headers, queryParams, formData, rawData, rawDataType, grpcRawData, multipartData, httpURL }  = extractParamsFromRequestEvent(httpRequestEvent);
-    
-    let reqObject = {
-        id: existingId || uuidv4(),
-        httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-        httpURL: httpURL,
-        httpURLShowOnly: httpRequestEvent.apiPath,
-        headers: headers,
-        queryStringParams: queryParams,
-        bodyType: multipartData && multipartData.length > 0 ? "multipartData" : formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcRawData && grpcRawData.length > 0 ? "grpcData" : "formData",
-        formData: formData,
-        multipartData,
-        rawData: rawData,
-        rawDataType: rawDataType,
-        paramsType: grpcRawData ? "showBody" : "showQueryParams",
-        responseStatus: "NA",
-        responseStatusText: "",
-        responseHeaders: "",
-        responseBody: "",
-        responsePayloadState: httpResponseEventPayload?.payloadState,
-        recordedResponseHeaders: httpResponseEventPayload.hdrs ? JSON.stringify(httpResponseEventPayload.hdrs, undefined, 4) : "",
-        recordedResponseBody: httpResponseEvent ? httpResponseEventPayload.body ? JSON.stringify(httpResponseEventPayload.body, undefined, 4) : "" : "",
-        recordedResponseStatus: httpResponseEvent ? httpResponseEventPayload.status : "",
-        responseBodyType: "json",
-        requestId: reqId,
-        outgoingRequestIds: [],
-        eventData: httpEventReqResPair,
-        showOutgoingRequestsBtn: false,
-        showSaveBtn: true,
-        outgoingRequests: [],
-        showCompleteDiff: false,
-        isOutgoingRequest: isOutgoingRequest,
-        service: httpRequestEvent.service,
-        recordingIdAddedFromClient: "",
-        collectionIdAddedFromClient: httpRequestEvent.collection,
-        traceIdAddedFromClient: httpRequestEvent.traceId,
-        apiPath: httpRequestEvent.apiPath,
-        requestRunning: false,
-        showTrace: null,
-        metaData: httpResponseEvent ? httpResponseEvent.metaData : {},
-        grpcData: applyGrpcDataToRequestObject(grpcRawData, httpRequestEvent.metaData.grpcConnectionSchema, httpRequestEvent.apiPath),
-        grpcConnectionSchema: getConnectionSchemaFromMetadataOrApiPath(httpRequestEvent.metaData.grpcConnectionSchema, httpRequestEvent.apiPath)
-    };
-    return reqObject;
+    return  new TabDataFactory(httpRequestEvent, httpResponseEvent).getReqObjAfterResponse(reqId, isOutgoingRequest, existingId);
 }
 
 
@@ -443,6 +401,7 @@ function getPathName(url){
 const generateApiPathAndService = (parsedUrl) => {
     let generatedApiPath = parsedUrl.pathname;
     let service = parsedUrl.host;
+    let targetUrl = "";
     let isModified = false;
     let foundMatchingPathFromConfig = false;
     
@@ -459,6 +418,7 @@ const generateApiPathAndService = (parsedUrl) => {
             if(path.indexOf(serviceConfig.servicePrefix) > -1){
                 generatedApiPath = path;
                 service = serviceConfig.service;
+                targetUrl = serviceConfig.url;
                 foundMatchingPathFromConfig = true;
                 break;
             }
@@ -486,7 +446,9 @@ const generateApiPathAndService = (parsedUrl) => {
     }
     return {
         apiPath : _.trim(generatedApiPath, "/"),
-        service : service
+        service : service,
+        isServiceMatchedFromConfig : foundMatchingPathFromConfig,
+        targetUrl
     };
 };
 
@@ -504,7 +466,6 @@ export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, ty
     let httpRequestEvent = eachPair[httpRequestEventTypeIndex];
     let httpResponseEvent = eachPair[httpResponseEventTypeIndex];
     let httpURL = "";
-
     // Set the URL
     if(bodyType === "grpcData") {
         httpURL = getRequestUrlFromSchema(tabToSave.grpcConnectionSchema);
@@ -512,27 +473,22 @@ export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, ty
         httpURL = tabToSave.httpURL;
     }
     
-    // let apiPath = getApiPathFromRequestEvent(httpRequestEvent); // httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
-    // let apiPath = this.getPathName(applyEnvVarsToUrl(tabToSave.httpURL));
     const parsedUrl = urlParser(applyEnvVarsToUrl(httpURL), PLATFORM_ELECTRON ? {} : true);
-
-    let {apiPath, service : generatedService} = generateApiPathAndService(parsedUrl);
+    const service = tabToSave.service;
+    let apiPath = ((tabToSave.service && tabToSave.service != getDefaultServiceName()) ? tabToSave.requestPathURL : "") || parsedUrl.pathname;
 
     if(bodyType === "grpcData") {
         // Trim the all slashes in case of gRPC
         apiPath = _.trim(apiPath, '/');
     }
     
+    httpRequestEvent = updateHttpEvent(selectedApp, apiPath, service, httpRequestEvent);
+    httpResponseEvent = updateHttpEvent(selectedApp, apiPath, service, httpResponseEvent);
 
     if(httpRequestEvent.reqId === "NA") {
-        let service = httpRequestEvent.service != "NA" ? httpRequestEvent.service : (generatedService || "NA");
-        httpRequestEvent = updateHttpEvent(selectedApp, apiPath, service, httpRequestEvent);
-        httpResponseEvent = updateHttpEvent(selectedApp, apiPath, service, httpResponseEvent);
         httpRequestEvent.metaData.typeOfRequest = "devtool";
     } else {
         if(!httpRequestEvent.metaData.typeOfRequest) httpRequestEvent.metaData.typeOfRequest = "apiCatalog";
-        httpRequestEvent = updateHttpEvent(selectedApp, apiPath, "", httpRequestEvent);
-        httpResponseEvent = updateHttpEvent(selectedApp, apiPath, "", httpResponseEvent);
     }
 
     if(!httpResponseEvent.metaData){
@@ -540,6 +496,7 @@ export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, ty
     }
     httpRequestEvent.metaData.httpURL = httpURL;
     httpResponseEvent.metaData.httpURL = httpURL;
+    httpRequestEvent.metaData.httpResolvedURL = applyEnvVarsToUrl(httpRequestEvent.metaData.httpURL);
 
     if(httpRequestEvent.parentSpanId === null) {
         httpRequestEvent.parentSpanId = "NA"
