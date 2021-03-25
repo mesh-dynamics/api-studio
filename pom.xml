@@ -149,6 +149,11 @@
             <version>${org.mapstruct.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.sendgrid</groupId>
+            <artifactId>sendgrid-java</artifactId>
+            <version>4.0.1</version>
+        </dependency>
+        <dependency>
             <groupId>io.cube</groupId>
             <artifactId>commons</artifactId>
             <version>1.2.38.0</version>

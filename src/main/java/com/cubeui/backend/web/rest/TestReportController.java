@@ -4,7 +4,7 @@ import com.cubeui.backend.domain.PathResults;
 import com.cubeui.backend.domain.TimeLineData;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
-import com.cubeui.backend.service.MailService;
+import com.cubeui.backend.service.MailTemplateService;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -39,7 +39,7 @@ public class TestReportController {
   @Autowired
   private Validation validation;
   @Autowired
-  private MailService mailService;
+  private MailTemplateService mailTemplateService;
   @Autowired
   private ObjectMapper jsonMapper;
 
@@ -79,7 +79,7 @@ public class TestReportController {
           }
         });
         timeLineData.calculate95CI(timelineResults.size()-1);
-        mailService.sendTestReportTemplate(replay,timeLineData,emails);
+        mailTemplateService.sendTestReportTemplate(replay,timeLineData,emails);
       } catch (Exception e) {
         log.info(String.format("Error while reading response, message=", e.getMessage()));
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("Error", e.getMessage()));
