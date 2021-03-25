@@ -738,12 +738,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (SolrIterator
             .getSingleResult(solr, checkExistingTemplateSet).isPresent()) {
             // remove templates templates with the given version
-            String deleteQueryBuffer = VERSIONF + ":" + templateSet.version + " AND "
-                + TYPEF + ":(" + String
-                .join(" OR ", List.of(Type.RequestCompare.toString()
+            String deleteQueryBuffer = VERSIONF + ":" + SolrIterator
+                .escapeQueryChars(templateSet.version) + " AND "
+                + TYPEF + ":(" + String.join(" OR ", List.of(Type.RequestCompare.toString()
                     , Type.RequestMatch.toString(), Type.ResponseCompare.toString()))
-                + ") AND " + CUSTOMERIDF + ":" + templateSet.customer + " AND "
-                + APPF + ":" + templateSet.app;
+                + ") AND " + CUSTOMERIDF + ":" + SolrIterator.escapeQueryChars(templateSet.customer)
+                + " AND " + APPF + ":" + SolrIterator.escapeQueryChars(templateSet.app);
             solr.deleteByQuery(deleteQueryBuffer);
             solr.commit();
             LOGGER.debug(new ObjectMessage(Map.of(VERSIONF, templateSet.version,

@@ -122,10 +122,12 @@ public class TemplateSerializationTest {
         TemplateRegistries templateRegistries1 = mapper.readValue(data1, TemplateRegistries.class);
         TemplateRegistries templateRegistries2 = mapper.readValue(data2, TemplateRegistries.class);
 
-        TemplateSet tset1 = ServerUtils.templateRegistriesToTemplateSet(templateRegistries1, CUSTID, app, "randomTest" , LocalDateTime
-            .now().format(Utils.templateLabelFormatter));
-        TemplateSet tset2 = ServerUtils.templateRegistriesToTemplateSet(templateRegistries2, CUSTID, app, "randomTest" , LocalDateTime
-            .now().format(Utils.templateLabelFormatter));
+        LocalDateTime firstSetLabel = LocalDateTime.now();
+        TemplateSet tset1 = ServerUtils.templateRegistriesToTemplateSet(templateRegistries1, CUSTID, app, "randomTest" ,
+            firstSetLabel.format(Utils.templateLabelFormatter));
+        TemplateSet tset2 = ServerUtils.templateRegistriesToTemplateSet(templateRegistries2, CUSTID, app, "randomTest" ,
+            firstSetLabel.plusSeconds(2)
+            .format(Utils.templateLabelFormatter));
 
         reqRespStore.saveTemplateSet(tset1);
 
