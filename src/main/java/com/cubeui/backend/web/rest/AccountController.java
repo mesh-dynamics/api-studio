@@ -1,6 +1,5 @@
 package com.cubeui.backend.web.rest;
 
-import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.ChangePasswordDTO;
 import com.cubeui.backend.domain.DTO.CustomerDTO;
@@ -12,17 +11,15 @@ import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.PersonalEmailDomainsRepository;
 import com.cubeui.backend.service.CubeServerService;
 import com.cubeui.backend.service.CustomerService;
-import com.cubeui.backend.service.MailService;
+import com.cubeui.backend.service.MailTemplateService;
 import com.cubeui.backend.service.ReCaptchaAPIService;
 import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.service.utils.Utils;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
-import io.md.dao.Recording.RecordingType;
 import io.md.utils.Constants;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -34,8 +31,6 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.util.MultiValueMap;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -60,7 +55,7 @@ public class AccountController {
     private String emailSender;
 
     private UserService userService;
-    private MailService mailService;
+    private MailTemplateService mailTemplateService;
     private ReCaptchaAPIService reCaptchaAPIService;
     private CubeServerService cubeServerService;
     private AppRepository appRepository;
@@ -68,11 +63,11 @@ public class AccountController {
     private PersonalEmailDomainsRepository personalEmailDomainsRepository;
 
     public AccountController(UserService userService,
-        MailService mailService, ReCaptchaAPIService reCaptchaAPIService,
+        MailTemplateService mailTemplateService, ReCaptchaAPIService reCaptchaAPIService,
         CubeServerService cubeServerService, AppRepository appRepository, CustomerService customerService,
         PersonalEmailDomainsRepository personalEmailDomainsRepository) {
         this.userService = userService;
-        this.mailService = mailService;
+        this.mailTemplateService = mailTemplateService;
         this.reCaptchaAPIService = reCaptchaAPIService;
         this.cubeServerService = cubeServerService;
         this.appRepository = appRepository;
@@ -132,7 +127,7 @@ public class AccountController {
 
             // send activation mail
             log.info("Sending activation mail");
-            mailService.sendActivationEmail(saved);
+            mailTemplateService.sendActivationEmail(saved);
 
             return created(
                 ServletUriComponentsBuilder
@@ -192,8 +187,8 @@ public class AccountController {
         Optional<User> optionalUser = userService.activateUser(activationKey);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            mailService.sendCreationEmail(user);
-            mailService.sendCreationEmailAdmin(user);
+            mailTemplateService.sendCreationEmail(user);
+            mailTemplateService.sendCreationEmailAdmin(user);
             return ok("User activated");
         } else {
             throw new RecordNotFoundException("No user was found for with this activation key");
@@ -204,7 +199,7 @@ public class AccountController {
     public ResponseEntity resendActivationMail(@RequestParam(value="email") String email) {
         log.info("Resend activation mail for " + email);
         Optional<User> user = userService.resendActivationMail(email);
-        mailService.sendActivationEmail(user.get());
+        mailTemplateService.sendActivationEmail(user.get());
         return ok("User activation mail sent");
     }
 
@@ -213,7 +208,7 @@ public class AccountController {
         Optional<User> user = userService.requestPasswordReset(email);
 
         if (user.isPresent()) {
-            mailService.sendPasswordResetMail(user.get());
+            mailTemplateService.sendPasswordResetMail(user.get());
         }
         JSONObject object =  new JSONObject();
         object.put(Constants.MESSAGE, "Email sent to " + email);
@@ -229,7 +224,7 @@ public class AccountController {
         Optional<User> user = userService.completePasswordReset(keyAndPassword.getPassword(), keyAndPassword.getKey());
         return user.map(u -> {
           // send password reset successful mail
-          mailService.sendPasswordResetSuccessfulMail(u);
+          mailTemplateService.sendPasswordResetSuccessfulMail(u);
           return ok().build();
         }).orElseThrow(() -> {
             throw new RecordNotFoundException("No user was found for this reset key");

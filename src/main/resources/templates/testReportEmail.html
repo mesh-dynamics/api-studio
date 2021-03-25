@@ -1,0 +1,130 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="#{email.test.report}">Test Report</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <style>
+    .content-wrapper {
+      margin: 25px;
+      min-height: calc(100% - 50px);
+      box-sizing: border-box !important;
+    }
+    .table {
+      width: 100%;
+      border-collapse: collapse !important;
+    }
+    .table-striped > tbody > tr:nth-of-type(odd) {
+      background-color: #f9f9f9;
+    }
+    .table-bordered, tr, td, th {
+      border: 1px solid #ddd;
+    }
+  </style>
+</head>
+
+<body>
+<div class="content-wrapper">
+  <div>
+    <h4>Test Report</h4>
+    <div>
+      <h5>Details</h5>
+      <table class="table table-striped">
+        <tbody>
+        <tr>
+          <td>App</td>
+          <td th:text="${replay.app}"></td>
+        </tr>
+        <tr>
+          <td>Test Configuration</td>
+          <td th:text="${replay.testConfigName.orElse('NA')}"></td>
+        </tr>
+        <tr>
+          <td>Mocked Services</td>
+          <td th:text="${replay.mockServices.size() > 0  ? #strings.listJoin(replay.mockServices, ', ') : 'N/A'}"></td>
+        </tr>
+        <tr>
+          <td>Instance</td>
+          <td th:text="${replay.instanceId}"></td>
+        </tr>
+        <tr>
+          <td>Test API Paths</td>
+          <td th:text="${replay.excludePaths} ? 'All paths excluding: ' : ${ #strings.listJoin(replay.paths,', ')}"></td>
+        </tr>
+        <tr>
+          <td>Golden</td>
+          <td th:text="${replay.goldenName.orElse('')}"></td>
+        </tr>
+        <tr>
+          <td>Test ID</td>
+          <td th:text="${replay.replayId}"></td>
+        </tr>
+        <tr>
+          <td>Recording ID</td>
+          <td th:text="${replay.recordingId.orElse('')}"></td>
+        </tr>
+        <tr>
+          <td>Date</td>
+          <!-- remove date -->
+          <td th:text="${#dates.formatISO(replay.creationTimeStamp)}"></td>
+        </tr>
+        </tbody>
+      </table>
+      <br>
+      <h5>Aggregate Summary Results (Response Mismatches)</h5>
+      <table class="table table-striped table-bordered">
+        <thead>
+        <tr>
+          <th colspan="3">Current Test</th>
+          <th colspan="2">Previous Tests (<span th:text="${timeLineData.previousCount}">0</span>)</th>
+        </tr>
+        <tr>
+          <th>Tested</th>
+          <th>Errors</th>
+          <th>Error %</th>
+          <th>Average Error %</th>
+          <th>95% CI</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr align="center">
+          <td th:text="${timeLineData.currentAllTotal}"></td>
+          <td th:text="${timeLineData.currentAllResponseMismatches}"></td>
+          <td th:text="${#numbers.formatDecimal(timeLineData.currentAllMismatchFraction * 100, 1, 2) + '%'}"></td>
+          <td th:text="${timeLineData.previousAverage} > 0 ? ${#numbers.formatDecimal(timeLineData.previousAverage * 100, 1, 2) + '%'} : 'N/A'"></td>
+          <td th:text="${timeLineData.previousAll95CIRespMismatches} > 0 ? ${timeLineData.previousAll95CIRespMismatches} : 'N/A'"></td>
+        </tr>
+        </tbody>
+      </table>
+      <br>
+      <h5>Response Mismatches</h5>
+      <table class="table table-striped table-bordered">
+        <thead>
+        <tr>
+          <th></th>
+          <th colspan="3">Current Test</th>
+          <th colspan="2">Previous Tests (<span th:text="${timeLineData.previousCount}">0</span>)</th>
+        </tr>
+        <tr>
+          <th>API Path</th>
+          <th>Tested</th>
+          <th>Errors</th>
+          <th>Error %</th>
+          <th>Average Error %</th>
+          <th>95% CI</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr align="center" th:each="entry: ${timeLineData.pathResults}">
+          <td th:text="${entry.key}"></td>
+          <td th:text="${entry.value.currentTotal}"></td>
+          <td th:text="${entry.value.currentResponseMismatches}"></td>
+          <td th:text="${#numbers.formatDecimal(entry.value.currentMismatchFraction * 100, 1, 2) +'%'}"></td>
+          <td th:text="${entry.value.previousMismatchFraction} > 0 ? ${#numbers.formatDecimal(entry.value.previousMismatchFraction * 100, 1, 2) + '%'} : 'N/A'"</td>
+          <td th:text="${entry.value.previous95CIRespMismatches} > 0 ? ${entry.value.previous95CIRespMismatches} : 'N/A'"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>
