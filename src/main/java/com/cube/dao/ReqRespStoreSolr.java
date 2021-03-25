@@ -5,6 +5,7 @@ package com.cube.dao;
 
 import static io.md.core.TemplateKey.*;
 
+import io.md.cache.Constants.PubSubContext;
 import io.md.constants.ReplayStatus;
 import io.md.core.AttributeRuleMap;
 import io.md.core.BatchingIterator;
@@ -3772,6 +3773,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if(!success) {
             throw new SolrStoreException("Error saving Injection config in Solr");
         }
+
+        // clear the customerId & app specific cache keys from DYNAMIC_INJECTION inMem cache
+        config.pubSubMgr.publish(PubSubContext.IN_MEM_CACHE , Map.of(
+            io.md.cache.Constants.CACHE_NAME , io.md.cache.Constants.DYNAMIC_INJECTION ,
+            io.md.cache.Constants.CUSTOMER_ID , dynamicInjectionConfig.customerId ,
+            io.md.cache.Constants.APP , dynamicInjectionConfig.app ));
+
         return solrDoc.getFieldValue(IDF).toString();
 
     }
