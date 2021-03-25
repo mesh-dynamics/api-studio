@@ -28,6 +28,7 @@ import io.md.dao.Recording.RecordingType;
 import io.md.injection.DynamicInjectionConfig.StaticValue;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.text.NumberFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -167,13 +168,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     void removeCollectionKey(CollectionKey collectionKey) {
         if (config.intentResolver.isIntentToMock()) return;
         try (Jedis jedis = config.jedisPool.getResource()) {
-            //jedis.del(collectionKey.toString());
-            //Long result = jedis.expire(collectionKey.toString(), Config.REDIS_DELETE_TTL);
             if (jedis.exists(collectionKey.toString())) {
                 String shadowKey = Constants.REDIS_SHADOW_KEY_PREFIX + collectionKey.toString();
-                Long result = jedis.expire(shadowKey, com.cube.ws.Config.REDIS_DELETE_TTL);
+                int waitBeforeStopInt = getAppConfiguration(collectionKey.customerId,
+                    collectionKey.app).map(appConfig -> appConfig.stopWaitInterval)
+                    .orElse(com.cube.ws.Config.REDIS_DELETE_TTL);
+                Long result = jedis.expire(shadowKey, waitBeforeStopInt);
                 LOGGER.info(String.format("Expiring redis key \"%s\" in %d seconds"
-                        , shadowKey, com.cube.ws.Config.REDIS_DELETE_TTL));
+                    , shadowKey, waitBeforeStopInt));
             }
         } catch (Exception e) {
             LOGGER.error("Unable to remove key from redis cache :: "+ e.getMessage());
@@ -2108,6 +2110,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static final String TRACERF = CPREFIX + TRACER_FIELD + STRING_SUFFIX;
     private static final String API_GEN_PATHS_F = CPREFIX + API_GEN_PATHS_FIELD + NOTINDEXED_SUFFIX;
+    private static final String STOP_WAIT_INTERVAL_F = CPREFIX + STOP_WAIT_INTERVAL_FIELD + INT_SUFFIX; ;
 
     static {
         fieldNameSolrMap.put(Constants.EVENT_TYPE_FIELD , EVENTTYPEF);
@@ -3426,10 +3429,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         final Optional<String> tracer = getStrField(doc, TRACERF);
         final Optional<Map<String , String[]>> apiGenericPaths = getStrFieldMVFirst(doc , API_GEN_PATHS_F).flatMap(src-> deserialize(src , new TypeReference<Map<String , String[]>>(){} , "apiGenericPaths" ));
+        final Optional<Integer> stopWaitInterval = getIntField(doc, STOP_WAIT_INTERVAL_F);
 
         CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder(customerId.get() , app.get());
         tracer.ifPresent(builder::withTracer);
         apiGenericPaths.ifPresent(builder::withApiGenericPaths);
+        stopWaitInterval.ifPresent(builder::withStopWaitInterval);
         builder.withId(id.get());
 
         return Optional.of(builder.build());
@@ -3451,6 +3456,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             }
             doc.setField(API_GEN_PATHS_F , genPathStr);
         });
+        doc.setField(STOP_WAIT_INTERVAL_F , cfg.stopWaitInterval);
         return doc;
     }
 
