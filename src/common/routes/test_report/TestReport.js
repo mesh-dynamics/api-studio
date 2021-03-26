@@ -6,7 +6,6 @@ import { cubeActions } from "../../actions";
 import config from '../../config';
 import _ from 'lodash';
 import { cubeService } from '../../services';
-import {processTimelineData, generatePathTableData} from '../../utils/test-report/test-report-utils.js'
 import * as moment from 'moment';
 
 class TestReport extends Component {
@@ -15,11 +14,7 @@ class TestReport extends Component {
         super(props);
         this.state = {
             replayId: "",
-            goldenName: "",
-            pathTableData: [],
-            timeStamp: "",
-            timelineResults: {},
-            recordingId: "",
+            timeLineData: {},
             loading: true,
             errorText: "",
         }
@@ -37,60 +32,23 @@ class TestReport extends Component {
         const replayId = urlParameters["replayId"];
         let errorText = "";
         // get replay details for replayId 
-        let replayStatus;
+        let testReport;
         try {
-            replayStatus = await cubeService.checkStatusForReplay(replayId);
+            testReport = await cubeService.fetchTestReport(replayId);
         } catch (e) {
-            errorText =  "error fetching replay details: " + e;
-            console.error(errorText);
+            errorText =  "error fetching test report details: " + e;
             this.setState({errorText : errorText})
             return
-        }
-
-        // get results current and previous results
-        const numResults = 30; // todo configurable?
-        let timelineResults = {};
-        try {        
-            timelineResults = await cubeService.fetchTimelineData(user, replayStatus.app, 'ALL', new Date(replayStatus.creationTimeStamp * 1000), 
-                                                                                null, numResults, replayStatus.testConfigName, replayStatus.goldenName)
-        } catch (e) {
-                errorText = "error fetching timeline results: " + e;
-                console.error(errorText);
-                this.setState({errorText: errorText})
-        }
-
-        if(timelineResults.numFound === 0) {
-            // error
-            errorText = "no results found";
-            console.error(errorText);
-            this.setState({errorText: errorText})
-            return;
         }
 
         if (errorText) {
             return;
         }
-    
-        // paths to filter: we compute results for all paths in the current test if no paths are defined in the test config
-        // but if the paths are defined in the test config (and excludePaths is false), we prefer those
-        let paths = timelineResults.timelineResults[0].results
-                        .map(r => r.path)
-                        .filter(r => r)  // current test paths (exclude 'null');
-        if (!_.isEmpty(replayStatus.paths) && !replayStatus.excludePaths) {
-            paths = replayStatus.paths
-        }
-
-        // transform the results data
-        const processedTimelineData = processTimelineData(timelineResults, paths); 
-        const pathTableData = generatePathTableData(processedTimelineData, replayId);
 
         this.setState({
             replayId: replayId, 
-            replayStatus: replayStatus,
-
-            pathTableData: pathTableData,
-            timelineResults: timelineResults,
-            
+            replayStatus: testReport.replay,
+            timeLineData: testReport.timeLineData,            
             loading: false,
         });
     }
@@ -115,37 +73,14 @@ class TestReport extends Component {
     }
 
     renderAggregateSummary = () => {
-        const {pathTableData} = this.state;
-        const aggrData = pathTableData.path_results.reduce((acc, p) => {  
-            let total = acc.total + p.total;
-            let curr_resp_mm = acc.curr_resp_mm + p.curr_resp_mm;
-            let curr_resp_mm_fraction = curr_resp_mm / total;
-            let prev_results_count = p.prev_path_results_count;
-            
-            // checking if the number of results per path is consistent
-            if (acc.prev_results_count !== 0 && acc.prev_results_count !== p.prev_path_results_count) {
-                console.error("path results count isn't consistent")
-            }
-            
-            return {
-                total: total,
-                curr_resp_mm: curr_resp_mm,
-                curr_resp_mm_fraction: curr_resp_mm_fraction,
-                prev_results_count: prev_results_count,
-            }
-        }, {
-                total: 0,
-                curr_resp_mm: 0,
-                curr_resp_mm_fraction: 0,
-                prev_results_count: 0,
-        });
+        const {timeLineData} = this.state;
         
         return(
             <table className="table table-striped table-bordered">
                 <thead>
                     <tr>
                         <th colSpan={3}>Current Test</th>
-                        <th colSpan={2}>Previous Tests ({aggrData.prev_results_count})</th>
+                        <th colSpan={2}>Previous Tests ({timeLineData.previousCount})</th>
                     </tr>
                     <tr>
                         <th>
@@ -168,19 +103,19 @@ class TestReport extends Component {
                 <tbody>
                     <tr>
                         <td>
-                            {aggrData.total}
+                            {timeLineData.currentAllTotal}
                         </td>
                         <td>
-                            {aggrData.curr_resp_mm}
+                            {timeLineData.currentAllResponseMismatches}
                         </td>
                         <td>
-                            {(aggrData.curr_resp_mm_fraction * 100).toFixed(2) + "%"}
+                            {(timeLineData.currentAllMismatchFraction * 100).toFixed(2) + "%"}
                         </td>
                         <td>
-                            {pathTableData.prev_avg_resp_mm!==null ? (pathTableData.prev_avg_resp_mm * 100).toFixed(2) + "%" : "N/A"}
+                            {timeLineData.previousAverage > 0 ? (timeLineData.previousAverage * 100).toFixed(2) + "%" : "N/A"}
                         </td>
                         <td>
-                            {pathTableData.prev_95_ci_resp_mm!==null ? (pathTableData.prev_95_ci_resp_mm * 100).toFixed(2) + "%" : "N/A"}
+                            {timeLineData.previousAll95CIRespMismatches > 0 ? timeLineData.previousAll95CIRespMismatches : "N/A"}
                         </td>
                     </tr>
                 </tbody>
@@ -190,15 +125,14 @@ class TestReport extends Component {
 
 
     renderPathSummary = () => {
-        const {pathTableData} = this.state;
-        const result_count = pathTableData.path_results[0] ? pathTableData.path_results[0].prev_path_results_count : 0;
+        const {timeLineData} = this.state;
         return(
             <table className="table table-striped table-bordered">
                 <thead>
                     <tr>
                         <th></th>
                         <th colSpan={3}>Current Test</th>
-                        <th colSpan={2}>Previous Tests ({result_count})</th>
+                        <th colSpan={2}>Previous Tests ({timeLineData.previousCount})</th>
                     </tr>
                     <tr>
                         <th>
@@ -222,25 +156,25 @@ class TestReport extends Component {
                     </tr>
                 </thead>
                 <tbody>
-                    {pathTableData.path_results.map((pathEntry, i) => { 
-                            return <tr key={pathEntry.path}>
+                    {Object.entries(timeLineData.pathResults).map(([key, pathEntry]) => { 
+                            return <tr key={key}>
                                 <td>
-                                    {pathEntry.path}
+                                    {key}
                                 </td>
                                 <td>
-                                    {pathEntry.total}
+                                    {pathEntry.currentTotal}
                                 </td>
                                 <td>
-                                    {pathEntry.curr_resp_mm}
+                                    {pathEntry.currentResponseMismatches}
                                 </td>
                                 <td>
-                                    {(pathEntry.curr_resp_mm_fraction * 100).toFixed(2) + "%"}
+                                    {(pathEntry.currentMismatchFraction * 100).toFixed(2) + "%"}
                                 </td>
                                 <td>
-                                    {pathEntry.prev_avg_resp_mm!==null ? (pathEntry.prev_avg_resp_mm * 100).toFixed(2) + "%" : "N/A"}
+                                    {pathEntry.previousMismatchFraction > 0 ? (pathEntry.previousMismatchFraction * 100).toFixed(2) + "%" : "N/A"}
                                 </td>
                                 <td>
-                                    {pathEntry.prev_95_ci_resp_mm!==null ? (pathEntry.prev_95_ci_resp_mm * 100).toFixed(2) + "%" : "N/A"}
+                                    {pathEntry.previous95CIRespMismatches > 0 ? pathEntry.previous95CIRespMismatches : "N/A"}
                                 </td>
                             </tr>
                         })}
