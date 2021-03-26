@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { FormGroup, FormControl, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { FormGroup, FormControl, InputGroup, Button } from 'react-bootstrap';
 import _ from 'lodash';
 import classNames from 'classnames';
 import Tippy from '@tippy.js/react';
@@ -7,8 +7,13 @@ import 'tippy.js/themes/light.css';
 import { applyEnvVarsToUrl } from "../../utils/http_client/envvar";
 import { UpdateBodyOrRawDataTypeHandler, UpdateParamHandler, ReplaceAllParamsHandler } from './HttpResponseHeaders';
 import {generateUrlWithQueryParams, extractURLQueryParams} from "./../../utils/http_client/utils"
-import { IRequestParamData } from '../../reducers/state.types';
+import { IMockConfig, IRequestParamData, IStoreState } from '../../reducers/state.types';
 import HideInternalHeadersButton from './HideInternalHeadersButton';
+import { connect } from 'react-redux';
+import ServiceSelector from './components/ServiceSelector';
+import { getDefaultServiceName, joinPaths } from '../../utils/http_client/httpClientUtils';
+import { getApiPathAndServiceFromUrl } from '../../utils/http_client/httpClientTabs.utils';
+import MockConfigUtils from '../../utils/http_client/mockConfigs.utils';
 export interface IHttpRequestMessageProps {
     bodyType: string;
     httpMethod: string;
@@ -29,6 +34,11 @@ export interface IHttpRequestMessageProps {
     replaceAllParams: ReplaceAllParamsHandler;
     disabled: boolean;
     clientTabId: string;
+    queryStringParams: IRequestParamData[];
+    service: string;
+    mockConfigList: IMockConfig[];
+    selectedMockConfig: string;
+    requestPathURL: string;
 }
 
 
@@ -47,6 +57,18 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
         this.onChangeValue = this.onChangeValue.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleBodyOrRawDataType = this.handleBodyOrRawDataType.bind(this);
+    }
+
+    componentDidUpdate(prevProps: IHttpRequestMessageProps) {
+        const mockConfigUtils = new MockConfigUtils({
+            selectedMockConfig: this.props.selectedMockConfig,
+            mockConfigList: this.props.mockConfigList,
+        });
+        const currentService = mockConfigUtils.getCurrentService(this.props.service);
+        const domain = currentService?.url || this.props.service;
+        if (!this.props.readOnly && (prevProps.selectedMockConfig !== this.props.selectedMockConfig || this.props.httpURL.indexOf(domain) != 0)) {
+          this.handleServiceChange(this.props.service);
+        }
     }
 
     handleChange(evt) {
@@ -101,21 +123,94 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
         const {httpURL, queryParamsFromUrl} = extractURLQueryParams(evt.target.value)
         const queryStringParamsUnselected = _.filter(queryStringParams, {selected: false})
         const queryParams = queryStringParamsUnselected.concat(queryParamsFromUrl)
-        this.props.updateParam(isOutgoingRequest, tabId, "httpURL", "httpURL", httpURL);
+        this.props.updateParam(isOutgoingRequest, tabId, "httpURL", "httpURL", httpURL); //It will again replace apiPath
         this.props.replaceAllParams(isOutgoingRequest, tabId, "queryStringParams", queryParams)
     }
 
-    render() {
-        const {httpURL, queryStringParams} = this.props;
-        const urlWithQueryParams = generateUrlWithQueryParams(httpURL, queryStringParams)
-        const urlRendered = this.generateUrlTooltip(urlWithQueryParams);
+    showServiceSelectionSuggestion(){
+        const serviceIsSelected = this.isServiceSelected();
+        const { httpURL, readOnly } = this.props;
+        if(!serviceIsSelected && !readOnly){
+            const {isServiceMatchedFromConfig, service, targetUrl} =  getApiPathAndServiceFromUrl(httpURL);
+            if(isServiceMatchedFromConfig){
+                return <div key="serviceSuggestion" className="font-12">URL `{targetUrl}` matches with service <b>{service}</b>. 
+                    <Button className="btn btn-sm cube-btn left margin-top-5" style={{padding: "2px 10px", fontSize : "10px"}} 
+                     onClick={()=> this.handleServiceChange(service)} title={`Update service to '${service}'`}>
+                         <i className="fa fa-list-alt"></i> Update</Button> 
+                </div>
+            }
+        }
+        return null;
+    }
+
+    handleServiceChange = (value:string)=> {
+        this.props.updateParam(this.props.isOutgoingRequest, this.props.tabId, "service", "service",value);
+    }
+    handleApiPathChange = (evt)=> {
+        const {httpURL: requestPathURL, queryParamsFromUrl} = extractURLQueryParams(evt.target.value);
+        this.props.updateParam(this.props.isOutgoingRequest, this.props.tabId, "requestPathURL", "requestPathURL", requestPathURL);
+
+        const { tabId, isOutgoingRequest, queryStringParams } = this.props;
+        const queryStringParamsUnselected = _.filter(queryStringParams, {selected: false})
+        const queryParams = queryStringParamsUnselected.concat(queryParamsFromUrl)
+        this.props.replaceAllParams(isOutgoingRequest, tabId, "queryStringParams", queryParams)
+    }
+
+    isServiceSelected(){
+        const defaultService = getDefaultServiceName();
+        let selectedService = this.props.service || defaultService;
+        return selectedService != defaultService;
+    }
+
+    renderURLBox = ()=> {
         
-        const urlTextBox = <div style={{display: "inline-block", width: "82%"}}>
+        const {httpURL, queryStringParams, requestPathURL} = this.props;
+        const serviceIsSelected = this.isServiceSelected();
+        if(!serviceIsSelected || this.props.readOnly){ 
+            const urlWithQueryParams = generateUrlWithQueryParams(httpURL, queryStringParams);
+            const urlRendered = this.generateUrlTooltip(urlWithQueryParams);
+            const urlTextBox = (<div style={{display: "inline-block", width: "82%"}}>
             <FormGroup bsSize="small" style={{marginBottom: "0px", fontSize: "12px"}}>
                 <FormControl type="text" placeholder="https://...." style={{fontSize: "12px"}} readOnly={this.props.readOnly} disabled={this.props.disabled} name="httpURL" value={urlWithQueryParams} onChange={this.handleURLChange}/>
             </FormGroup>
-        </div>
+            </div>);
 
+            return (<Tippy content={urlRendered} arrow={false} arrowType="round" enabled={!this.props.disabled} interactive={true} theme={"google"} size="large" placement="bottom-start" onShow={this.onTippyShow}>
+            {urlTextBox}
+            </Tippy>)
+        }
+        else{
+
+        const pathWithQueryParams = generateUrlWithQueryParams(requestPathURL, queryStringParams); 
+        const mockConfigUtils = new MockConfigUtils({
+            selectedMockConfig: this.props.selectedMockConfig,
+            mockConfigList: this.props.mockConfigList,
+        });
+        const currentService = mockConfigUtils.getCurrentService(this.props.service);
+        let domain = currentService?.url || this.props.service;
+        if(!domain.endsWith("/")){
+            domain = domain + "/";
+        }
+        
+        const urlRendered = this.generateUrlTooltip(joinPaths(domain, pathWithQueryParams));
+              
+             const urlTextBox = (<div style={{display: "inline-block", width: "82%"}}>
+                <FormGroup bsSize="small" style={{marginBottom: "0px", fontSize: "12px"}}>
+                <InputGroup>
+                <InputGroup.Addon style={{fontSize: "11px"}}>{domain}</InputGroup.Addon>
+                    <FormControl type="text" placeholder="/request/path?with=query" style={{fontSize: "12px"}} readOnly={this.props.readOnly} disabled={this.props.disabled} name="requestPathURL" value={pathWithQueryParams} onChange={this.handleApiPathChange}/>
+                </InputGroup>
+                </FormGroup>
+                </div>);
+            
+            return (<Tippy content={urlRendered} arrow={false} arrowType="round" enabled={!this.props.disabled} interactive={true} theme={"google"} size="large" placement="bottom-start" onShow={this.onTippyShow}>
+                {urlTextBox}
+            </Tippy>)
+        }
+
+    }
+
+    render() {
         const headerLabelClass = classNames({
             "request-data-label": true,
             "filled": this.props.headers.findIndex( header => header.name !== '') > -1
@@ -134,17 +229,17 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
         }); 
         const isgRPCData = this.props.bodyType == "grpcData" && this.props.paramsType == "showBody";
         const httpMethod = isgRPCData ? "post" : this.props.httpMethod;
-        
+
 
         return (
             <>
                 <div style={{marginRight: "7px"}}>
                     <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}>REQUEST</div>
                 </div>
-                
-                <div style={{marginBottom: "0px"}}>
-                    <div style={{display: "inline-block", width: "18%", paddingRight: "15px"}}> 
-                        <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
+
+                <div className="margin-bottom-10">
+                    <div style={{display: "inline-block",  paddingRight: "15px"}}> 
+                        <FormGroup bsSize="small" style={{marginBottom: "0px", display: "flex"}}>
                             <FormControl componentClass="select" placeholder="Method" style={{fontSize: "12px"}} name="httpMethod" 
                                 readOnly={this.props.readOnly || isgRPCData} value={httpMethod} onChange={this.handleChange}>
                                 <option value="get">GET</option>
@@ -163,12 +258,14 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                                 <option value="propfind">PROPFIND</option>
                                 <option value="view">VIEW</option>
                             </FormControl>
+                            <ServiceSelector readOnly={this.props.readOnly} selectedService={this.props.service} 
+                            onChange={this.handleServiceChange} serviceSelectionSuggestion={this.showServiceSelectionSuggestion()}/>
                         </FormGroup>
                     </div>
-                    <Tippy content={urlRendered} arrow={false} arrowType="round" enabled={!this.props.disabled} interactive={true} theme={"google"} size="large" placement="bottom-start" onShow={this.onTippyShow}>
-                        {urlTextBox}
-                    </Tippy>
                 </div>
+                  
+                {this.renderURLBox()}
+
                 <div className="" style={{marginTop: "18px", marginBottom: "5px"}}>
                     <div className="" style={{display: "inline-block", paddingRight: "18px", opacity: "0.7", fontSize: "12px", width: "50px"}}>
                         VIEW
@@ -197,4 +294,13 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
     }
 }
 
-export default HttpRequestMessage;
+const mapStateToProps = (state: IStoreState) =>  {
+    const {httpClient: {selectedMockConfig, mockConfigList}} = state;
+    //Progressively, get as much possible props from redux state by tabId, rather then passing as props between components
+    return {
+        selectedMockConfig,
+        mockConfigList
+    }
+};
+
+export default connect(mapStateToProps)(HttpRequestMessage);

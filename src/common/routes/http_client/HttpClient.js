@@ -778,6 +778,8 @@ class HttpClient extends Component {
                                                 grpcData={selectedTraceTableReqTab.grpcData}
                                                 rawDataType={selectedTraceTableReqTab.rawDataType}
                                                 paramsType={selectedTraceTableReqTab.paramsType}
+                                                requestPathURL={selectedTraceTableReqTab.requestPathURL || ""}
+                                                service={selectedTraceTableReqTab.service}
                                                 updateParam={this.props.updateParam}
                                                 replaceAllParams={this.props.replaceAllParams}
                                                 updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
@@ -802,6 +804,8 @@ class HttpClient extends Component {
                                                     grpcData={selectedTraceTableTestReqTab.grpcData}
                                                     rawDataType={selectedTraceTableTestReqTab.rawDataType}
                                                     paramsType={selectedTraceTableReqTab.paramsType}
+                                                    requestPathURL={selectedTraceTableReqTab.requestPathURL || ""}
+                                                    service={selectedTraceTableTestReqTab.service}
                                                     updateParam={this.props.updateParam}
                                                     replaceAllParams={this.props.replaceAllParams}
                                                     updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
