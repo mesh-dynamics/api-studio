@@ -93,7 +93,7 @@ function ServiceSelector(props: IServiceSelectorProps) {
       >
         <option disabled={true}>Select Service</option>
         {serviceList.map((service) => (
-          <option value={service}>{service}</option>
+          <option value={service}>{service == getDefaultServiceName() ? "No service selected" : service}</option>
         ))}
       </FormControl>
       {getTipForService()}
