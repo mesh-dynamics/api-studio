@@ -222,16 +222,25 @@ public class AnalyzeWS {
     public Response getTemplateSetLabels(@Context UriInfo uriInfo,
 	    @PathParam("customerId") String customerId,
 	    @PathParam("appId") String appId) {
-    	Result<TemplateSet> templateSetList = rrstore.getTemplateSetList(customerId, appId);
-    	JSONObject root = new JSONObject();
+      MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+      Optional<String> templateSetName = Optional.ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_NAME));
+      Optional<String> templateSetLabel = Optional.ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_LABEL));
+      Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
+      boolean includeEmpty = Optional.ofNullable(queryParams.getFirst("includeEmpty")).flatMap(Utils::strToBool).orElse(false);
+      Result<TemplateSet> templateSetList = rrstore.getTemplateSetList(customerId, appId, templateSetName, templateSetLabel, start, includeEmpty);
+      List<JSONObject> responseList = new ArrayList<>();
+      long numResults = templateSetList.numResults;
     	templateSetList.getObjects().forEach(templateSet -> {
     		JSONObject setDetails = new JSONObject();
     		setDetails.put("name" , templateSet.name);
-	        setDetails.put("label" , templateSet.label);
-	        setDetails.put("timestamp" , templateSet.timestamp.toString());
-		    root.put(templateSet.version , setDetails);
+    		setDetails.put("label" , templateSet.label);
+    		setDetails.put("timestamp" , templateSet.timestamp.toString());
+        responseList.add(setDetails);
 	    });
-		return Response.ok().entity(root.toString()).build();
+    	JSONObject response = new JSONObject();
+    	response.put("numResults", numResults);
+    	response.put("response", responseList);
+    	return Response.ok().entity(response.toString()).build();
     }
 
 
@@ -377,6 +386,64 @@ public class AnalyzeWS {
     }
 
     @GET
+    @Path("/getTemplateSet/{customerId}/{app}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response getTemplateSet(@Context UriInfo uriInfo, @PathParam("customerId")
+            String customerId, @PathParam("app") String app) {
+
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+
+        Optional<String> templateSetName = Optional
+            .ofNullable(queryParams.getFirst("templateSetName"));
+
+        Optional<String> templateSetLabel = Optional
+            .ofNullable(queryParams.getFirst("templateSetLabel"));
+
+        Optional<TemplateSet> templateSet;
+
+        if (templateSetLabel.isPresent()) {
+            if (templateSetName.isPresent()) {
+                templateSet = rrstore.getTemplateSet(customerId, app, io.md.utils.Utils
+                    .createTemplateSetVersion(templateSetName.get(), templateSetLabel.get()));
+            } else {
+                templateSet = Optional.empty();
+            }
+        } else {
+            templateSet = rrstore
+                .getLatestTemplateSet(customerId, app, templateSetName);
+        }
+
+        return templateSet.map(ts -> {
+            try {
+
+                return ServerUtils.writeResponseToFile("comparison_rules", templateSet, TemplateSet.class,
+                    Optional.of(jsonMapper), Optional.empty());
+
+            } catch (JsonProcessingException e) {
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        String.format(
+                            "Error in converting comparison rules to JSON for customer=%s, app=%s, name=%s, label=%s",
+                            customerId, app, templateSetName, templateSetLabel.orElse(""))))
+                    .build();
+            } catch (IOException e) {
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.IO_EXCEPTION,
+                        String.format(
+                            "Error in comparison rules file creation for customer=%s, app=%s, name=%s, label=%s",
+                            customerId, app, templateSetName, templateSetLabel.orElse(""))))
+                    .build();
+            }
+        }).orElse(Response.serverError()
+                .entity(Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
+                    String
+                        .format(
+                            "Unable to find templateSet for customer=%s, app=%s, name=%s, label=%s",
+                            customerId, app, templateSetName, templateSetLabel.orElse(""))))
+                .build());
+    }
+
+    @GET
     @Path("getTemplateSet/{customerId}/{appId}/{templateVersion}/")
     @Produces(MediaType.TEXT_PLAIN)
     public Response getTemplateSet(@Context UriInfo urlInfo, @PathParam("appId") String appId,
@@ -385,22 +452,9 @@ public class AnalyzeWS {
         return rrstore.getTemplateSet(customerId, appId, templateVersion).map(templateSet -> {
             try {
 
-                String data = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(templateSet);
-                final String fileName = "comparison_rules", ext = ".json";
-
-                File file = new File("/tmp/" + fileName + "-" +
-                    (customerId + appId + Instant.now()).hashCode() +
-                    ext);
-
-                FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
-
-                Response.ResponseBuilder response = Response.ok(file);
-                response.header("Content-Disposition",
-                    "attachment; filename=\"" + fileName + ext + "\"");
-                response.header("Access-Control-Expose-Headers",
-                    "Content-Disposition, X-Suggested-Filename");
-
-                return response.build();
+                return ServerUtils
+                    .writeResponseToFile("comparison_rules", templateSet, TemplateSet.class,
+                        Optional.of(jsonMapper), Optional.empty());
 
             } catch (JsonProcessingException e) {
                 LOGGER.error(
@@ -481,22 +535,8 @@ public class AnalyzeWS {
 
             try {
 
-                CsvSchema csvSchema = csvMapper.schemaFor(TemplateEntryMeta.class).withHeader();
-                String data = csvMapper.writer(csvSchema).writeValueAsString(finalMetaList);
-
-                final String fileName = "learned_comparison_rules", ext = ".csv";
-
-                File file = new File(
-                    "/tmp/" + fileName + "-" + (replayId + Instant.now()).hashCode() + ext);
-
-                FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
-                Response.ResponseBuilder response = Response.ok((Object) file);
-                response
-                    .header("Content-Disposition", "attachment; filename=\"" + fileName + ext + "\"");
-                response.header("Access-Control-Expose-Headers",
-                    "Content-Disposition, X-Suggested-Filename");
-
-                return response.build();
+                return ServerUtils.writeResponseToFile("learned_comparison_rules", finalMetaList,
+                    TemplateEntryMeta.class, Optional.empty(), Optional.of(csvMapper));
 
             } catch (IOException e) {
                 String errorString =  String.format("Error in file creation for replay=%s", replayId);
@@ -2086,10 +2126,10 @@ public class AnalyzeWS {
 			Result<Event> result =  rrstore.getEvents(builder.build());
 
 			for (Event e : (Iterable<Event>) () -> result.getObjects().iterator()) {
-				if(lhsRequestEventOpt.isEmpty() && e.reqId.equals(lhsReqId) && Event.isReqType(e.eventType)) lhsRequestEventOpt = Optional.of(e);
-				if(rhsRequestEventOpt.isEmpty() && e.reqId.equals(rhsReqId) && Event.isReqType(e.eventType)) rhsRequestEventOpt = Optional.of(e);
-				if(lhsResponseEventOpt.isEmpty() && e.reqId.equals(lhsReqId) && !Event.isReqType(e.eventType)) lhsResponseEventOpt = Optional.of(e);
-				if(rhsResponseEventOpt.isEmpty() && e.reqId.equals(rhsReqId) && !Event.isReqType(e.eventType)) rhsResponseEventOpt = Optional.of(e);
+				if(lhsRequestEventOpt.isEmpty() && e.reqId.equals(lhsReqId) && e.isReqType()) lhsRequestEventOpt = Optional.of(e);
+				if(rhsRequestEventOpt.isEmpty() && e.reqId.equals(rhsReqId) && e.isReqType()) rhsRequestEventOpt = Optional.of(e);
+				if(lhsResponseEventOpt.isEmpty() && e.reqId.equals(lhsReqId) && !e.isReqType()) lhsResponseEventOpt = Optional.of(e);
+				if(rhsResponseEventOpt.isEmpty() && e.reqId.equals(rhsReqId) && !e.isReqType()) rhsResponseEventOpt = Optional.of(e);
 			}
 		}
 

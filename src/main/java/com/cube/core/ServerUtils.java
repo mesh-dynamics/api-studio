@@ -4,12 +4,16 @@
 package com.cube.core;
 
 
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.md.core.Comparator.Diff;
 import io.md.core.CompareTemplate.DataType;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -34,6 +38,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -468,6 +473,34 @@ public class ServerUtils {
 
     public static String serializeList(List list){
 	    return serialize(list).orElse("[]");
+    }
+
+    public static Response writeResponseToFile(String fileName, Object object, Class clazz,
+        Optional<ObjectMapper> jsonMapper, Optional<CsvMapper> csvMapper)
+        throws IOException {
+        String data, ext;
+        if (csvMapper.isPresent()) {
+            CsvSchema csvSchema = csvMapper.get().schemaFor(clazz).withHeader();
+            data = csvMapper.get().writer(csvSchema).writeValueAsString(object);
+            ext = ".csv";
+        } else if (jsonMapper.isPresent()){
+            data = jsonMapper.get().writerWithDefaultPrettyPrinter().writeValueAsString(object);
+            ext = ".json";
+        } else {
+            // Internal error. Should never reach this branch.
+            return Response.serverError().entity(io.md.core.Utils.buildErrorResponse(Constants.ERROR, Constants.ERROR,
+                String.format("File type not csv/json. Filename:%s", fileName))).build();
+        }
+
+        File file = new File("/tmp/" + fileName + "-" + UUID.randomUUID());
+        FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
+        Response.ResponseBuilder response = Response.ok((Object) file);
+        response.header("Content-Disposition", "attachment; filename=\"" + fileName + ext + "\"" );
+        response
+            .header("Access-Control-Expose-Headers", "Content-Disposition, X-Suggested-Filename");
+
+        return response.build();
+
     }
 
 

@@ -2083,6 +2083,56 @@ public class CubeStore {
 
 
 
+    @POST
+    @Path("/protoDescriptorCompiledFileUpload/{customerId}/{app}/")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response protoDescriptorCompiledFileUpload(@PathParam("customerId") String customerId,
+        @PathParam("app") String app,
+        @FormDataParam("protoDescriptorFile") List<FormDataBodyPart>  bodyParts) {
+
+        // TODO : Temp API will merge with protoDescriptorFileUpload
+
+        if(bodyParts == null || bodyParts.size() != 1) {
+            return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
+                Map.of("Message",
+                    "Uploaded file stream null or size greater than 1. Ensure the variable name is \"protoDescriptorFile\" for the file")
+            )).toString()).build();
+        }
+
+        // TODO: Move this to constants when merging apis
+        String NO_PROTO_SPECIAL_KEY = "NO_PROTO_SPECIAL_KEY";
+        Map<String, String> protoFileMap = new HashMap<>();
+        boolean status = false;
+        byte[] encodedFileBytes;
+        try {
+
+            FormDataBodyPart bodyPart = bodyParts.get(0);
+            BodyPartEntity bodyPartEntity = (BodyPartEntity) bodyPart.getEntity();
+            String fileName = bodyPart.getContentDisposition().getFileName();
+            String uniqueFileName = "TAG_" + UUID.randomUUID() + "_" + fileName;
+            byte[] fileBytes = bodyPartEntity.getInputStream().readAllBytes();
+            protoFileMap.put(NO_PROTO_SPECIAL_KEY, fileName);
+
+            encodedFileBytes = Base64.getEncoder().encode(fileBytes);
+            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app,
+                new String(encodedFileBytes, StandardCharsets.UTF_8), protoFileMap);
+            status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
+        } catch (Exception e) {
+            String message = "Cannot encode uploaded proto descriptor file";
+            if(e instanceof FileNotFoundException) {
+                message = "Cannot compile descriptor file from protos using protoc compiler."
+                    + " Make sure the files are not duplicated in case of appending to existing protos";
+            }
+            LOGGER.error("Cannot encode uploaded proto descriptor file",e);
+            return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
+                Map.of("Message", message,
+                    "Error", e.getMessage())).toString())).build();
+        }
+        return status ? Response.ok().type(MediaType.APPLICATION_JSON)
+            .entity("The protofile is successfully saved in Solr").build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
+    }
+
 
     @POST
     @Path("/protoDescriptorFileUpload/{customerId}/{app}/")
@@ -2105,6 +2155,10 @@ public class CubeStore {
         Map<String, String> protoFileMap = new HashMap<>();
         boolean status = false;
         byte[] encodedFileBytes;
+
+        // TODO: Move this to constants when merging apis
+        String NO_PROTO_SPECIAL_KEY = "NO_PROTO_SPECIAL_KEY";
+
         try {
             String tmpDir = io.md.constants.Constants.TEMP_DIR.concat("/")
                 .concat(UUID.randomUUID().toString());
@@ -2116,8 +2170,14 @@ public class CubeStore {
                 Optional<ProtoDescriptorDAO> existingProtoDescriptorDAOOptional = rrstore
                     .getLatestProtoDescriptorDAO(customerId, app);
                 existingProtoDescriptorDAOOptional.ifPresent(UtilException.rethrowConsumer(existingProtoDescriptorDAO ->
-                    existingProtoDescriptorDAO.protoFileMap.forEach(UtilException.rethrowBiConsumer(
-                        protoFileMap::put))));
+                {
+                    if (!existingProtoDescriptorDAO.protoFileMap
+                        .containsKey(NO_PROTO_SPECIAL_KEY)) {
+                        existingProtoDescriptorDAO.protoFileMap
+                            .forEach(UtilException.rethrowBiConsumer(
+                                protoFileMap::put));
+                    }
+                }));
             }
 
             // Add newly uploaded protos
@@ -2443,18 +2503,20 @@ public class CubeStore {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response setAppConfiguration(CustomerAppConfig custAppCfg ) {
-
-        //Get existing appCfg
-        Optional<CustomerAppConfig> existing = rrstore.getAppConfiguration(custAppCfg.customerId , custAppCfg.app);
+        //Todo: remove this part of existing config check untill wallmart deployment
+        // all the id fields has been corrected (solrid -> builder.recalculateId) in our all deployments
+        Optional<CustomerAppConfig> existing = rrstore
+            .getAppConfiguration(custAppCfg.customerId, custAppCfg.app);
         //If the existing app cfg Id in solr is different then autoCalculated
-        if(existing.isPresent() && !existing.get().id.equals(custAppCfg.id)){
-            CustomerAppConfig.Builder builder = new Builder(custAppCfg.customerId , custAppCfg.app);
+        if (existing.isPresent() && !existing.get().id.equals(custAppCfg.id)) {
+            CustomerAppConfig.Builder builder = new Builder(custAppCfg.customerId, custAppCfg.app);
             custAppCfg.tracer.ifPresent(builder::withTracer);
             custAppCfg.apiGenericPaths.ifPresent(builder::withApiGenericPaths);
             builder.withId(existing.get().id);
             custAppCfg = builder.build();
         }
-        if(rrstore.saveConfig(custAppCfg)){
+
+        if(rrstore.saveConfig(custAppCfg) && rrstore.commit()){
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(
                 buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of(Constants.MESSAGE, "The customer app config tag has been changed",
                             Constants.CUSTOMER_ID_FIELD, custAppCfg.customerId, Constants.APP_FIELD, custAppCfg.app)))).build();

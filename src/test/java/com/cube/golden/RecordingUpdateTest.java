@@ -29,6 +29,7 @@ class RecordingUpdateTest {
         var app = "MovieInfo";
         var service = "movieinfo";
         var path = "minfo/rentmovie";
+        Optional<String> method = Optional.empty();
 
         // create new operation set
         String recordingOperationSetId = recordingUpdate.createRecordingOperationSet(customerid, app);
@@ -45,7 +46,7 @@ class RecordingUpdateTest {
         System.out.println("updating operations: " + updateOperationList);
         boolean update =
             recordingUpdate.updateRecordingOperationSet(
-                new RecordingOperationSetSP(recordingOperationSetId, customerid, app, service, path,
+                new RecordingOperationSetSP(recordingOperationSetId, customerid, app, service, path, method,
                     updateOperationList));
         Assertions.assertTrue(update);
 
@@ -86,6 +87,7 @@ class RecordingUpdateTest {
         var app = "MovieInfo";
         var service = "movieinfo";
         var path = "minfo/rentmovie";
+        Optional<String> method = Optional.empty();
 
         String newCollectionName = "test-gu-update";
         List<ReqRespUpdateOperation> updateOperationList = Arrays.asList(
@@ -95,7 +97,7 @@ class RecordingUpdateTest {
         );
 
         RecordingOperationSetSP operationSet = new RecordingOperationSetSP(newCollectionName + "-id",
-            newCollectionName + "-osid", customerid, app, service, path, updateOperationList);
+            newCollectionName + "-osid", customerid, app, service, path, method , updateOperationList);
 
        /* Config config = null;
         try {

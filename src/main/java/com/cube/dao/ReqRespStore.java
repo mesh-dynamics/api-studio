@@ -148,6 +148,8 @@ public interface ReqRespStore extends DataStore {
 
     Optional<TemplateSet> getTemplateSet(String customerId, String app, String version);
 
+    Optional<TemplateSet> getLatestTemplateSet(String customerId, String app, Optional<String> templateSetName);
+
     // void invalidateCacheFromTemplateSet(TemplateSet templateSet);
 
     void invalidateCache();
@@ -732,7 +734,9 @@ public interface ReqRespStore extends DataStore {
 
 	boolean saveConfig(CustomerAppConfig cfg);
 
-	Result<TemplateSet> getTemplateSetList (String customerId, String appId);
+	Result<TemplateSet> getTemplateSetList (String customerId, String appId,
+			Optional<String> templateSetName, Optional<String> templateSetLabel, Optional<Integer> start,
+			boolean includeEmpty);
 
 	public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp
 		, Optional<Predicate<Event>> eventFilter);
