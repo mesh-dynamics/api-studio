@@ -8,7 +8,6 @@ import static io.md.core.Utils.buildErrorResponse;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.learning.DynamicInjectionRulesLearner;
-import com.cube.learning.InjectionExtractionMeta;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
@@ -16,6 +15,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import io.md.dao.ReqRespMatchResult;
+import io.md.injection.InjectionExtractionMeta;
 import io.md.injection.StaticInjection;
 import io.md.injection.StaticInjection.StaticInjectionMeta;
 import java.io.File;
@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -561,49 +561,38 @@ public class ReplayWS extends ReplayBasicWS {
 
         MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 
-        String replayId = queryParams.getFirst("replayId");
+        List<String> replayIds = Optional.ofNullable(queryParams.get("replayId")).orElse(
+            Collections.emptyList());
+
         Optional<List<String>> paths = Optional.ofNullable(queryParams.get("path"));
 
-
-        if (replayId == null){
+        if (replayIds.isEmpty()) {
             return Response.serverError().entity(
                 Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
                     "Missing query parameter replayId")).build();
         }
+
         Optional<DynamicInjectionConfig> dynamicInjectionConfig = rrstore.getDynamicInjectionConfig(
             customerId, app, version);
 
         DynamicInjectionRulesLearner diLearner = new DynamicInjectionRulesLearner(Optional.empty());
-        long processedCount = 0, totalCount;
-        List<InjectionExtractionMeta> injectionExtractionMetas;
 
-        if (dynamicInjectionConfig.isPresent()) {
-            DynamicInjectionConfig diConfig = dynamicInjectionConfig.get();
+        return dynamicInjectionConfig.map(diConfig -> {
 
-            do {
-                AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(
-                    replayId,
-                    new MultivaluedHashMap<String, String>(
-                        Map.of(Constants.START_FIELD, String.valueOf(processedCount))));
+            AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(
+                replayIds);
 
-                ReqRespResultsWithFacets resultWithFacets = rrstore
-                    .getAnalysisMatchResults(analysisMatchResultQuery);
+            ReqRespResultsWithFacets resultWithFacets = rrstore
+                .getAnalysisMatchResults(analysisMatchResultQuery);
 
-                processedCount += resultWithFacets.result.getNumResults();
-                totalCount = resultWithFacets.result.getNumFound();
+            Stream<ReqRespMatchResult> reqRespMatchResultStream = resultWithFacets.result
+                .getObjects();
 
-                Stream<ReqRespMatchResult> reqRespMatchResultStream = resultWithFacets.result
-                    .getObjects();
-
-                diLearner.processReplayMatchResults(reqRespMatchResultStream);
-
-            } while (processedCount < totalCount);
-
-            injectionExtractionMetas = diLearner.generateFilteredRules(diConfig);
-
+            List<InjectionExtractionMeta> injectionExtractionMetas = diLearner
+                .generateFilteredRules(diConfig, reqRespMatchResultStream);
 
             try {
-                return ServerUtils.writeResponseToFile("context_propagation_rules", injectionExtractionMetas,
+                return ServerUtils.writeResponseToFile("filtered_context_propagation_rules", injectionExtractionMetas,
                     InjectionExtractionMeta.class, Optional.empty(), Optional.of(csvMapper));
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format(
@@ -621,12 +610,10 @@ public class ReplayWS extends ReplayBasicWS {
                         String.format("Error in file creation for customer:%s, app:%s, version:%s",
                             customerId, app, version))).build();
             }
-        } else {
-            return Response.status(Response.Status.NOT_FOUND)
+        }).orElse(
+            Response.status(Response.Status.NOT_FOUND)
                 .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
-                    "DynamicInjectionConfig object not found")).build();
-        }
-
+                    "DynamicInjectionConfig object not found")).build());
     }
 
     @POST

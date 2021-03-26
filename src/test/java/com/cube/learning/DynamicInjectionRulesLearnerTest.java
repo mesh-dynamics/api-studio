@@ -7,6 +7,7 @@ import com.cube.ws.Config;
 import io.md.dao.Event;
 import io.md.dao.Event.EventType;
 import io.md.dao.EventQuery;
+import io.md.injection.InjectionExtractionMeta;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

@@ -66,7 +66,7 @@ public class DynamicInjectionTest {
 
             DynamicInjectionConfig dynamicInjectionConfig = new DynamicInjectionConfig("ver1",
                 "ravivj", "RandomApp", Optional.empty(), extractionMetaList, injectionMetaList,
-                Collections.emptyList());
+                Collections.emptyList(), Collections.emptyList());
 
 			CubeMetaInfo cubeMetaInfo = new CubeMetaInfo("random-user"
 				, "test", "movie-info", "mi-rest");
