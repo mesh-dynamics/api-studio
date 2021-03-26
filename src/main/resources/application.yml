@@ -101,3 +101,6 @@ password:
             days: 1
     length: 20
 md_cloud: false
+sendgrid:
+      api:
+        key: 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

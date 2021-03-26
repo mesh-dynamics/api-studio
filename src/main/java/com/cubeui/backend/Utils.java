@@ -1,6 +1,9 @@
 package com.cubeui.backend;
 
+import com.google.common.util.concurrent.AtomicDouble;
+import java.util.DoubleSummaryStatistics;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
@@ -43,4 +46,20 @@ public class Utils {
 		}
 	}
 
+	public static int calculate95CI(List<Double> previousMismatches) {
+		if (previousMismatches.size() >= com.cubeui.backend.security.Constants.MIN_ENTRIES_FOR_GAUSSIAN) {
+			DoubleSummaryStatistics summaryStatistics = previousMismatches.stream()
+					.mapToDouble((x) -> x).summaryStatistics();
+			double average = summaryStatistics.getAverage();
+			double[] sumOfDiff = {0};
+			previousMismatches.forEach(r -> {
+				double sq = Math.pow(r.doubleValue() - average, 2);
+				sumOfDiff[0] += sq;
+			});
+			int size = previousMismatches.size();
+			int sigma = size <= 1 ? 0 : (int) Math.sqrt(sumOfDiff[0] / (size - 1));
+			return  Math.min((int) average + 2 * sigma, 1);
+		}
+		return 0;
+	}
 }

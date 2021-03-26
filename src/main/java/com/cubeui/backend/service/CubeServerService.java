@@ -17,16 +17,19 @@ import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
+import io.md.utils.Constants;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -174,6 +177,21 @@ public class CubeServerService {
         ResponseEntity response = fetchGetResponse(path, query);
         Optional<List<Recording>> recordings = getListData(response, path+query, Optional.of("recordings"), new TypeReference<List<Recording>>(){});
         return recordings.map(r -> r.stream().findFirst()).orElse(Optional.empty());
+    }
+
+    public ResponseEntity getTimeLinersResult(Replay replay) {
+        UriBuilder uriBuilder = UriBuilder
+            .fromPath("/as/timelineres/{customerId}/{app}")
+            .queryParam(Constants.GOLDEN_NAME_FIELD, replay.goldenName.get())
+            .queryParam(Constants.NUM_RESULTS_FIELD, 30)
+            .queryParam(Constants.USER_ID_FIELD, replay.userId)
+            .queryParam("byPath", "y")
+            .queryParam(Constants.END_DATE_FIELD, replay.creationTimeStamp.toString());
+        if(replay.testConfigName.isPresent()) {
+            uriBuilder.queryParam(Constants.TEST_CONFIG_NAME_FIELD, replay.testConfigName.get());
+        }
+        URI uri = uriBuilder.build(replay.customerId, replay.app);
+        return fetchGetResponse(cubeServerBaseUrlReplay + uri.getPath(), uri.getQuery());
     }
 
     public Optional<Recording> getRecordingFromResponseEntity(ResponseEntity response, String request) {
