@@ -89,4 +89,9 @@ public abstract  class AbstractMDCache implements MDCache {
 			return cleanRegexKeys(pair.getKey(), keyRegex);
 		} , Long::sum);
 	}
+
+	public String createFieldsKey(String... fields){
+		return String.join(getJoinBy() , fields);
+	}
+
 }

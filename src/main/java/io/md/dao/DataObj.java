@@ -1,10 +1,15 @@
 package io.md.dao;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+
+import org.slf4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -13,12 +18,15 @@ import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.core.WrapUnwrapContext;
 import io.md.cryptography.EncryptionAlgorithm;
+import io.md.logger.LogMgr;
 
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-09-03
  */
 public interface DataObj {
+
+	static final Logger LOGGER = LogMgr.getLogger(DataObj.class);
 
 	@JsonIgnore
 	boolean isLeaf();
@@ -70,6 +78,29 @@ public interface DataObj {
 
 	@JsonIgnore
 	boolean put(String path, DataObj value) throws PathNotFoundException;
+
+	@JsonIgnore
+	default int getChecksum(Optional<CompareTemplate> template){
+		int checksum = 0;
+		Map<String, String> keyValMap = new HashMap<>();
+		List<String> keyVals = new ArrayList<>();
+		collectKeyVals(path -> template.map(t->t.getRule(path).getCompareType()
+			== CompareTemplate.ComparisonType.Equal).orElse(true) , keyValMap);
+
+		for (Map.Entry<String, String> entry : keyValMap.entrySet()) {
+			keyVals.add((entry.getKey() + "=" + entry.getValue()).toLowerCase());
+		}
+		LOGGER.info("Generating checksum from vals : ".concat(keyVals.toString()));
+
+		if (!keyVals.isEmpty()) {
+			checksum = Objects.hash(keyVals.get(0));
+		}
+		for (int i = 1 ; i < keyVals.size(); i++) {
+			checksum ^= Objects.hash(keyVals.get(i));
+		}
+		LOGGER.info("checksum generated : ".concat(String.valueOf(checksum)));
+		return checksum;
+	}
 
 
 	class PathNotFoundException extends Exception{

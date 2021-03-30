@@ -207,28 +207,7 @@ public class Event implements MDStorable {
 	}
 
 	public void parseAndSetKey(CompareTemplate template, Optional<URLClassLoader> classLoader)  {
-		Map<String, String> keyValMap = new HashMap<>();
-		List<String> keyVals = new ArrayList<>();
-		payload.collectKeyVals(path -> template.getRule(path).getCompareType()
-			== CompareTemplate.ComparisonType.Equal, keyValMap);
-
-		for (Map.Entry<String, String> entry : keyValMap.entrySet()) {
-			keyVals.add((entry.getKey() + "=" + entry.getValue()).toLowerCase());
-		}
-
-		LOGGER.info("Generating event key from vals : ".concat(keyVals.toString()));
-		//Making parameter matching for mock, Case Insensitive
-
-		if (!keyVals.isEmpty()) {
-			payloadKey = Objects.hash(keyVals.get(0));
-		}
-		for (int i = 1 ; i < keyVals.size(); i++) {
-			payloadKey ^= Objects.hash(keyVals.get(i));
-		}
-		// TODO deal with this later
-		/*if (eventType == EventType.ThriftRequest) {
-			this.traceId = ((ThriftDataObject) payload).traceId;
-		}*/
+		payloadKey = payload.getChecksum(Optional.of(template));
 		LOGGER.info("Event key generated : ".concat(String.valueOf(payloadKey)));
 	}
 

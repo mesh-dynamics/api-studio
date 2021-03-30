@@ -1,5 +1,7 @@
 package io.md.dao;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,6 +31,9 @@ public class CustomerAppConfig {
     @JsonProperty("stopWaitInterval")
     public final Integer stopWaitInterval;
 
+    @JsonProperty("filterTransform")
+    public  final List<FilterTransform> filterTransform;
+
     private CustomerAppConfig(Builder builder){
         this.customerId = builder.customerId;
         this.app = builder.app;
@@ -36,6 +41,7 @@ public class CustomerAppConfig {
         this.tracer = Optional.ofNullable(builder.tracer);
         this.apiGenericPaths = Optional.ofNullable(builder.apiGenericPaths);
         this.stopWaitInterval = builder.stopWaitInterval;
+        this.filterTransform = builder.filterTransform;
     }
 
     public static class Builder{
@@ -44,7 +50,8 @@ public class CustomerAppConfig {
         private String tracer;
         private Map<String , String[]> apiGenericPaths;
         private String id;
-        public Integer stopWaitInterval;
+        private Integer stopWaitInterval;
+        private List<FilterTransform> filterTransform = Collections.EMPTY_LIST;
 
         @JsonCreator
         public Builder(@JsonProperty("customerId") String customerId , @JsonProperty("app") String app){
@@ -59,6 +66,11 @@ public class CustomerAppConfig {
 
         public Builder withApiGenericPaths(Map<String , String[]> apiGenPaths){
             this.apiGenericPaths = apiGenPaths;
+            return this;
+        }
+
+        public Builder withFilterTransform(List<FilterTransform> filterTransform){
+            this.filterTransform = filterTransform;
             return this;
         }
 

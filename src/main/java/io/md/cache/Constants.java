@@ -25,6 +25,9 @@ public class Constants {
 
 	public static final String TRACER = "Tracer";
 
+	public static final String FILTER_TRANSFORM = "FilterTransform";
+
+
 	public enum PubSubContext {
 
 		IN_MEM_CACHE

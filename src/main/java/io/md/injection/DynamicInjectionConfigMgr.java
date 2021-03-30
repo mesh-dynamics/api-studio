@@ -49,7 +49,7 @@ class DynamicInjectionConfigMgr extends AbstractMDCache {
 
         if(!version.isPresent()) return Optional.empty();
 
-        final String key = String.format("%s-%s-%s", customerId,  app, version.get());
+        final String key = createFieldsKey(customerId,  app, version.get());
         Optional<DynamicInjectionConfig> cfg = configs.get(key);
         if(cfg !=null) return cfg;
 

@@ -184,6 +184,7 @@ public class Constants {
 	public static final String TRACER_FIELD = "tracer";
 	public static final String API_GEN_PATHS_FIELD = "apiGenericPaths";
 	public static final String STOP_WAIT_INTERVAL_FIELD = "stopWaitInterval";
+	public static final String FILTER_TRANSFORM_FIELD = "filterTransform";
 	public static final String PROTO_FILE_MAP_FIELD ="protoFileMap";
 
 

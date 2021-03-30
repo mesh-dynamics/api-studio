@@ -59,7 +59,7 @@ public class ApiGenPathMgr extends AbstractMDCache {
 
 	public Optional<String> getGenericPath(String customerId, String app, String service, String apiPath) {
 
-		String apiPathKey = String.format("%s-%s-%s-%s", customerId, app, service, apiPath);
+		String apiPathKey = createFieldsKey(customerId, app, service, apiPath);
 		Optional<String> genPath = serviceApiGenPaths.get(apiPathKey);
 		if (genPath != null) {
 			return genPath;
@@ -72,7 +72,7 @@ public class ApiGenPathMgr extends AbstractMDCache {
 	}
 
 	private Optional<String> generateGenericPath(String customerId, String app, String service, String apiPath){
-		String key = String.format("%s-%s-%s", customerId, app, service);
+		String key = createFieldsKey(customerId, app, service);
 		Optional<ApiPathRegex[]> apiPathRegexes = serviceApiPathPatterns.get(key);
 		if(apiPathRegexes==null){
 			synchronized (this){
