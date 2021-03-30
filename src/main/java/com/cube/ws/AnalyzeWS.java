@@ -226,8 +226,9 @@ public class AnalyzeWS {
       Optional<String> templateSetName = Optional.ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_NAME));
       Optional<String> templateSetLabel = Optional.ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_LABEL));
       Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
+      Optional<Integer> numOfResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt);
       boolean includeEmpty = Optional.ofNullable(queryParams.getFirst("includeEmpty")).flatMap(Utils::strToBool).orElse(false);
-      Result<TemplateSet> templateSetList = rrstore.getTemplateSetList(customerId, appId, templateSetName, templateSetLabel, start, includeEmpty);
+      Result<TemplateSet> templateSetList = rrstore.getTemplateSetList(customerId, appId, templateSetName, templateSetLabel, start, includeEmpty, numOfResults);
       List<JSONObject> responseList = new ArrayList<>();
       long numResults = templateSetList.numResults;
     	templateSetList.getObjects().forEach(templateSet -> {

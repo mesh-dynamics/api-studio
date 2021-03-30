@@ -736,7 +736,7 @@ public interface ReqRespStore extends DataStore {
 
 	Result<TemplateSet> getTemplateSetList (String customerId, String appId,
 			Optional<String> templateSetName, Optional<String> templateSetLabel, Optional<Integer> start,
-			boolean includeEmpty);
+			boolean includeEmpty, Optional<Integer> numOfResults);
 
 	public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp
 		, Optional<Predicate<Event>> eventFilter);
