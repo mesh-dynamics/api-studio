@@ -15,6 +15,7 @@ import com.cube.queue.StoreUtils;
 import io.md.cache.Constants.PubSubContext;
 import io.md.core.ApiGenPathMgr;
 import io.md.core.CollectionKey;
+import io.md.core.FilterTransformMgr;
 import io.md.dao.CustomerAppConfig.Builder;
 import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.dao.Event.EventType;
@@ -32,7 +33,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -79,7 +79,6 @@ import org.msgpack.value.ValueType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.JsonObject;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
@@ -120,7 +119,6 @@ import com.cube.dao.WrapperEvent;
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
 import com.cube.sequence.SeqMgr;
-import com.cube.utils.AnalysisUtils;
 import com.cube.utils.ScheduledCompletable;
 import com.cube.ws.SanitizationFilters.BadStatuses;
 import com.cube.ws.SanitizationFilters.IgnoreStaticContent;
@@ -394,14 +392,14 @@ public class CubeStore {
                             Event[] events = jsonMapper.readValue(messageBytes , Event[].class);
                             boolean success = true;
                             if (direct) {
-                                success = rrstore.save(Arrays.stream(events).map(this::mapApiGenPath));
+                                success = rrstore.save(Arrays.stream(events).map(this::mapEventTransformOp));
                             } else {
                                 if (events.length > 0) {
                                     Event event = events[0];
                                     Optional<RecordOrReplay> recordOrReplay =
                                         rrstore.getRecordOrReplayFromCollection(event.customerId, event.app,
                                             event.getCollection());
-                                    StoreUtils.processEvents(Arrays.stream(events).map(this::mapApiGenPath), rrstore,
+                                    StoreUtils.processEvents(Arrays.stream(events).map(this::mapEventTransformOp), rrstore,
                                         Optional.of(config.protoDescriptorCache), recordOrReplay);
                                 }
                             }
@@ -434,7 +432,7 @@ public class CubeStore {
             return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(
                 Status.BAD_REQUEST.toString(), Constants.ERROR, e.getMessage())).build();
         }
-        mapApiGenPath(event);
+        mapEventTransformOp(event);
         boolean success = true;
         if (direct) {
             success = rrstore.save(event) && rrstore.commit();
@@ -446,8 +444,18 @@ public class CubeStore {
             : Response.serverError().entity("Event save error").build();
     }
 
+    private Event mapEventTransformOp(Event event){
+        event = mapApiGenPath(event);
+        event = mapFilterTransform(event);
+        return event;
+    }
+
     private Event mapApiGenPath(Event event){
         apiGenPathMgr.getGenericPath(event).ifPresent(event::setApiPath);
+        return event;
+    }
+    private Event mapFilterTransform(Event event){
+        filterTransformMgr.filterTransform(event);
         return event;
     }
 
@@ -493,7 +501,7 @@ public class CubeStore {
             }
             event = wrapperEvent.cubeEvent;
             event.validateEvent();
-            mapApiGenPath(event);
+            mapEventTransformOp(event);
         } catch (IOException e) {
             LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Error parsing Event JSON")),e);
@@ -2705,6 +2713,7 @@ public class CubeStore {
 		this.tagConfig = new TagConfig(config.rrstore);
 		this.factory = new DynamicInjectorFactory(rrstore, jsonMapper);
 		this.apiGenPathMgr = ApiGenPathMgr.getInstance(rrstore);
+		this.filterTransformMgr = FilterTransformMgr.getInstance(rrstore);
 		this.custAppConfigCache = CustAppConfigCache.getInstance(rrstore);
 	}
 
@@ -2716,6 +2725,7 @@ public class CubeStore {
 	TagConfig tagConfig;
     DisruptorEventQueue eventQueue;
     ApiGenPathMgr apiGenPathMgr;
+    FilterTransformMgr filterTransformMgr;
     CustAppConfigCache custAppConfigCache;
 
 	private Optional<String> getCurrentCollectionIfEmpty(Optional<String> collection,
