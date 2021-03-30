@@ -1,8 +1,8 @@
-import React, { Component, Fragment, createContext } from "react";
+import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
-import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Glyphicon } from 'react-bootstrap';
-import { applyEnvVars, getCurrentEnvironment, getRenderEnvVars, getCurrentEnvVars } from "../../utils/http_client/envvar";
+import { FormControl, FormGroup, Tabs, Tab, Modal, Button, ControlLabel, Glyphicon } from 'react-bootstrap';
+import { applyEnvVars, getCurrentEnvironment, getCurrentEnvVars } from "../../utils/http_client/envvar";
 import EnvironmentConfig from './EnvironmentSection';
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
@@ -46,7 +46,8 @@ import {
 } from "../../utils/http_client/utils.js";
 import * as httpClientTabUtils from "../../utils/http_client/httpClientTabs.utils.js";
 import { getContextMapKeyValues, getDefaultServiceName, joinPaths } from "../../utils/http_client/httpClientUtils";
-import { 
+import {
+    getGrpcTabName, 
     extractGrpcBody,
     applyGrpcDataToRequestObject,
     getRequestUrlFromSchema,
@@ -78,6 +79,7 @@ class HttpClientTabs extends Component {
             modalErrorImportFromCurlMessage: "",
         };
         this.addTab = this.addTab.bind(this);
+        this.addGRPCTab = this.addGRPCTab.bind(this);
         this.handleTabChange = this.handleTabChange.bind(this);
         this.handleRemoveTab = this.handleRemoveTab.bind(this);
 
@@ -1220,6 +1222,21 @@ class HttpClientTabs extends Component {
             })
     }
 
+    addGRPCTab() {
+        const { dispatch } = this.props;
+        const newTabId = this.addTab("gRPC", null, null, true);
+        
+        const value = {
+            bodyType: 'grpcData',
+            paramsType: 'showBody',
+            payloadRequestEventName: 'GRPCRequestPayload',
+            payloadResponseEventName: 'GRPCResponsePayload',
+            tabName: "New"
+        };
+        
+        dispatch(httpClientActions.updateRequestTypeOfSelectedTab(newTabId, value));
+    }
+
 
     addTab(evt, reqObject, givenApp, isSelected = true) {
         const { dispatch, user, httpClient: {selectedTabKey} } = this.props;
@@ -1641,6 +1658,7 @@ class HttpClientTabs extends Component {
                         <ResponsiveTabs
                             allowRemove={true} 
                             onAddClick={this.addTab}
+                            onGRPCAddClick={this.addGRPCTab}
                             removeActiveOnly={false} 
                             onChange={this.handleTabChange} 
                             onRemove={this.handleRemoveTab}
