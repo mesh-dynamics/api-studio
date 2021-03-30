@@ -155,7 +155,7 @@ class HttpClientTabs extends Component {
                 url = parsedCurl.url;
             const parsedUrl = URL.parse(url);
             let apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
-            let service = parsedUrl.host ? parsedUrl.host : "NA";
+            let service = getDefaultServiceName();
             let defaultParamsType = "showQueryParams";
             const traceDetails = getTraceDetailsForCurrentApp()
             const customerId = user.customer_name;
