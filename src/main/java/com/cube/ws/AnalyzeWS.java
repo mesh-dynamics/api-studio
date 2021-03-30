@@ -1867,6 +1867,9 @@ public class AnalyzeWS {
 	  Integer numResults =
         Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).orElse(20);
 	  Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
+	  boolean sendMetadata = Optional.ofNullable(queryParams.getFirst("getMetaData")).map(Boolean::valueOf).
+		  orElse(false);
+
 	  long numFound = 0;
 	  Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, start,
         Optional.of(numResults),
@@ -1943,7 +1946,7 @@ public class AnalyzeWS {
 	      for (Event parent : parentRequestEvents) {
 	        if(reqIds.contains(parent.getReqId())) {
             response.add(getApiTraceResponse(parent, depth,
-                Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
+                Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey), sendMetadata));
           }
 	      }
 	    });
@@ -1965,7 +1968,8 @@ public class AnalyzeWS {
       return  event.getTraceId() + " " +  event.getCollection() + " " + event.runId;
   }
 
-  private ApiTraceResponse getApiTraceResponse(Event parentRequestEvent, int depth, List<Event> eventsForTraceId) {
+  private ApiTraceResponse getApiTraceResponse(Event parentRequestEvent, int depth,
+	  List<Event> eventsForTraceId, boolean sendMetaData) {
     final ApiTraceResponse apiTraceResponse = new ApiTraceResponse(parentRequestEvent.getTraceId(),
         parentRequestEvent.getCollection(), parentRequestEvent.timestamp);
 
@@ -1980,7 +1984,7 @@ public class AnalyzeWS {
     });
 
     levelOrderTraversal(parentRequestEvent,  depth, apiTraceResponse, responseEventsByReqId,
-        requestEventsByParentSpanId);
+        requestEventsByParentSpanId, sendMetaData);
     apiTraceResponse.res.sort(new java.util.Comparator<ServiceReqRes>() {
       @Override
       public int compare(ServiceReqRes o1, ServiceReqRes o2) {
@@ -1990,27 +1994,37 @@ public class AnalyzeWS {
     return apiTraceResponse;
   }
 
-  private void levelOrderTraversal(Event e, int level, final ApiTraceResponse apiTraceResponse, Map<String, Event> responseEventsByReqId,
-      MultivaluedMap<String, Event> requestEventsByParentSpanId) {
-	  if(level == 0) return;
+	private void levelOrderTraversal(Event e, int level, final ApiTraceResponse apiTraceResponse,
+		Map<String, Event> responseEventsByReqId, MultivaluedMap<String, Event>
+		requestEventsByParentSpanId, boolean sendMetaData) {
 
-	  Event responseEvent = responseEventsByReqId.get(e.reqId);
-	  RequestPayload payload = (RequestPayload) e.payload;
+		if (level == 0) {
+			return;
+		}
 
-    String status = responseEvent != null ? ((ResponsePayload) responseEvent.payload).getStatusCode() : "";
-    ServiceReqRes serviceReqRes = new ServiceReqRes(e.service, e.apiPath,
-        e.reqId, e.timestamp, e.spanId, e.parentSpanId, status, payload.getMethod()
-	    , (MultivaluedHashMap<String, String>) payload.getQueryParams());
-    apiTraceResponse.res.add(serviceReqRes);
-    List<Event> eventList = requestEventsByParentSpanId.get(e.spanId);
-    if (eventList == null) return;
-    List<Event> children = eventList.stream()
-        .filter(child -> child.reqId != null && !child.reqId.equals(e.reqId)).collect(Collectors.toList());
-    for(Event child: children) {
-      levelOrderTraversal(child, level-1, apiTraceResponse, responseEventsByReqId,
-          requestEventsByParentSpanId);
-    }
-  }
+		Event responseEvent = responseEventsByReqId.get(e.reqId);
+		RequestPayload payload = (RequestPayload) e.payload;
+
+		String status =
+			responseEvent != null ? ((ResponsePayload) responseEvent.payload).getStatusCode() : "";
+		ServiceReqRes serviceReqRes = new ServiceReqRes(e.service, e.apiPath,
+			e.reqId, e.timestamp, e.spanId, e.parentSpanId, status, payload.getMethod()
+			, (MultivaluedHashMap<String, String>) payload.getQueryParams(), sendMetaData ?
+			e.metaData : new HashMap<>());
+		apiTraceResponse.res.add(serviceReqRes);
+		List<Event> eventList = requestEventsByParentSpanId.get(e.spanId);
+		if (eventList == null) {
+			return;
+		}
+
+		List<Event> children = eventList.stream()
+			.filter(child -> child.reqId != null && !child.reqId.equals(e.reqId))
+			.collect(Collectors.toList());
+		for (Event child : children) {
+			levelOrderTraversal(child, level - 1, apiTraceResponse, responseEventsByReqId,
+				requestEventsByParentSpanId, sendMetaData);
+		}
+	}
 
 	private void setRequestAndRules(Recording recording, String service, String apiPath,
 		JSONObject jsonObject, Event request) throws JsonProcessingException {
