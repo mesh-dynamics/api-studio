@@ -409,8 +409,6 @@ const setupListeners = (mockContext, user, replayContext) => {
             setup({session: {rejectUnauthorized: false}});
         }
 
-        setup({session: {rejectUnauthorized: false}});
-
         fetch(url, data.fetchConfigRendered).then(async response => {
             logger.info(`RESPONSE STATUS: ${response.statusCode}`);
             
