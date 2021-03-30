@@ -3,7 +3,10 @@ package io.md.dao;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import javax.ws.rs.core.MultivaluedHashMap;
 
 public class ApiTraceResponse {
@@ -44,6 +47,7 @@ public class ApiTraceResponse {
     public String status;
     public String method;
     public MultivaluedHashMap<String, String> queryParams;
+    public Map<String, String> metaData;
 
     private ServiceReqRes() {
       this.service = "";
@@ -55,11 +59,13 @@ public class ApiTraceResponse {
       this.status = "";
       this.method = "";
       this.queryParams = new MultivaluedHashMap<>();
+      this.metaData = new HashMap<>();
     }
 
     public ServiceReqRes(String service, String apiPath, String requestEventId,
         Instant reqTimestamp, String spanId,
-        String parentSpanId, String status, String method, MultivaluedHashMap<String, String> queryParams) {
+        String parentSpanId, String status, String method,
+        MultivaluedHashMap<String, String> queryParams, Map<String, String> metaData) {
       this.service = service;
       this.apiPath = apiPath;
       this.requestEventId = requestEventId;
@@ -69,6 +75,7 @@ public class ApiTraceResponse {
       this.status = status;
       this.method = method;
       this.queryParams = queryParams;
+      this.metaData = metaData;
     }
   }
 }
