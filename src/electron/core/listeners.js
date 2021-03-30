@@ -405,6 +405,9 @@ const setupListeners = (mockContext, user, replayContext) => {
                 responseTrailersPromise.resolve(trailersObject);
             };
         }
+        if(!data.fetchConfigRendered.isAllowCertiValidation){
+            setup({session: {rejectUnauthorized: false}});
+        }
 
         setup({session: {rejectUnauthorized: false}});
 

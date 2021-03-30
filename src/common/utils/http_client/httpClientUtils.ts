@@ -63,3 +63,7 @@ export function joinPaths(path1: string, path2: string){
   }
   return path1 + joinWith + path2;
 }
+
+export function isTrueOrUndefined(value: any){
+  return value == undefined || value == "true" || value == true;
+}
