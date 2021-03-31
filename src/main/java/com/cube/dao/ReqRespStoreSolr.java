@@ -30,7 +30,6 @@ import io.md.injection.DynamicInjectionConfig.StaticValue;
 import io.md.injection.InjectionExtractionMeta;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.text.NumberFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -149,14 +148,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 	@Override
 	public Result<TemplateSet> getTemplateSetList(String customerId, String appId,
       Optional<String> templateSetName, Optional<String> templateSetLabel, Optional<Integer> start,
-      boolean includeEmpty) {
+      boolean includeEmpty, Optional<Integer> numOfResults) {
         SolrQuery templateSetQuery = new SolrQuery("*:*");
         addFilter(templateSetQuery, TYPEF, Types.TemplateSet.toString());
         addFilter(templateSetQuery, CUSTOMERIDF , customerId);
         addFilter(templateSetQuery, APPF, appId);
         addFilter(templateSetQuery, TEMPLATE_SET_NAME_F, templateSetName, true, includeEmpty);
         addFilter(templateSetQuery, TEMPLATE_SET_LABEL_F, templateSetLabel, true, includeEmpty);
-        return SolrIterator.getResults(solr, templateSetQuery, Optional.empty(),  solrDoc ->
+        return SolrIterator.getResults(solr, templateSetQuery, numOfResults,  solrDoc ->
             solrDocToTemplateSet(solrDoc, false), start);
 
 	}
@@ -2119,7 +2118,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static final String TRACERF = CPREFIX + TRACER_FIELD + STRING_SUFFIX;
     private static final String API_GEN_PATHS_F = CPREFIX + API_GEN_PATHS_FIELD + NOTINDEXED_SUFFIX;
-    private static final String STOP_WAIT_INTERVAL_F = CPREFIX + STOP_WAIT_INTERVAL_FIELD + INT_SUFFIX; ;
+    private static final String STOP_WAIT_INTERVAL_F = CPREFIX + STOP_WAIT_INTERVAL_FIELD + INT_SUFFIX;
+    private static final String FILTER_TRANSFORM_F = CPREFIX + FILTER_TRANSFORM_FIELD + NOTINDEXED_SUFFIX;
+
 
     static {
         fieldNameSolrMap.put(Constants.EVENT_TYPE_FIELD , EVENTTYPEF);
@@ -3439,11 +3440,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final Optional<String> tracer = getStrField(doc, TRACERF);
         final Optional<Map<String , String[]>> apiGenericPaths = getStrFieldMVFirst(doc , API_GEN_PATHS_F).flatMap(src-> deserialize(src , new TypeReference<Map<String , String[]>>(){} , "apiGenericPaths" ));
         final Optional<Integer> stopWaitInterval = getIntField(doc, STOP_WAIT_INTERVAL_F);
+        final Optional<List<FilterTransform>> filterTransforms = getStrFieldMVFirst(doc , FILTER_TRANSFORM_F).flatMap(src-> deserialize(src , new TypeReference<List<FilterTransform>>(){} , "filterTransforms" ));
 
         CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder(customerId.get() , app.get());
         tracer.ifPresent(builder::withTracer);
         apiGenericPaths.ifPresent(builder::withApiGenericPaths);
         stopWaitInterval.ifPresent(builder::withStopWaitInterval);
+        filterTransforms.ifPresent(builder::withFilterTransform);
         builder.withId(id.get());
 
         return Optional.of(builder.build());
@@ -3457,14 +3460,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(IDF , cfg.id);
         cfg.tracer.ifPresent(tracer->doc.setField(TRACERF , tracer));
         cfg.apiGenericPaths.ifPresent(genPaths->{
-            String genPathStr = null;
-            try{
-                genPathStr = this.config.jsonMapper.writeValueAsString(genPaths);
-            }catch(Exception e){
-                LOGGER.error("genPath serialization error" , e);
-            }
-            doc.setField(API_GEN_PATHS_F , genPathStr);
+            ServerUtils.serialize(genPaths).ifPresent(genPathStr->doc.setField(API_GEN_PATHS_F , genPathStr));
         });
+        if(!cfg.filterTransform.isEmpty()){
+            ServerUtils.serialize(cfg.filterTransform).ifPresent(filterTransformStr->doc.setField(FILTER_TRANSFORM_F , filterTransformStr));
+        }
         doc.setField(STOP_WAIT_INTERVAL_F , cfg.stopWaitInterval);
         return doc;
     }
