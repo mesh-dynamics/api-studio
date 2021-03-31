@@ -17,6 +17,7 @@ import {
 
 import EnvironmentConfigs from "./EnvironmentConfigs";
 import "./EnvironmentSection.css";
+import commonUtils from "../../utils/commonUtils";
 
 export interface IEnvironmentSectionState {
   showSelectedEnvModal: boolean;
@@ -146,6 +147,17 @@ class EnvironmentSection extends React.Component<
     this.setState({ showMockConfigModal: false, tabIndexForEdit: 0 });
   };
 
+  handleExportConfigClick = () => {
+
+    const { mockConfigList,  selectedMockConfig } = this.props;
+
+    const currentMockConfig: IMockConfigValue = getCurrentMockConfig(mockConfigList, selectedMockConfig);
+
+    const currentMockConfigFileName = `${currentMockConfig.name}.json`;
+
+    commonUtils.downloadAFileToClient(currentMockConfigFileName, JSON.stringify(currentMockConfig));
+  };
+
   renderSelectedEnvModal = () => {
     const {
       environmentList, 
@@ -232,6 +244,10 @@ class EnvironmentSection extends React.Component<
                 {
                   selectedMockConfig &&
                   <div>
+                    <span onClick={this.handleExportConfigClick} style={{ cursor: "pointer", marginRight: "20px" }}>
+                      Export
+                    </span>
+
                     <span onClick={this.handleMockConfigEdit} style={{ cursor: "pointer" }}>
                       Edit
                     </span>
