@@ -66,7 +66,7 @@ class CreateCollection extends Component<
 
   componentDidMount() {
     const {cube: {templateSetNameLabelsList, selectedApp}} = this.props;
-    const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name}) => (name===`Default${selectedApp}`)) // set default if available
+    const selectedTemplateSetNameLabel = (templateSetNameLabelsList || []).find(({name}) => (name===`Default${selectedApp}`)) // set default if available
     const {name, label} = selectedTemplateSetNameLabel || {name: "", label: ""}
     this.setState({selectedTemplateSetName: name, selectedTemplateSetLabel: label})
   }

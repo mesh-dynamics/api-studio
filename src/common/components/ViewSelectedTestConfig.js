@@ -216,7 +216,7 @@ class ViewSelectedTestConfig extends React.Component {
         
         dispatch(cubeActions.clearPreviousData());
         
-        const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name, label}) => (name===templateSetName && label===templateSetLabel))
+        const selectedTemplateSetNameLabel = (templateSetNameLabelsList || []).find(({name, label}) => (name===templateSetName && label===templateSetLabel))
         if(selectedTemplateSetNameLabel){
             dispatch(cubeActions.setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel))
         }
