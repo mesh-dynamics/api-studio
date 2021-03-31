@@ -333,7 +333,7 @@ const getNewTemplateVerInfo = async (customerId: string, app: string, currentTem
     }
 };
 
-const getTemplateSetNameLabels = async (customerId: string, app: string) => {
+const getTemplateSetNameLabels = async (customerId: string, app: string | null) => {
     try {
         const response = await api.get(`${config.analyzeBaseUrl}/getTemplateSetLabels/${customerId}/${app}`)
         let templateSetList: ITemplateSetNameLabel[] = []

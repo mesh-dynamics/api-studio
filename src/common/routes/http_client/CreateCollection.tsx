@@ -19,6 +19,7 @@ import {
   ITemplateSetNameLabel,
   IUserAuthDetails,
 } from "../../reducers/state.types";
+import TemplateSetBrowse from "../../components/TemplateSetBrowse/TemplateSetBrowse";
 
 export interface ICreateCollectionProps {
   modalButton?: boolean;
@@ -32,7 +33,8 @@ interface ICreateCollectionState {
   newCollectionName: string;
   modalCreateCollectionMessage: string;
   showCreateCollectionModal: boolean;
-  selectedTemplateSetNameLabel: ITemplateSetNameLabel | null;
+  selectedTemplateSetName: string;
+  selectedTemplateSetLabel: string;
 }
 
 class CreateCollection extends Component<
@@ -45,7 +47,8 @@ class CreateCollection extends Component<
       newCollectionName: "",
       modalCreateCollectionMessage: "",
       showCreateCollectionModal: false,
-      selectedTemplateSetNameLabel: null,
+      selectedTemplateSetName: "",
+      selectedTemplateSetLabel: "",
     };
 
     this.handleCollectionNameChange = this.handleCollectionNameChange.bind(
@@ -63,8 +66,9 @@ class CreateCollection extends Component<
 
   componentDidMount() {
     const {cube: {templateSetNameLabelsList, selectedApp}} = this.props;
-    const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name}) => (name===`Default${selectedApp}`)) || null // set default if available
-    this.setState({selectedTemplateSetNameLabel})
+    const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name}) => (name===`Default${selectedApp}`)) // set default if available
+    const {name, label} = selectedTemplateSetNameLabel || {name: "", label: ""}
+    this.setState({selectedTemplateSetName: name, selectedTemplateSetLabel: label})
   }
 
   handleCreateCollectionModalShow() {
@@ -98,7 +102,7 @@ class CreateCollection extends Component<
   }
 
   handleCreateCollection() {
-    const { newCollectionName, selectedTemplateSetNameLabel } = this.state;
+    const { newCollectionName, selectedTemplateSetName, selectedTemplateSetLabel } = this.state;
     const {
       user,
       dispatch,
@@ -120,17 +124,17 @@ class CreateCollection extends Component<
       this.setState({
         modalCreateCollectionMessage: "Collection name already exists.",
       });
-    } else if(!selectedTemplateSetNameLabel) {
+    } else if(!selectedTemplateSetName) {
       this.setState({
         modalCreateCollectionMessage: "Please select template set",
       });
     }else {
       const app = selectedApp;
-      const {name: templateSetName, label: templateSetLabel} = selectedTemplateSetNameLabel;
+      const {selectedTemplateSetName, selectedTemplateSetLabel} = this.state
       try {
         this.setState({ modalCreateCollectionMessage: "Saving.." });
         cubeService
-          .createUserCollection(user, collectionName, app, templateSetName, templateSetLabel)
+          .createUserCollection(user, collectionName, app, selectedTemplateSetName, selectedTemplateSetLabel)
           .then(() => {
             dispatch(httpClientActions.loadUserCollections());
             dispatch(
@@ -162,40 +166,18 @@ class CreateCollection extends Component<
     }
   }
 
-  handleTemplateSetNameLabelChange = (e: React.FormEvent<FormControl & HTMLSelectElement>) => {
-    const targetOption = e.target.options[e.target.selectedIndex]
-    const templateSetName = targetOption.getAttribute("data-name")
-    const templateSetLabel = targetOption.getAttribute("data-label")
-
-    const { cube: {templateSetNameLabelsList}, dispatch} = this.props;
-    const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name, label}) => (name===templateSetName && label===templateSetLabel)) || null;
-    //dispatch(cubeActions.setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel))
-    this.setState({selectedTemplateSetNameLabel})
+  handleTemplateSetNameLabelChange = (name: string, label: string) => {
+    this.setState({selectedTemplateSetName: name, selectedTemplateSetLabel: label})
   }
 
   renderTemplateSetNameLabelSelection = () => {
-      const { cube: {templateSetNameLabelsList} } = this.props;
-      const { selectedTemplateSetNameLabel} = this.state;
+    const { selectedTemplateSetName, selectedTemplateSetLabel } = this.state;
 
-      const options = (templateSetNameLabelsList || []).map(({name, label}) => {
-        return <option key={`${name}-${label}`} value={`${name}-${label}`} data-name={name} data-label={label}>{name} {label && label}</option>
-      })
-
-      const {name, label} = selectedTemplateSetNameLabel
-                            || {name: "", label: ""}
-
-      return (
-        <FormControl
-          componentClass="select"
-          placeholder="Template Set"
-          value={`${name}-${label}`}
-          onChange={this.handleTemplateSetNameLabelChange}
-          className="btn-sm md-env-select"
-        >
-          <option disabled value="-">Select Template Set</option>
-          {options}
-        </FormControl>
-      )
+    return <TemplateSetBrowse
+        templateSetName={selectedTemplateSetName}
+        templateSetLabel={selectedTemplateSetLabel}
+        handleTemplateSetNameLabelSelect={this.handleTemplateSetNameLabelChange}
+      />
   }
 
   getCreateCollectionBody() {
