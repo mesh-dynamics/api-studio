@@ -31,6 +31,9 @@ export const httpClientActions: IActionsType = {
     updateContextMap: (value) => {
         return {type: httpClientConstants.UPDATE_CONTEXT_MAP, data: {value}};
     },
+    updateGeneralSettings: (key, value) => {
+        return {type: httpClientConstants.UPDATE_GENERAL_SETTINGS, data: {key, value}};
+    },
     updateAddToService: (service) => {
         return {type: httpClientConstants.UPDATE_ADD_TO_SERVICE, data: {service}};
     },

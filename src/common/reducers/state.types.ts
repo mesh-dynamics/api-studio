@@ -586,6 +586,7 @@ export interface IHttpClientStoreState {
   mockContextLookupCollection: string;
   mockContextSaveToCollection: ICollectionDetails;
   uiPref: IKeyValuePairs<any>;
+  generalSettings: IKeyValuePairs<any>;
   historyPathFilterText: string;
   appGrpcSchema: IGrpcSchema;
   contextMap: IContextMap;

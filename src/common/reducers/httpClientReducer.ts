@@ -169,7 +169,8 @@ const initialState: IHttpClientStoreState = {
     uiPref:{},
     historyPathFilterText: "",
     appGrpcSchema: {},
-    contextMap: {}
+    contextMap: {},
+    generalSettings:{}
 }
 
 const getTabIndexGivenTabId = (tabId: string, tabs: IHttpClientTabDetails[]) => {
@@ -569,6 +570,14 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                     }
                     return eachTab;
                 })
+            }
+        }
+
+        case httpClientConstants.UPDATE_GENERAL_SETTINGS: {
+
+            return {
+                ...state,
+                generalSettings: {...state.generalSettings, [data.key] : data.value }
             }
         }
 
