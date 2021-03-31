@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Glyphicon, FormGroup, Button, FormControl, Radio, ControlLabel, Checkbox } from 'react-bootstrap';
+import AutoCompleteBox from './components/AutoCompleteBox';
 // import "./styles_here.css";
 import {UpdateParamHandler, AddOrRemoveHandler, IFormData} from './HttpResponseHeaders';
 
@@ -87,16 +88,15 @@ class HttpRequestFormData extends Component<IHttpRequestFormDataProps> {
                             </FormGroup>
                         </div>
                         <div className="cell cell-2"> 
-                            <FormGroup>
-                                <FormControl type="text" placeholder="" 
-                                readOnly={this.props.readOnly} 
-                                value={eachParam.name} name="name" onChange={this.handleChange.bind(this, eachParam.id)}/>
+                            <FormGroup className="autocomplete">
+                                <AutoCompleteBox readOnly={this.props.readOnly} id={"name"+ eachParam.id}
+                                    value={eachParam.name} name="name" onChange={this.handleChange.bind(this, eachParam.id)}/>
                             </FormGroup>
                         </div>
                         <div className="cell cell-3">
-                            <FormGroup>
-                                <FormControl type="text" placeholder="" 
-                                readOnly={this.props.readOnly} value={eachParam.value} name="value" onChange={this.handleChange.bind(this, eachParam.id)} />
+                            <FormGroup className="autocomplete">
+                                <AutoCompleteBox readOnly={this.props.readOnly} id={"value" + eachParam.id}
+                                    value={eachParam.value} name="value" onChange={this.handleChange.bind(this, eachParam.id)}/>
                             </FormGroup>
                         </div>
                         <div className="cell cell-4" onClick={this.handleDelete.bind(this, eachParam.id)} > 

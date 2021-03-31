@@ -13,6 +13,7 @@ import {
 } from '../../utils/http_client/grpc-utils';
 import './GRPCRequestMessage.css';
 import { Link } from 'react-router-dom';
+import AutoCompleteBox from './components/AutoCompleteBox';
 
 export declare type UpdateGRPCDataHandler = (
     isOutgoingRequest: boolean,
@@ -147,10 +148,10 @@ const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
     const urlRendered = generateUrlTooltip(httpURL);
 
     const urlTextBox = (
-        <FormGroup bsSize="small" style={{marginBottom: "0px", fontSize: "12px"}}>
+        <FormGroup bsSize="small" style={{marginBottom: "0px", fontSize: "12px"}} className="autocomplete">
             <InputGroup>
-                <FormControl 
-                    type="text" 
+                <AutoCompleteBox 
+                    id="grpcUrl"
                     placeholder="https://0.0.0.0:8080"
                     style={{fontSize: "12px"}} 
                     readOnly={readOnly} 
