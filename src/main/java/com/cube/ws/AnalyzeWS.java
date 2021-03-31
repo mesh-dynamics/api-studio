@@ -230,7 +230,7 @@ public class AnalyzeWS {
       boolean includeEmpty = Optional.ofNullable(queryParams.getFirst("includeEmpty")).flatMap(Utils::strToBool).orElse(false);
       Result<TemplateSet> templateSetList = rrstore.getTemplateSetList(customerId, appId, templateSetName, templateSetLabel, start, includeEmpty, numOfResults);
       List<JSONObject> responseList = new ArrayList<>();
-      long numResults = templateSetList.numResults;
+      long numResults = templateSetList.numFound;
     	templateSetList.getObjects().forEach(templateSet -> {
     		JSONObject setDetails = new JSONObject();
     		setDetails.put("name" , templateSet.name);
