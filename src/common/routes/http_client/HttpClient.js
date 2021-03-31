@@ -146,30 +146,33 @@ class HttpClient extends Component {
         });
     }
 
-    handleRequestTypeChange = (event, selectedTraceTableReqTabId) => {
-        const { currentSelectedTab, updateRequestTypeOfTab } = this.props;
-        const value = {};
-        if(event.target.value === 'grpcData') {
-            value.bodyType = 'grpcData';
-            value.paramsType = 'showBody';
-            value.payloadRequestEventName = 'GRPCRequestPayload';
-            value.payloadResponseEventName = 'GRPCResponsePayload';
-            value.tabName = getGrpcTabName(currentSelectedTab.grpcConnectionSchema)
-        } else {
-            value.bodyType = 'rawData';
-            value.paramsType = 'showQueryParams';
-            value.tabName = currentSelectedTab.httpURL;
-            value.payloadRequestEventName = 'HTTPRequestPayload';
-            value.payloadResponseEventName = 'HTTPResponsePayload';
-        }
+    /**
+     * Maybe keep for sometime in case of bugs - may need to look back
+     */
+    // handleRequestTypeChange = (event, selectedTraceTableReqTabId) => {
+    //     const { currentSelectedTab, updateRequestTypeOfTab } = this.props;
+    //     const value = {};
+    //     if(event.target.value === 'grpcData') {
+    //         value.bodyType = 'grpcData';
+    //         value.paramsType = 'showBody';
+    //         value.payloadRequestEventName = 'GRPCRequestPayload';
+    //         value.payloadResponseEventName = 'GRPCResponsePayload';
+    //         value.tabName = getGrpcTabName(currentSelectedTab.grpcConnectionSchema)
+    //     } else {
+    //         value.bodyType = 'rawData';
+    //         value.paramsType = 'showQueryParams';
+    //         value.tabName = currentSelectedTab.httpURL;
+    //         value.payloadRequestEventName = 'HTTPRequestPayload';
+    //         value.payloadResponseEventName = 'HTTPResponsePayload';
+    //     }
         
 
-        if(currentSelectedTab.id === selectedTraceTableReqTabId) {
-            updateRequestTypeOfTab(false, currentSelectedTab.id, selectedTraceTableReqTabId, value);
-        } else {
-            updateRequestTypeOfTab(true, currentSelectedTab.id, selectedTraceTableReqTabId, value);
-        }
-    }
+    //     if(currentSelectedTab.id === selectedTraceTableReqTabId) {
+    //         updateRequestTypeOfTab(false, currentSelectedTab.id, selectedTraceTableReqTabId, value);
+    //     } else {
+    //         updateRequestTypeOfTab(true, currentSelectedTab.id, selectedTraceTableReqTabId, value);
+    //     }
+    // }
 
     handleEditServiceNameForEgress = (updatedServiceName, requestId) => {
         const { currentSelectedTab: { id: tabId, outgoingRequests }, updateParam, isOutgoingRequest } = this.props;
@@ -745,7 +748,7 @@ class HttpClient extends Component {
                         </div>
                     </div>
                 </div>
-                <div style={{ display: "flex", width: "10%" }}>
+                {/* <div style={{ display: "flex", width: "10%" }}>
                     <select 
                         value={isRequestTypeGrpc(selectedTraceTableReqTabId, currentSelectedTab, outgoingRequests) ? "grpcData" : "rawData"}
                         className="form-control md-request-type-dropdown" 
@@ -754,7 +757,7 @@ class HttpClient extends Component {
                         <option value="grpcData">gRPC</option>
                         <option value="rawData">REST</option>
                     </select>
-                </div>
+                </div> */}
                 {!showCompleteDiff && (
                     <div>
                     {

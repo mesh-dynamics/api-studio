@@ -1,5 +1,5 @@
 import React, { Component, MouseEvent } from "react";
-import { Glyphicon } from "react-bootstrap";
+import { Glyphicon, Overlay, Popover } from "react-bootstrap";
 import cs from "classnames";
 import Tab, { ITabProps } from "./components/Tab";
 import TabPanel, { ITabPanelProps } from "./components/TabPanel";
@@ -27,12 +27,13 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
     super(props);
 
     this.selectedTabKeyProp = props.selectedTabKey;
-
     this.state = {
       selectedTabKey: props.selectedTabKey,
       focusedTabKey: null,
       draggingTabId: "",
       currentTabIndex: -1,
+      showOverlayTabMenu: false,
+      showOverlayTarget: null
     };
   }
 
@@ -52,10 +53,32 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
   componentDidMount() {
     this.setScrollPosition();
     Shortcuts.register("ctrl+n", this.props.onAddClick);
+    document.body.addEventListener("mousedown", this.handleOutsideClick);
+    // document.body.addEventListener("mouseleave", this.handleOverlayLeave);
   }
 
   componentWillUnmount() {
     Shortcuts.unregister("ctrl+n");
+    document.body.removeEventListener("mousedown", this.handleOutsideClick);
+    // document.body.removeEventListener("mouseleave", this.handleOverlayLeave);
+  }
+
+  handleOutsideClick = (event) => {
+    const targetElement = event.target as HTMLDivElement;
+
+    if(targetElement.className !== "RRT__popover-menu-item") {
+      this.setState({ showOverlayTabMenu: false, showOverlayTarget: null });
+    }
+  }
+
+  handleOverlayLeave = (event) => {
+
+    console.log("EEEEEEEEE", event.target);
+    const targetElement = event.target as HTMLDivElement;
+
+    if(targetElement.id === "menuItemOverlay") {
+      this.setState({ showOverlayTabMenu: false, showOverlayTarget: null }); 
+    }
   }
 
   static getDerivedStateFromProps(props: ITabsProps, state: ITabsState) {
@@ -76,7 +99,8 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
       nextProps.selectedTabKey !== this.selectedTabKeyProp ||
       nextState.selectedTabKey !== selectedTabKey ||
       nextState.draggingTabId != this.state.draggingTabId ||
-      nextState.currentTabIndex != this.state.currentTabIndex
+      nextState.currentTabIndex != this.state.currentTabIndex ||
+      nextState.showOverlayTabMenu != this.state.showOverlayTabMenu
     );
   }
 
@@ -437,6 +461,24 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
     }
   };
 
+  handleAddIconMouseEnter = e => {
+    this.setState({ showOverlayTabMenu: true, showOverlayTarget: e.target });
+  }
+
+  handleAddIconClick = e => {
+    this.setState({ showOverlayTabMenu: !this.state.showOverlayTabMenu, showOverlayTarget: e.target });
+  };
+
+  handleAddRestTab = (event: React.MouseEvent) => {
+    this.props.onAddClick(event);
+    this.setState({ showOverlayTabMenu: false, showOverlayTarget: null });
+  }
+
+  handleAddGrpcTab = (event: React.MouseEvent) => {
+    this.props.onGRPCAddClick();
+    this.setState({ showOverlayTabMenu: false, showOverlayTarget: null });
+  }
+
   renderTabs = (tabsVisible: ITabProps[], draggingTabId: string) => {
     const tabElements: JSX.Element[] = [];
     //Placeholder to show next position on TabContainer
@@ -483,7 +525,8 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
   };
 
   render() {
-    const { containerClass, tabsWrapperClass, onAddClick } = this.props;
+    const { containerClass, tabsWrapperClass } = this.props;
+    const { showOverlayTabMenu, showOverlayTarget } = this.state;
     const { tabsVisible, panels } = this.getTabs();
     const isCollapsed = false;
     const selectedTabKey = this.getSelectedTabKey();
@@ -496,20 +539,59 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
         <div className={tabsClasses}>
           <div className="tabContainer" ref={(e) => (this.tabScrollRef = e!)}>
             {this.renderTabs(tabsVisible, this.state.draggingTabId)}
-
             <div
               className="RRT_add-icon-container"
+              onMouseEnter={this.handleAddIconMouseEnter}
+              onClick={this.handleAddIconClick}
               ref={(e) => (this.addBtnRef = e!)}
-              onClick={onAddClick}
             >
-              <Glyphicon className="RRT__add-icon" glyph="plus" />
+              <div className="RRT_add-icon">
+                <Glyphicon glyph="plus" />
+              </div>
+              {
+                showOverlayTabMenu &&
+                <Overlay
+                  id="menuItemOverlay"
+                  show={showOverlayTabMenu}
+                  onHide={() =>{ /** Required prop. Don't need to do anything */}}
+                  target={showOverlayTarget}
+                  placement="bottom"
+                  container={this}
+                  containerPadding={20}
+                  rootClose
+                >
+                  <Popover 
+                    id="popover-contained"
+                    style={{ 
+                      marginLeft: "-35px",
+                      borderRadius: "2px",
+                      marginTop: "-10px"
+                    }}
+                  >
+                      <div className="RRT__popover-menu-container">
+                        <span 
+                          className="RRT__popover-menu-item"
+                          onClick={this.handleAddRestTab}
+                        >REST</span>
+                        <span
+                          className="RRT__popover-menu-item"
+                          onClick={this.handleAddGrpcTab}
+                        >gRPC</span>
+                      </div>
+                  </Popover>
+                </Overlay>
+              }  
             </div>
           </div>
           <div
-            className="RRT_scrollButtons"
+            className="RRT__scrollButtons"
             ref={(e) => (this.scrollBtnRef = e!)}
           >
-            <div className="RRT-icon-container" onClick={onAddClick}>
+            <div 
+              className="RRT-icon-container" 
+              onMouseEnter={this.handleAddIconMouseEnter}
+              onClick={this.handleAddIconClick}
+            >
               <Glyphicon className="RRT__add-icon" glyph="plus" />
             </div>
             <div
@@ -542,6 +624,8 @@ export interface ITabsState {
   focusedTabKey?: string;
   draggingTabId: string;
   currentTabIndex: number;
+  showOverlayTabMenu: boolean;
+  showOverlayTarget: any; // TODO: figure this out later
 }
 interface ITabAccumulator {
   tabsVisible: ITabProps[];
@@ -571,6 +655,7 @@ export interface ITabsProps {
   // show 'X' closing element only for active tab
   removeActiveOnly: boolean;
   onAddClick: React.MouseEventHandler;
+  onGRPCAddClick: React.MouseEventHandler;
   onChange: Function;
   onRemove: Function;
   onPositionChange: (fromPos: number, toPos: number) => void;

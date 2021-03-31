@@ -5,6 +5,7 @@ import { AddOrRemoveHandler, UpdateParamHandler } from './HttpResponseHeaders';
 import {filterInternalHeaders} from '../../utils/http_client/utils'
 import { connect } from "react-redux";
 import { IRequestParamData, IStoreState } from '../../reducers/state.types';
+import AutoCompleteBox from './components/AutoCompleteBox';
 
 export interface IHttpRequestHeadersProps{
     tabId: string;
@@ -94,16 +95,15 @@ class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
                             </FormGroup>}
                         </div>
                         <div className="cell cell-2"> 
-                            <FormGroup>
-                                <FormControl type="text" placeholder="" 
-                                readOnly={this.props.readOnly} 
+                            <FormGroup className="autocomplete">
+                                <AutoCompleteBox readOnly={this.props.readOnly} id={"name"+ eachHeader.id} headerList={true}
                                 value={eachHeader.name} name="name" onChange={this.handleChange.bind(this, eachHeader.id)}/>
                             </FormGroup>
                         </div>
                         <div className="cell cell-3">
-                            <FormGroup>
-                                <FormControl
-                                readOnly={this.props.readOnly}  type="text" placeholder="" value={eachHeader.value} name="value" onChange={this.handleChange.bind(this, eachHeader.id)} />
+                            <FormGroup className="autocomplete">
+                            <AutoCompleteBox readOnly={this.props.readOnly} id={"value"+ eachHeader.id}
+                                value={eachHeader.value} name="value" onChange={this.handleChange.bind(this, eachHeader.id)}/>
                             </FormGroup>
                         </div>
                         <div className="cell cell-4"

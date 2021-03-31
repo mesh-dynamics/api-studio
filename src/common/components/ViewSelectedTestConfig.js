@@ -26,6 +26,7 @@ import gcbrowseActions from '../actions/gcBrowse.actions.ts';
 import { defaultCollectionItem } from "../constants";
 import {setStrictMock} from "./../helpers/httpClientHelpers"
 import { fetchGoldenMeta } from "../services/golden.service";
+import TemplateSetBrowse from "./TemplateSetBrowse/TemplateSetBrowse";
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
         super(props)
@@ -1200,30 +1201,25 @@ class ViewSelectedTestConfig extends React.Component {
         return panel[pathname] ? panel[pathname]() : (<div />);
     };
 
-    handleTemplateSetNameLabelChange = (e) => {
-        const targetOption = e.target.options[e.target.selectedIndex]
-        const templateSetName = targetOption.getAttribute("data-name")
-        const templateSetLabel = targetOption.getAttribute("data-label")
-        const { cube: {templateSetNameLabelsList}, dispatch} = this.props;
-        const selectedTemplateSetNameLabel = (templateSetNameLabelsList || []).find(({name, label}) => (name===templateSetName && label===templateSetLabel))
-        dispatch(cubeActions.setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel))
+    handleTemplateSetNameLabelChange = (name, label) => {
+        const {dispatch} = this.props;
+        dispatch(cubeActions.setSelectedTemplateSetNameLabel({name, label}))
     }
 
     renderTemplateSetNameLabelSelection = () => {
-        const { cube: {templateSetNameLabelsList, selectedTemplateSetNameLabel, selectedApp} } = this.props;
-        const options = (templateSetNameLabelsList || []).map(({name, label}) => {
-            return <option key={`${name}-${label}`} value={`${name}-${label}`} data-name={name} data-label={label}>{name} {label && label}</option>
-        })
+        const { cube: {selectedTemplateSetNameLabel} } = this.props
 
         const {name, label} = selectedTemplateSetNameLabel
                             || {name: "", label: ""}
+
         return (
             <div className="margin-top-10">
                 <div className="label-n">SELECT TEMPLATE SET</div>
-                <select className="r-att" onChange={this.handleTemplateSetNameLabelChange} value={`${name}-${label}`}>
-                    <option disabled value="-">Select Template Set</option>
-                    {options}
-                </select>
+                <TemplateSetBrowse
+                    templateSetName={name}
+                    templateSetLabel={label}
+                    handleTemplateSetNameLabelSelect={this.handleTemplateSetNameLabelChange}
+                />
             </div>
         )
     }
