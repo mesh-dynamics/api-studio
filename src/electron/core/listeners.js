@@ -2,7 +2,7 @@
  * This file is set up proxy and listeners
  */
 const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
-const { fetch, AbortController } = require("fetch-h2");
+const { fetch, AbortController, setup } = require("fetch-h2");
 const { autoUpdater } = require('electron-updater');
 autoUpdater.logger = require('electron-log')
 const isDev = require('electron-is-dev');
@@ -405,6 +405,9 @@ const setupListeners = (mockContext, user, replayContext) => {
                 responseTrailersPromise.resolve(trailersObject);
             };
         }
+        
+        setup({session: {rejectUnauthorized: data.fetchConfigRendered.isAllowCertiValidation}});
+        
 
         fetch(url, data.fetchConfigRendered).then(async response => {
             logger.info(`RESPONSE STATUS: ${response.statusCode}`);
