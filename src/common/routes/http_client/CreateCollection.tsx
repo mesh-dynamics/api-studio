@@ -63,7 +63,7 @@ class CreateCollection extends Component<
 
   componentDidMount() {
     const {cube: {templateSetNameLabelsList, selectedApp}} = this.props;
-    const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name}) => (name===`Default${selectedApp}`)) || null // set default if available
+    const selectedTemplateSetNameLabel = (templateSetNameLabelsList || []).find(({name}) => (name===`Default${selectedApp}`)) || null // set default if available
     this.setState({selectedTemplateSetNameLabel})
   }
 
@@ -168,7 +168,7 @@ class CreateCollection extends Component<
     const templateSetLabel = targetOption.getAttribute("data-label")
 
     const { cube: {templateSetNameLabelsList}, dispatch} = this.props;
-    const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name, label}) => (name===templateSetName && label===templateSetLabel)) || null;
+    const selectedTemplateSetNameLabel = (templateSetNameLabelsList || []).find(({name, label}) => (name===templateSetName && label===templateSetLabel)) || null;
     //dispatch(cubeActions.setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel))
     this.setState({selectedTemplateSetNameLabel})
   }

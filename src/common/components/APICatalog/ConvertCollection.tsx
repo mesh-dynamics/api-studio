@@ -229,7 +229,7 @@ class ConvertCollection extends Component<
     const templateSetLabel = targetOption.getAttribute("data-label")
 
     const { templateSetNameLabelsList } = this.props;
-    const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name, label}) => (name===templateSetName && label===templateSetLabel)) || {name: "", label: ""}
+    const selectedTemplateSetNameLabel = (templateSetNameLabelsList || []).find(({name, label}) => (name===templateSetName && label===templateSetLabel)) || {name: "", label: ""}
     const {name: collTemplateSetName, label: collTemplateSetLabel} = selectedTemplateSetNameLabel
     this.setState({collTemplateSetName, collTemplateSetLabel})
   }
