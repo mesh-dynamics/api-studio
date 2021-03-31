@@ -54,7 +54,7 @@ export function getContextMapKeyValues(contextMap: IContextMap){
 }
 
 export function getDefaultServiceName(){
-  return "noservice"; //This can be changed as per decision.
+  return "none";
 }
 export function joinPaths(path1: string, path2: string){
   let joinWith = "";
@@ -62,4 +62,8 @@ export function joinPaths(path1: string, path2: string){
     joinWith = "/";
   }
   return path1 + joinWith + path2;
+}
+
+export function isTrueOrUndefined(value: any){
+  return value == undefined || value == "true" || value == true;
 }

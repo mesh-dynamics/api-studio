@@ -45,8 +45,8 @@ import {
     getHostName,
 } from "../../utils/http_client/utils.js";
 import * as httpClientTabUtils from "../../utils/http_client/httpClientTabs.utils.js";
-import { getContextMapKeyValues, getDefaultServiceName, joinPaths } from "../../utils/http_client/httpClientUtils";
-import {
+import { getContextMapKeyValues, getDefaultServiceName, joinPaths, isTrueOrUndefined } from "../../utils/http_client/httpClientUtils";
+import { 
     getGrpcTabName, 
     extractGrpcBody,
     applyGrpcDataToRequestObject,
@@ -157,7 +157,7 @@ class HttpClientTabs extends Component {
                 url = parsedCurl.url;
             const parsedUrl = URL.parse(url);
             let apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
-            let service = parsedUrl.host ? parsedUrl.host : "NA";
+            let service = getDefaultServiceName();
             let defaultParamsType = "showQueryParams";
             const traceDetails = getTraceDetailsForCurrentApp()
             const customerId = user.customer_name;
@@ -803,7 +803,7 @@ class HttpClientTabs extends Component {
      }
 
     async driveRequest(isOutgoingRequest, tabId) {
-        const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection, mockContextSaveToCollection, selectedEnvironment, contextMap  }} = this.props;
+        const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection, mockContextSaveToCollection, selectedEnvironment, contextMap, generalSettings  }} = this.props;
         const { cube: { selectedApp }, user } = this.props;
         const { dispatch } = this.props;
         const userId = user.username;
@@ -923,6 +923,9 @@ class HttpClientTabs extends Component {
         let fetchUrlRendered = httpRequestURLRendered + (queryStringValue.length ? "?" + queryStringValue : "");
         let fetchedResponseHeaders = {};
         fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
+
+        const value = generalSettings && generalSettings[commonConstants.ALLOW_CERTIFICATE_VALIDATION];
+        fetchConfigRendered.isAllowCertiValidation = isTrueOrUndefined(value);
         
         if(PLATFORM_ELECTRON) {
             const requestApi = window.require('electron').remote.getGlobal("requestApi");
@@ -985,7 +988,7 @@ class HttpClientTabs extends Component {
                     fetchedResponseHeaders[header[0]] = header[1];
                 }
 
-                const bodyData = response.text();
+                const bodyData = await response.text();
 
                 this.driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData, {}, preRequestResult);
             
@@ -1107,7 +1110,7 @@ class HttpClientTabs extends Component {
                                 dispatch(httpClientActions.updateEventDataInSelectedTab(tabId, eventData ));                                
                                 dispatch(httpClientActions.afterResponseReceivedData(tabId, JSON.stringify(responseEvent.payload[1].body, undefined, 4)));
                             }
-                            const apiPath = _.trimStart(data[0].request.apiPath, '/');
+                            const apiPath = _.trimStart(data[0].request.apiPath, '/') || "/";
                             const isLocalhost = isLocalhostUrl(tabToProcess.httpURL);
                             this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
                             if(!isLocalhost){

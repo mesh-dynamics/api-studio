@@ -8,6 +8,8 @@ import { getCurrentEnvironment } from "../../utils/http_client/envvar";
 import { getCurrentMockConfig } from "../../utils/http_client/utils";
 import { httpClientActions } from '../../actions/httpClientActions';
 import { IHttpClientStoreState, IStoreState, IEnvironmentConfig, IUserAuthDetails, IMockConfig, ICubeState, IMockConfigValue, IConfigVars } from '../../reducers/state.types';
+import { isTrueOrUndefined } from '../../utils/http_client/httpClientUtils';
+import commonConstants from '../../utils/commonConstants';
 
 export interface IMockConfigsState{
     selectedEditMockConfig: any, //Need to verify type: {name: string; serviceConfigs: []}
@@ -27,7 +29,7 @@ export interface IMockConfigsProps{
     hideModal: () => void;
 }
 class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
-    constructor(props) {
+    constructor(props: IMockConfigsProps) {
         super(props)
         this.state = {
             selectedEditMockConfig: {},
@@ -447,6 +449,30 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
         );
     }
 
+    onChangeAllowCertification = (event: React.ChangeEvent<HTMLInputElement>) => {
+        this.props.dispatch(httpClientActions.updateGeneralSettings(commonConstants.ALLOW_CERTIFICATE_VALIDATION, event.target.checked));
+    }
+
+    renderCertificatesTab = () => {
+        const {
+            httpClient: { generalSettings },
+        } = this.props;
+        const value = generalSettings && generalSettings[commonConstants.ALLOW_CERTIFICATE_VALIDATION];
+        const isAllowCertiValidation = isTrueOrUndefined(value);
+        return <Fragment>
+            <Grid>
+                <Row className="show-grid margin-top-15">
+                    <Col xs={5}>
+                        <label htmlFor="allowCertificateValidation">Allow certificate validation</label>
+                    </Col>
+                    <Col xs={5}>
+                        <input type="checkbox" name="allowCertificateValidation" checked={isAllowCertiValidation} onChange={this.onChangeAllowCertification} />
+                    </Col>
+                </Row>
+            </Grid>
+        </Fragment>
+    }
+
     renderSessionVariables = () => {
         const {
             sessionVars,
@@ -689,6 +715,9 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
                             </Tab>
                             <Tab eventKey={3} title="Session Variables">
                                 {this.renderSessionVariables()}
+                            </Tab>
+                            <Tab eventKey={4} title="Certificates">
+                                {this.renderCertificatesTab()}
                             </Tab>
                         </Tabs>
                     </div>
