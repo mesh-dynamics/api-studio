@@ -215,7 +215,7 @@ class ViewSelectedTestConfig extends React.Component {
         
         dispatch(cubeActions.clearPreviousData());
         
-        const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name, label}) => (name===templateSetName && label===templateSetLabel))
+        const selectedTemplateSetNameLabel = (templateSetNameLabelsList || []).find(({name, label}) => (name===templateSetName && label===templateSetLabel))
         if(selectedTemplateSetNameLabel){
             dispatch(cubeActions.setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel))
         }
@@ -1205,7 +1205,7 @@ class ViewSelectedTestConfig extends React.Component {
         const templateSetName = targetOption.getAttribute("data-name")
         const templateSetLabel = targetOption.getAttribute("data-label")
         const { cube: {templateSetNameLabelsList}, dispatch} = this.props;
-        const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name, label}) => (name===templateSetName && label===templateSetLabel))
+        const selectedTemplateSetNameLabel = (templateSetNameLabelsList || []).find(({name, label}) => (name===templateSetName && label===templateSetLabel))
         dispatch(cubeActions.setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel))
     }
 
