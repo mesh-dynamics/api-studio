@@ -148,13 +148,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 	@Override
 	public Result<TemplateSet> getTemplateSetList(String customerId, String appId,
       Optional<String> templateSetName, Optional<String> templateSetLabel, Optional<Integer> start,
-      boolean includeEmpty, Optional<Integer> numOfResults) {
+      Optional<Integer> numOfResults) {
         SolrQuery templateSetQuery = new SolrQuery("*:*");
         addFilter(templateSetQuery, TYPEF, Types.TemplateSet.toString());
         addFilter(templateSetQuery, CUSTOMERIDF , customerId);
         addFilter(templateSetQuery, APPF, appId);
-        addFilter(templateSetQuery, TEMPLATE_SET_NAME_F, templateSetName, true, includeEmpty);
-        addFilter(templateSetQuery, TEMPLATE_SET_LABEL_F, templateSetLabel, true, includeEmpty);
+      if(templateSetName.isPresent() && !templateSetName.get().isEmpty()) {
+          addOrFilterInFields(templateSetQuery,
+              Map.of(TEMPLATE_SET_NAME_F, templateSetName.get(), VERSIONF, templateSetName.get() + "*"));
+      }
+      if(templateSetLabel.isPresent() && !templateSetLabel.get().isEmpty()) {
+          addOrFilterInFields(templateSetQuery,
+              Map.of(TEMPLATE_SET_LABEL_F, templateSetLabel.get(), VERSIONF, "*" + templateSetLabel.get()));
+      }
         return SolrIterator.getResults(solr, templateSetQuery, numOfResults,  solrDoc ->
             solrDocToTemplateSet(solrDoc, false), start);
 
@@ -1612,12 +1618,18 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return String.format(queryFmt, fieldname, startVal, endVal);
     }
 
-
     private static void addOrDateRangeFilter(SolrQuery query, List<String> fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive,
             boolean endInclusive) {
         String rangeQuery = fieldname.stream().map(v -> getDateRangeFilterString(v, startDate, endDate, startInclusive, endInclusive))
             .collect(Collectors.joining(" OR ", "( ", " )"));
         query.addFilterQuery(rangeQuery);
+    }
+
+    private static void addOrFilterInFields(SolrQuery query, Map<String, String> fieldValues) {
+        String orQuery = fieldValues.entrySet().stream().map
+            (entry -> String.format("%s:%s", entry.getKey(), SolrIterator.escapeQueryChars(entry.getValue())))
+            .collect(Collectors.joining(" OR ", "( ", " )"));
+        query.addFilterQuery(orQuery);
     }
 
     private static void addDateRangeFilter(SolrQuery query,String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
