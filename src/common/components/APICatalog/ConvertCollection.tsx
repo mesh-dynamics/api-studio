@@ -166,15 +166,23 @@ class ConvertCollection extends Component<
     
     const {collTemplateSetName, collTemplateSetLabel} = this.state
 
-    const copyRecordingData: any = {
+    let copyRecordingData: any = {
       golden_name: this.state.newCollection,
       recordingType: isGolden ? "UserGolden" : "Golden",
-      templateSetName: collTemplateSetName,
-      templateSetLabel: collTemplateSetLabel
-    };
+    }
+    
+    if (collTemplateSetName) {
+      copyRecordingData.templateSetName = collTemplateSetName
+    }
+    
+    if (collTemplateSetLabel) {
+      copyRecordingData.templateSetLabel = collTemplateSetLabel
+    }
+
     if (isGolden) {
       copyRecordingData.label = username;
     }
+    
     this.setState({ message: "", isLoading: true, isErrorMessage: false });
 
     if (isGolden) {
