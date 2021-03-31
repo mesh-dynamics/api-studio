@@ -431,9 +431,12 @@ public class ServerUtils {
         Optional<String> templateSetLabel, Optional<String> name, Optional<String> userId
         , Instant timeStamp, String labelValue, RecordingType type) {
         String collection = UUID.randomUUID().toString();
-        String templateSetNameFinal = templateSetName.orElse(recording.templateSetName);
-        String templateSetLabelFinal = templateSetLabel.orElse(
-            recording.templateSetLabel);
+        String templateSetNameFinal = templateSetName.orElse(recording.templateSetName != null &&
+            (!recording.templateSetName.isEmpty()) ? recording.templateSetName
+            : Utils.extractTemplateSetNameAndLabel(recording.templateVersion).getLeft());
+        String templateSetLabelFinal = templateSetLabel.orElse(recording.templateSetLabel != null &&
+            (!recording.templateSetLabel.isEmpty()) ? recording.templateSetLabel
+            : Utils.extractTemplateSetNameAndLabel(recording.templateVersion).getRight());
         String templateSetVersion = Utils.createTemplateSetVersion(templateSetNameFinal,
             templateSetLabelFinal);
         RecordingBuilder recordingBuilder = new RecordingBuilder(
