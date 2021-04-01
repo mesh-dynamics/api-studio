@@ -1,10 +1,10 @@
 //Use this util file to create new function definition in Typescript and to move existing function to make them typescript compliant
 
-import {
-  IApiTrace,
-  IContextMap,
-  IKeyValuePairs,
-} from "../../reducers/state.types";
+import { IApiTrace, ICollectionDetails, IContextMap, IKeyValuePairs, IStoreState } from "../../reducers/state.types";
+
+import { store } from "../../helpers";
+import { cubeService } from "../../services";
+import { httpClientActions } from "../../actions/httpClientActions";
 
 export function sortApiTraceChildren(apiTraces: IApiTrace[]) {
   apiTraces.forEach((trace) => {
@@ -53,6 +53,34 @@ export function getContextMapKeyValues(contextMap: IContextMap){
   return contextMapKeyValues;
 }
 
+function searchCollection(collections: ICollectionDetails[], collectionId: string) {
+  return (collections || []).find((collec) => collec.collec == collectionId);
+}
+
+export async function getCollectionDetailsById(collectionId: string): Promise<ICollectionDetails | undefined> {
+  const state = store.getState() as IStoreState;
+  const goldenList = state.apiCatalog.goldenList,
+    collectionList = state.apiCatalog.collectionList,
+    actualGoldens = state.gcBrowse.actualGoldens.recordings,
+    userGoldens = state.gcBrowse.userGoldens.recordings,
+    cachedGoldens = state.httpClient.collectionsCache;
+  const collectionFound =
+    searchCollection(goldenList, collectionId) ||
+    searchCollection(collectionList, collectionId) ||
+    searchCollection(actualGoldens, collectionId) ||
+    searchCollection(userGoldens, collectionId) ||
+    searchCollection(cachedGoldens, collectionId);
+  if (collectionFound) {
+    return collectionFound;
+  } else {
+    const collectionResult = await cubeService.fetchCollectionbyCollectionId(state.authentication.user, collectionId);
+    if (collectionResult.numFound > 0) {
+      store.dispatch(httpClientActions.addCachedCollections(collectionResult.recordings));
+      return collectionResult.recordings[0];
+    }
+  }
+  return undefined;
+}
 export function getDefaultServiceName(){
   return "none";
 }

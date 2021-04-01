@@ -83,7 +83,7 @@ export interface IApiCatalogState {
   selectedService: string;
   selectedSource: string;
   services: any[]; //2
-  startTime: string| null; //1
+  startTime: string | null; //1
   goldenCollectionLoading: boolean;
 }
 
@@ -207,7 +207,7 @@ export interface ICubeState {
   analysisStatusObj: any; //2
   appsList: IAppDetails[];
   appImages: IAppImages[];
-  appImagesReqStatus: string,
+  appImagesReqStatus: string;
   appImagesReqErr: string;
   appsListReqErr: string;
   appsListReqStatus: string;
@@ -258,8 +258,8 @@ export interface ICubeState {
   testIdsReqStatus: string;
   timelineData: ITimelineData[];
   isGettingStartedHidden?: boolean;
-  templateSetNameLabelsList: ITemplateSetNameLabel[],
-  selectedTemplateSetNameLabel: ITemplateSetNameLabel | null,
+  templateSetNameLabelsList: ITemplateSetNameLabel[];
+  selectedTemplateSetNameLabel: ITemplateSetNameLabel | null;
 }
 
 //Golden State
@@ -314,11 +314,60 @@ export interface IPayloadData {
   status?: number;
 }
 
+export interface IDiffLayoutData{
+  //Going forward, update the types here is any mismatch.
+  recordedResponseHeaders : IParamsMap,
+  replayedResponseHeaders : IParamsMap,
+  recordedData: string,
+  replayedData: string,
+  actJSON: string,
+  expJSON: string,
+  parsedDiff: any[],
+  reductedDiffArray: any[],
+  missedRequiredFields : any[],
+  show: boolean,
+  recordedRequestHeaders : IParamsMap,
+  replayedRequestHeaders : IParamsMap,
+  recordedRequestQParams : IParamsMap,
+  replayedRequestQParams : IParamsMap,
+  recordedRequestFParams : IParamsMap,
+  replayedRequestFParams : IParamsMap,
+  recordedRequestBody : IParamsMap,
+  replayedRequestBody : IParamsMap,
+  updatedReducedDiffArrayRespHdr : any[],
+  reductedDiffArrayReqHeaders : any[],
+  reductedDiffArrayReqQParams : any[],
+  reductedDiffArrayReqFParams : any[],
+  reductedDiffArrayReqBody : any[];
+  recordResponse: IPayloadData;
+  replayResponse: IPayloadData;
+  replayReqId: string;
+}
+
+export interface IDiffCompOperation {
+  fromValue: string;
+  op: string;
+  path: string;
+  resolution: string;
+  value: string;
+}
+
 export interface IParamsMap {
   [key: string]: string[];
 }
 export interface IKeyValuePairs<T = string> {
   [key: string]: T;
+}
+export interface IMetaData {
+  collectionMatched?: string;
+  matchType?: string;
+  matchedCollectionName?: string;
+  matchedRequestId?: string;
+  matchedResponseId?: string;
+  payloadKeyMatched?: string;
+  score?: string;
+  traceIdMatched?: string;
+  [key: string]: string | undefined;
 }
 
 export interface ITemplateSetNameLabel {
@@ -326,9 +375,9 @@ export interface ITemplateSetNameLabel {
   label: string;
   timestamp: string;
 }
-  export interface IContextMap {
+export interface IContextMap {
   [key: string]: {
-    value: any,
+    value: any;
     createdOn: number; //timestamp when context map entry is added
   };
 }
@@ -339,7 +388,7 @@ export interface IEventData {
   customerId: string;
   eventType: string;
   instanceId: string;
-  metaData: IKeyValuePairs; //2
+  metaData: IMetaData;
   parentSpanId: string;
   payload: [string, IPayloadData];
   recordingType: string;
@@ -351,8 +400,8 @@ export interface IEventData {
   spanId?: string;
   timestamp: number;
   traceId: string;
-  payloadFields:string[];
-  grpcConnectionSchema: IGrpcConnect
+  payloadFields: string[];
+  grpcConnectionSchema: IGrpcConnect;
 }
 export interface IApiTrace {
   apiPath: string;
@@ -408,13 +457,13 @@ export interface IRequestParamData {
 }
 
 export interface IGrpcData {
-  [packageName: string] : {
-    [serviceName: string] : {
-      [method: string] : {
-        data: string
-      }
-    }
-  }
+  [packageName: string]: {
+    [serviceName: string]: {
+      [method: string]: {
+        data: string;
+      };
+    };
+  };
 }
 
 export interface IRecordedHistory {
@@ -479,7 +528,7 @@ export interface IHttpClientTabDetails {
 }
 
 export interface IHttpTrailers {
-  [key: string]: string
+  [key: string]: string;
 }
 
 export interface IUserApiTraceHistory {
@@ -520,15 +569,15 @@ export interface ICollectionDetails {
   templateSetLabel: string;
 }
 
-export interface IServiceConfigDetails{
-  service:string;
-  url:string,
-  isMocked:boolean
+export interface IServiceConfigDetails {
+  service: string;
+  url: string;
+  isMocked: boolean;
   servicePrefix: string;
 }
-export interface IMockConfigValue{
+export interface IMockConfigValue {
   name: string;
-  serviceConfigs: IServiceConfigDetails[]
+  serviceConfigs: IServiceConfigDetails[];
 }
 export interface IMockConfig {
   app: string;
@@ -537,13 +586,13 @@ export interface IMockConfig {
   customer: string;
   id: number;
   key: string;
-  service: null
+  service: null;
   userId: string;
   value: string; //This is JSON.stringify(IMockConfigValue)
 }
 
 export interface IGrpcSchema {
-  [key: string]: any
+  [key: string]: any;
 }
 
 export interface IGrpcConnect {
@@ -590,6 +639,7 @@ export interface IHttpClientStoreState {
   historyPathFilterText: string;
   appGrpcSchema: IGrpcSchema;
   contextMap: IContextMap;
+  collectionsCache: ICollectionDetails[]; // When fetching a golden detail, which doesn't exists in any of our lists, we can cache it to reuse
   serviceToAddAction?: string;
 }
 
@@ -606,16 +656,16 @@ export interface INavigationState {
 }
 
 export interface IGoldenCollectionBrowseSearchResults {
-  numFound: number,
-  recordings: ICollectionDetails[]
+  numFound: number;
+  recordings: ICollectionDetails[];
 }
 
 export interface IGoldenCollectionBrowseState {
-  currentCollectionType: string,
-  actualGoldens: IGoldenCollectionBrowseSearchResults,
-  userGoldens: IGoldenCollectionBrowseSearchResults,
-  isCollectionLoading: boolean,
-  messages: string[]
+  currentCollectionType: string;
+  actualGoldens: IGoldenCollectionBrowseSearchResults;
+  userGoldens: IGoldenCollectionBrowseSearchResults;
+  isCollectionLoading: boolean;
+  messages: string[];
 }
 
 export interface IStoreState {
@@ -627,5 +677,3 @@ export interface IStoreState {
   gcBrowse: IGoldenCollectionBrowseState;
   apiCatalog: IApiCatalogState;
 }
-
-

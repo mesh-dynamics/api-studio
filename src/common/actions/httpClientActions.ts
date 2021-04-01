@@ -8,6 +8,7 @@ import {setDefaultMockContext} from '../helpers/httpClientHelpers';
 import { sortApiTraceChildren } from "../utils/http_client/httpClientUtils";
 import { IActionsType } from "./actions.types";
 import { ICollectionListApiResponse } from "../apiResponse.types";
+import { ICollectionDetails } from "../reducers/state.types";
 
 export const httpClientActions: IActionsType = {
     resetHttpClientToInitialState: () => ({ type: httpClientConstants.RESET_HTTP_CLIENT_TO_INITIAL_STATE }),
@@ -113,6 +114,10 @@ export const httpClientActions: IActionsType = {
 
     addTab: (tabId, reqObject, app, selectedTabKey, tabName) => {
         return {type: httpClientConstants.ADD_TAB, data: {tabId, reqObject, app, selectedTabKey, tabName}}; 
+    },
+    
+    addCachedCollections: (collections: ICollectionDetails[]) => {
+        return {type: httpClientConstants.ADD_CACHED_COLLECTIONS, data: {collections}}; 
     },
 
     addOutgoingRequestsToTab: (tabId, outgoingRequests) => {

@@ -279,6 +279,16 @@ var DiffViewer = /** @class */ (function (_super) {
         styles: PropTypes.object,
         hideLineNumbers: PropTypes.bool,
         highlightLines: PropTypes.arrayOf(PropTypes.string),
+        diffArray: PropTypes.array,
+        filterPaths: PropTypes.arrayOf(PropTypes.string),
+        inputElementRef: PropTypes.object,
+        showAll: PropTypes.bool,
+        searchFilterPath:PropTypes.string,
+        disableOperationSet: PropTypes.bool,
+        handleCollapseLength: PropTypes.func,
+        handleMaxLinesLength: PropTypes.func,
+        enableClientSideDiff: PropTypes.bool,
+
     };
     return DiffViewer;
 }(React.Component));

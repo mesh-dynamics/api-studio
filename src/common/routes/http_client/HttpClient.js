@@ -12,10 +12,10 @@ import GRPCRequestMessage from "./GRPCRequestMessage.tsx";
 import ErrorBoundary from '../../components/ErrorHandling/ErrorBoundary';
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import config from "../../config";
-import statusCodeList from "../../status-code-list";
+import { getHttpStatus } from "../../status-code-list";
 import { resolutionsIconMap } from '../../components/Resolutions.js';
 import api from '../../api';
-import { validateAndCreateDiffLayoutData  } from "../../utils/diff/diff-process.js";
+import { validateAndCreateDiffLayoutData , addCompressToggleData } from "../../utils/diff/diff-process.js";
 import { AbortRequest } from "./abortRequest";
 import SaveToCollection from './SaveToCollection.tsx';
 import SplitSlider from "../../components/SplitSlider.tsx";
@@ -118,9 +118,10 @@ class HttpClient extends Component {
         }
         return newState;
     }
-    
+
 
     preProcessResults = (results) => {
+        //Improvement required: All values from state are undefined. None of value is being set in state in this page.
         const {app, replayId, recordingId, templateVersion} = this.state;
         let diffLayoutData = validateAndCreateDiffLayoutData(results, app, replayId, recordingId, templateVersion, config.diffCollapseLength, config.diffMaxLinesLength);
         this.updateResolutionFilterPaths(diffLayoutData);
@@ -302,6 +303,7 @@ class HttpClient extends Component {
         this.props.showAddMockReqModal(currentSelectedTab.id);
     }
 
+    //Improvement required: There is bug in below collapse functionality. It is fixed in "DiffRequestIds.tsx" component
     increaseCollapseLength(e, jsonPath, recordReqId, replayReqId, typeOfChunkHandler) {
         const { collapseLength, collapseLengthIncrement, maxLinesLength, maxLinesLengthIncrement } = this.state;
         let newCollapseLength = collapseLength, newMaxLinesLength = maxLinesLength;
@@ -317,75 +319,6 @@ class HttpClient extends Component {
             incrementCollapseLengthForRepReqId: replayReqId,
             incrementStartJsonPath: jsonPath
         });
-    }
-
-    addCompressToggleData(diffData, collapseLength, maxLinesLength) {
-        let indx  = 0, atleastADiff = false;
-        if(!diffData) return diffData;
-        for (let i = config.diffCollapseStartIndex; i < diffData.length; i++) {
-            let diffDataChunk = diffData[i];
-            if(diffDataChunk.serverSideDiff !== null || (diffDataChunk.added || diffDataChunk.removed)) {
-                let j = i - 1, chunkTopLength = 0;
-                diffDataChunk["collapseChunk"] = false;
-                atleastADiff = true;
-                while (diffData[j] && diffData[j].serverSideDiff === null && chunkTopLength < collapseLength) {
-                    diffData[j]["collapseChunk"] = false;
-                    chunkTopLength++;
-                    j--;
-                }
-                let k = i + 1, chunkBottomLength = 0;
-                while (diffData[k] && diffData[k].serverSideDiff === null && chunkBottomLength < collapseLength) {
-                    diffData[k]["collapseChunk"] = false;
-                    chunkBottomLength++;
-                    k++;
-                }
-            } else {
-                if(!diffDataChunk.hasOwnProperty("collapseChunk")) diffDataChunk["collapseChunk"] = true;
-            }
-        }
-        if(!atleastADiff) {
-            for (let m = 0; m < collapseLength; m++) {
-                let tempDiffDataChunk = diffData[m];
-                if(tempDiffDataChunk) tempDiffDataChunk["collapseChunk"] = false;
-                if(m >= diffData.length) break;
-            }
-        }
-        let toggleDrawChunk  = false, arbitratryCount = 0;
-        let jsonPath, previousChunk, showMaxChunkToggle = false, arrayCount = 0, activatedCount;
-        for (let eachChunk of diffData) {
-            eachChunk["showMaxChunk"] = false;
-            eachChunk["showMaxChunkToggle"] = false;
-            if(arbitratryCount >= maxLinesLength && !showMaxChunkToggle) {
-                eachChunk["showMaxChunk"] = true;
-                showMaxChunkToggle = true;
-                activatedCount = arrayCount;
-            }
-            if(showMaxChunkToggle) {
-                eachChunk["showMaxChunkToggle"] = true;
-            }
-            if(jsonPath === eachChunk.jsonPath && showMaxChunkToggle && activatedCount === arrayCount) {
-                previousChunk["showMaxChunk"] = true;
-            }
-            if(eachChunk.collapseChunk === true && toggleDrawChunk === false) {
-                toggleDrawChunk = true;
-                eachChunk["drawChunk"] = true;
-                arbitratryCount++;
-            } else if(eachChunk.collapseChunk === true && toggleDrawChunk === true) {
-                eachChunk["drawChunk"] = false;
-            } else if(eachChunk.collapseChunk === false) {
-                toggleDrawChunk = false;
-                eachChunk["drawChunk"] = false;
-                if(jsonPath !== eachChunk.jsonPath) {
-                    arbitratryCount++;
-                }
-            } else if (!eachChunk.collapseChunk) {
-                arbitratryCount++;
-            }
-            jsonPath = eachChunk.jsonPath;
-            previousChunk = eachChunk;
-            arrayCount++;
-        }
-        return diffData;
     }
 
     handleSearchFilterChange(e) {
@@ -410,16 +343,6 @@ class HttpClient extends Component {
                 this.setState({ showResponseMessageBody: true, shownResponseMessageBody: true });
             }
         });
-    }
-
-    getHttpStatus = (code) => {
-        for (let httpStatus of statusCodeList) {
-            if (code == httpStatus.status) {
-                return httpStatus.value;
-            }
-        }
-
-        return code;
     }
 
     handleDeleteReq = (evt, outgoingReqTabId) => {
@@ -498,7 +421,7 @@ class HttpClient extends Component {
         let diffLayoutDataResCount = diffLayoutData && diffLayoutData.map(eachItem => {
             let resolutionTypes = [];
             if (incrementCollapseLengthForRepReqId && eachItem.replayReqId === incrementCollapseLengthForRepReqId) {
-                this.addCompressToggleData(eachItem.reductedDiffArray, collapseLength, maxLinesLength);
+                addCompressToggleData(eachItem.reductedDiffArray, collapseLength, maxLinesLength);
             }
             for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
                 resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
@@ -734,8 +657,8 @@ class HttpClient extends Component {
                                                         <td>
                                                             {eachReq.metaData && eachReq.metaData.matchType &&
                                                                 <RequestMatchType 
-                                                                matchType={eachReq.metaData.matchType } 
-                                                                matchedRequestId={eachReq.metaData.matchedRequestId}/>
+                                                                metaData={eachReq.metaData}
+                                                                originalReqId={eachReq.requestId}/>
                                                             }
                                                         </td>
                                                     </tr>
@@ -975,7 +898,8 @@ class HttpClient extends Component {
                             <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={showResponseMessageHeaders}>Response Headers</Checkbox>
                             <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={showResponseMessageBody} >Response Body</Checkbox>
                             <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
-                            <div style={{display: "inline-block"}}>
+                            {/** Removed below code as it is not working */}
+                            {/* <div style={{display: "inline-block"}}>
                                 <label className="checkbox-inline">
                                     Resolution Type:
                                 </label>
@@ -993,13 +917,12 @@ class HttpClient extends Component {
                                         {resolutionTypeOtherMenuItems}
                                     </DropdownButton>
                                 </div>
-                            </div>
+                            </div> */}
                             <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
                                 ref={this.inputElementRef}
                                 type="text"
                                 placeholder="Search"
                                 id="filterPathInputId"
-                                inputRef={ref => { this.input = ref; }}
                                 value={searchFilterPath}
                                 onChange={this.handleSearchFilterChange}
                             />
@@ -1121,13 +1044,13 @@ class HttpClient extends Component {
                                         <div className="col-md-6">
                                             <h4>
                                                 <Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Body</Label>&nbsp;&nbsp;
-                                                {selectedDiffItem.recordResponse ? <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(selectedDiffItem.recordResponse.status)}</span></span> : <span className="font-12" style={{"color": "magenta"}}>No Recorded Data</span>}
+                                                {selectedDiffItem.recordResponse ? <span className="font-12">Status:&nbsp;<span className="green">{getHttpStatus(selectedDiffItem.recordResponse.status)}</span></span> : <span className="font-12" style={{"color": "magenta"}}>No Recorded Data</span>}
                                             </h4>
                                         </div>
 
                                         <div className="col-md-6">
                                             <h4 style={{marginLeft: "18%"}}>
-                                            {selectedDiffItem.replayResponse ? <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(selectedDiffItem.replayResponse.status)}</span></span> : <span className="font-12" style={{"color": "magenta"}}>No Replayed Data</span>}
+                                            {selectedDiffItem.replayResponse ? <span className="font-12">Status:&nbsp;<span className="green">{getHttpStatus(selectedDiffItem.replayResponse.status)}</span></span> : <span className="font-12" style={{"color": "magenta"}}>No Replayed Data</span>}
                                             </h4>
                                         </div>
                                     </div>

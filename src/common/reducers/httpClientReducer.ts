@@ -170,6 +170,7 @@ const initialState: IHttpClientStoreState = {
     historyPathFilterText: "",
     appGrpcSchema: {},
     contextMap: {},
+    collectionsCache: [],
     generalSettings:{}
 }
 
@@ -593,6 +594,14 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             return {
                 ...state,
                 contextMap:{}
+            }
+        }
+
+        case httpClientConstants.ADD_CACHED_COLLECTIONS: {
+            const collections = [...(state.collectionsCache || []), ...data.collections];
+            return {
+                ...state,
+                collectionsCache: collections
             }
         }
 

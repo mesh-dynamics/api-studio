@@ -342,7 +342,30 @@ const addCompressToggleData = (diffData, collapseLength, maxLinesLength, diffCol
     return diffData;
 }
 
+const updateResolutionFilterPaths = (diffLayoutData) => {
+    // const selectedResolutionType = this.state.filter.selectedResolutionType;
+    const selectedResolutionType = "All";
+    diffLayoutData &&
+      diffLayoutData.forEach((item) => {
+        item.filterPaths = [];
+        for (let jsonPathParsedDiff of item.parsedDiff) {
+          // add path to the filter list if the resolution is All or matches the current selected one,
+          // and if the selected type is 'All Errors' it is an error type
+          if (
+            selectedResolutionType === "All" ||
+            selectedResolutionType === jsonPathParsedDiff.resolution ||
+            (selectedResolutionType === "ERR" && jsonPathParsedDiff.resolution.indexOf("ERR_") > -1)
+          ) {
+            // add only the json paths we want to show in the diff
+            let path = jsonPathParsedDiff.path;
+            item.filterPaths.push(path);
+          }
+        }
+      });
+  };
+
 export {
     validateAndCreateDiffLayoutData, 
     addCompressToggleData,
+    updateResolutionFilterPaths,
 }

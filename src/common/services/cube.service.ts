@@ -7,6 +7,7 @@ import arrayToTree from "array-to-tree";
 import { stringify } from 'query-string'
 import { ITemplateSetNameLabel, IUserAuthDetails } from '../reducers/state.types';
 import { CancelToken } from 'axios';
+import { ICollectionListApiResponse, IReqRespMatchResultResponse } from '../apiResponse.types';
 
 // TODO: replace console log statements with logging
 const fetchAppsList = async () => {
@@ -18,6 +19,14 @@ const fetchAppsList = async () => {
     }
 }
 
+const getReqRespMatchResult = async (lhsReqId: string, rhsReqId: string) => {
+    try {
+        return await api.get(`${config.apiBaseUrl}/as/getReqRespMatchResult?lhsReqId=${lhsReqId}&rhsReqId=${rhsReqId}`) as IReqRespMatchResultResponse
+    } catch (error) {
+        console.log("Error getting request match \n", error);
+        throw new Error("Error getting request match");
+    }
+}
 const fetchAppsImages = async () => {
     try {
         return await api.get(`${config.apiBaseUrl}/app/images`);
@@ -147,12 +156,26 @@ const fetchCollectionList = async (user: IUserAuthDetails, app: string, recordin
         numResults && params.set("numResults", `${numResults}`);
         start && params.set("start", `${start}`);
 
-        return await api.get(url + "?" + params.toString());
+        return await api.get(url + "?" + params.toString()) as any as ICollectionListApiResponse;
     } catch (error) {
         console.log("Error fetching test config \n", error);
         throw new Error("Error fetching test config");
     }
 };
+
+const fetchCollectionbyCollectionId = async(user: IUserAuthDetails, collectionId: string) => {
+    try {
+        let url = `${config.recordBaseUrl}/searchRecording`;
+        const params = new URLSearchParams();
+        params.set("customerId", user.customer_name);
+        params.set("collection", collectionId);;
+
+        return await api.get(url + "?" + params.toString()) as any as ICollectionListApiResponse;
+    } catch (error) {
+        console.log("Error fetching test config \n", error);
+        throw new Error("Error fetching test config");
+    }
+}
 
 const forceCompleteReplay = async (fcId: string) => {
     try {
@@ -748,6 +771,7 @@ export const cubeService = {
     getTestConfigByAppId,
     getGraphDataByAppId,
     fetchCollectionList,
+    fetchCollectionbyCollectionId,
     forceCompleteReplay,
     checkStatusForReplay,
     fetchTimelineData,
@@ -789,5 +813,6 @@ export const cubeService = {
     copyRecording,
     fetchGrpcProtoDescriptor,
     getTemplateSetNameLabels,
+    getReqRespMatchResult,
     fetchTestReport,
 };
