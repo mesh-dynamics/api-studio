@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import io.md.dao.TemplateSet;
 
 import io.md.core.AttributeRuleMap;
 import io.md.core.CompareTemplate;
@@ -25,10 +26,8 @@ import io.md.utils.Utils;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
 import com.cube.golden.TemplateEntryOperation.RuleType;
-import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
-import com.cube.utils.AnalysisUtils;
 import com.cube.ws.Config;
 
 public class AttributeMapTest {

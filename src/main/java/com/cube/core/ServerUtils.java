@@ -10,13 +10,14 @@ import io.md.core.Comparator.Diff;
 import io.md.core.CompareTemplate.DataType;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
+import io.md.dao.CompareTemplateVersioned;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.LocalDateTime;
+import io.md.dao.TemplateSet;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,7 +40,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
@@ -73,11 +73,7 @@ import io.md.utils.Utils;
 
 import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
-import com.cube.golden.TemplateSet;
-import com.cube.utils.AnalysisUtils;
 import com.cube.ws.Config;
-
-import redis.clients.jedis.Jedis;
 
 
 /**

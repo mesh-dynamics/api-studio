@@ -2,7 +2,8 @@ package com.cube.golden.transform;
 
 import static io.md.core.TemplateKey.*;
 import static io.md.services.DataStore.*;
-
+import io.md.dao.TemplateSet;
+import io.md.dao.CompareTemplateVersioned;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,13 +27,10 @@ import io.md.dao.ReqRespUpdateOperation.OperationType;
 import io.md.utils.Constants;
 import io.md.utils.Utils;
 
-import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
-import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
-import com.cube.utils.AnalysisUtils;
 
 public class TemplateSetTransformer {
 

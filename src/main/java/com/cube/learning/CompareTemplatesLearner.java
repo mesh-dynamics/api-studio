@@ -1,9 +1,8 @@
 package com.cube.learning;
 
-import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
-
-import com.cube.golden.TemplateSet;
+import io.md.dao.TemplateSet;
+import io.md.dao.CompareTemplateVersioned;
 import com.cube.learning.TemplateEntryMeta.Action;
 import com.cube.learning.TemplateEntryMeta.RuleStatus;
 
