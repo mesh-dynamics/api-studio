@@ -161,7 +161,7 @@
         <dependency>
             <groupId>io.cube</groupId>
             <artifactId>commons-server</artifactId>
-            <version>1.0.59.0</version>
+            <version>1.0.64.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.logging.log4j</groupId>
