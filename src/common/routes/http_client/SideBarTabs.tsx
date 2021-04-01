@@ -239,7 +239,10 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
 
       this.setState({ collectionIdInEditMode: "", editingCollectionName: "" })
     }
+  }
 
+  onEditLabelCanceled = () => {
+    this.setState({ collectionIdInEditMode: "", editingCollectionName: "" })
   }
 
   onToggle(node: TreeNode & IApiTrace, toggled: boolean) {
@@ -407,9 +410,12 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                   overflow: "hidden",
                 }}
               >
-                {props.node.name +
+                {(props.node.metaData?.name ||  props.node.name) +
                   " " +
                   moment(props.node.reqTimestamp * 1000).format("hh:mm:ss")}
+                  {props.node.metaData?.isPollRequest == "true" && 
+                    <i className="fas fa-history" title="Poll request" style={{marginLeft:"5px", color: "black"}}></i>
+                  }
               </span>
             </div>
             <div className="collection-options">
@@ -729,6 +735,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                         >
                           <EditableLabel
                             label={eachCollec.name}
+                            onEditCanceled={this.onEditLabelCanceled}
                             handleEditComplete={this.handleEditCollection}
                             allowEdit={eachCollec.id == this.state.collectionIdInEditMode}
                           />

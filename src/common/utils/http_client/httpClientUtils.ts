@@ -1,6 +1,13 @@
 //Use this util file to create new function definition in Typescript and to move existing function to make them typescript compliant
 
-import { IApiTrace, ICollectionDetails, IContextMap, IKeyValuePairs, IStoreState } from "../../reducers/state.types";
+import {
+  IApiTrace,
+  IContextMap,
+  ICollectionDetails,
+  IHttpClientTabDetails,
+  IKeyValuePairs,
+  IStoreState
+} from "../../reducers/state.types";
 
 import { store } from "../../helpers";
 import { cubeService } from "../../services";
@@ -94,4 +101,33 @@ export function joinPaths(path1: string, path2: string){
 
 export function isTrueOrUndefined(value: any){
   return value == undefined || value == "true" || value == true;
+}
+
+export function getTabByTabId(tabs: IHttpClientTabDetails[], tabId: string){
+  return tabs.find( tab => tab.id == tabId);
+}
+
+export function deriveTabNameFromTabObject(tab: IHttpClientTabDetails){
+  //This function should be used to manage tabName from single source of truth for 'tabName'. 
+  const requestEvent = tab.eventData.find( event => event.eventType == "HTTPRequest");
+  if(requestEvent){
+    if(requestEvent.metaData && requestEvent.metaData.name){
+      return requestEvent.metaData.name;
+    }
+  }
+  if(tab.bodyType== "grpcData"){
+    const { grpcConnectionSchema: {endpoint,method,service}  } = tab;
+    if(!service || !method) {
+        return 'New';
+    }
+    return `${endpoint}/${method}/${service}`;
+  }
+  else if(tab.httpURL){
+    return tab.httpURL;
+  }
+  else if(tab.httpURLShowOnly){
+    return tab.httpURLShowOnly;
+  }else{
+    return "New";
+  }
 }

@@ -237,7 +237,6 @@ class HttpClientTabs extends Component {
             }
             let reqObj = {
                 requestId: "NA",
-                tabName: urlWithoutQuery,
                 httpMethod: parsedCurl.method,
                 httpURL: urlWithoutQuery,
                 httpURLShowOnly: url,
@@ -385,7 +384,6 @@ class HttpClientTabs extends Component {
             let reqObj = {
                 id: uuidv4(),
                 requestId: "",
-                tabName: mockReqApiPath,
                 httpMethod: "get",
                 httpURL: mockReqApiPath,
                 httpURLShowOnly: mockReqApiPath,
@@ -776,7 +774,6 @@ class HttpClientTabs extends Component {
                         id: tabId,
                         requestId: eachReqId,
                         eventData: reqResPair,
-                        tabName: reqObject.httpURLShowOnly ? reqObject.httpURLShowOnly : "New",
                         ...reqObject
                     })
                 }

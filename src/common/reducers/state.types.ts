@@ -370,6 +370,17 @@ export interface IMetaData {
   [key: string]: string | undefined;
 }
 
+export interface IMetaData{
+  isPollRequest?: string,
+  pollMaxRetries?: string,
+  pollRetryIntervalSec?: string,
+  pollRespJsonPath?: string,
+  pollRespComparator?: string,
+  pollRespCompValue?: string,
+  name?: string,
+  [key: string]: string | undefined;
+}
+
 export interface ITemplateSetNameLabel {
   name: string;
   label: string;
@@ -421,6 +432,7 @@ export interface IApiTrace {
   status: string; //Should be number
   toggled: boolean;
   traceIdAddedFromClient: string;
+  metaData? : IMetaData
 }
 
 export interface ICubeRunHistory {

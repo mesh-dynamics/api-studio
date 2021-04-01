@@ -7,13 +7,14 @@ import classNames from 'classnames';
  * This component is reusable across application to provide Same user experience, without worrying CSS
  */
 
-export interface ICubeButton {
+export interface ICubeButton{
   onClick: () => void;
   faIcon?: string;
   glyphIcon?: string;
   label?: string;
   title?: string;
   className?: string;
+  disabled?: boolean;
   size?: "sm" | "lg" | "md";
 }
 
@@ -28,6 +29,7 @@ export function CubeButton(props: ICubeButton) {
   })
   return (
     <Button
+      disabled ={props.disabled || false}
       className={classes}
       onClick={props.onClick}
       title={props.title}

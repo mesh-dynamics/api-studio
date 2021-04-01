@@ -520,7 +520,7 @@ const fetchAPIFacetData = async (customerId: string, app: string, recordingType:
 }
 
 const fetchAPITraceData = async (customerId: string, traceApiFiltersProps: any) => {
-    const { app, startTime, endTime, service, apiPath, instance, recordingType, collectionName, depth, numResults } = traceApiFiltersProps;
+    const { app, startTime, endTime, service, apiPath, instance, recordingType, collectionName, depth, numResults, getMetaData } = traceApiFiltersProps;
 
     let apiTraceURL = `${config.analyzeBaseUrl}/getApiTrace/${customerId}/${app}`;
 
@@ -534,6 +534,7 @@ const fetchAPITraceData = async (customerId: string, traceApiFiltersProps: any) 
     recordingType && searchParams.set("recordingType", recordingType); // todo
     collectionName && searchParams.set("collection", collectionName);
     numResults && searchParams.set('numResults', numResults);
+    getMetaData && searchParams.set('getMetaData', getMetaData.toString());
 
     let url = apiTraceURL + "?" + searchParams.toString();
 
@@ -552,6 +553,7 @@ const loadCollectionTraces = async (customerId: string, selectedCollectionId: st
         collectionName: selectedCollectionId,
         depth: 100,
         numResults: 100,
+        getMetaData: true
     };
     const res: any = await fetchAPITraceData(customerId, filterData);
 

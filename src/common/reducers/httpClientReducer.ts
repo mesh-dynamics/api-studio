@@ -2,9 +2,9 @@ import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { updateHeaderBasedOnContentType } from '../utils/http_client/utils';
-import { setGrpcDataFromDescriptor, getGrpcTabName, getGrpcSchema } from '../utils/http_client/grpc-utils';
+import { setGrpcDataFromDescriptor, getGrpcSchema } from '../utils/http_client/grpc-utils';
 import { ICollectionDetails, ICubeRunHistory, IHttpClientStoreState, IHttpClientTabDetails } from "./state.types";
-import { getMergedContextMap } from "../utils/http_client/httpClientUtils";
+import { deriveTabNameFromTabObject, getMergedContextMap } from "../utils/http_client/httpClientUtils";
 export interface IHttpClientAction {
     type: string,
     data: any;
@@ -282,7 +282,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === data.tabId) {
                                 eachOutgoingTab[data.type] = params;
-                                if (data.type === "httpURL") eachOutgoingTab.tabName = params;
+                                if (data.type === "httpURL") eachOutgoingTab.tabName = deriveTabNameFromTabObject(eachOutgoingTab);
                                 eachOutgoingTab.hasChanged = true;
                             }
                         })
@@ -317,7 +317,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                             eachTab['headers'] = updateHeaderBasedOnContentType(eachTab.headers, "bodyType", eachTab.bodyType, eachTab);
                         }
                         eachTab[data.type as IHttpClientTabDetailsFieldNames] = params as any[];
-                        if (data.type === "httpURL") eachTab.tabName = params as unknown as string;
+                        if (data.type === "httpURL") eachTab.tabName = deriveTabNameFromTabObject(eachTab);
                         eachTab.hasChanged = true;
                         return {
                             ...eachTab
@@ -345,7 +345,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === data.tabId) {
                                 eachOutgoingTab[data.type] = params;
-                                if (data.type === "httpURL") eachOutgoingTab.tabName = params;
+                                if (data.type === "httpURL") eachOutgoingTab.tabName = deriveTabNameFromTabObject(eachOutgoingTab);
                                 eachOutgoingTab.hasChanged = true;
                             }
                         })
@@ -371,7 +371,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab[data.type as IHttpClientTabDetailsFieldNames] = params as any[];
-                        if (data.type === "httpURL") eachTab.tabName = params as unknown as string;
+                        if (data.type === "httpURL") eachTab.tabName = deriveTabNameFromTabObject(eachTab);
                         eachTab.hasChanged = true;
                     }
                     return eachTab;
@@ -493,6 +493,31 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             return {
                 ...state,
                 ...data
+            }
+        }
+        case httpClientConstants.UPDATE_REQUEST_METADATA_TAB: {
+            return {
+                ...state,
+                tabs: state.tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        //Status of main tab has changed
+                        const eventData = eachTab.eventData || [];
+                        const requestEvent = eventData.find(event => event.eventType == "HTTPRequest");
+                        if(requestEvent){
+                            requestEvent.metaData = {...(requestEvent.metaData || {}), ...data.metaData}
+                        }
+                        let tab = {
+                            ...eachTab, 
+                            eventData: [...eventData],
+                            hasChanged: true
+                        }
+                        tab.tabName = deriveTabNameFromTabObject(tab);
+                        return tab;
+                    }
+                    else{
+                        return eachTab;
+                    }
+                })
             }
         }
 
@@ -624,7 +649,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 ...state,
                 tabs: [...tabs, {
                     id: data.tabId,
-                    tabName: data.tabName,
+                    tabName: deriveTabNameFromTabObject(data.reqObject),
                     ...data.reqObject,
                     selectedTraceTableReqTabId: data.tabId,
                     isHighlighted: data.tabId != data.selectedTabKey,
@@ -1118,7 +1143,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab.grpcConnectionSchema = data.value;
-                        eachTab.tabName = getGrpcTabName(data.value);
+                        eachTab.tabName = deriveTabNameFromTabObject(eachTab);
                         eachTab.hasChanged = true;
                     }
                     return eachTab;
@@ -1184,7 +1209,6 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab.hasChanged = true;
                         eachTab.bodyType = data.value.bodyType;
                         eachTab.paramsType = data.value.paramsType;
-                        eachTab.tabName = data.value.tabName;
                         eachTab.grpcData = setGrpcDataFromDescriptor(state.appGrpcSchema, eachTab.grpcData);
                         eachTab.grpcConnectionSchema = getGrpcSchema(state.appGrpcSchema, eachTab.grpcConnectionSchema);
                         //Request Event
@@ -1193,6 +1217,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                             //Response Event
                             eachTab.eventData[1].payload[1] = data.value.payloadResponseEventName;
                         }
+                        eachTab.tabName = deriveTabNameFromTabObject(eachTab);
                     }
                     return eachTab;
                 })

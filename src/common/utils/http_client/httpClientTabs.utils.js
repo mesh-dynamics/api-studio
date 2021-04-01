@@ -129,6 +129,35 @@ export function createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFrom
         return tabData;
     }
 }
+
+function retainEventMetaData(newTabData, oldRequestEvent){
+    let httpRequestEventTypeIndex = newTabData.eventData[0].eventType === "HTTPRequest" ? 0 : 1;
+    let retainedData = {};
+    if(oldRequestEvent.metaData.name){
+        retainedData.name = oldRequestEvent.metaData.name;
+    }
+    if(oldRequestEvent.metaData.pollRespComparator){
+        const { isPollRequest,
+            pollMaxRetries,
+            pollRetryIntervalSec,
+            pollRespJsonPath,
+            pollRespComparator,
+            pollRespCompValue} = oldRequestEvent.metaData;
+        retainedData = {
+            ...retainedData,
+            isPollRequest,
+            pollMaxRetries,
+            pollRetryIntervalSec,
+            pollRespJsonPath,
+            pollRespComparator,
+            pollRespCompValue
+        }
+    }
+    newTabData.eventData[httpRequestEventTypeIndex].metaData = {
+        ...newTabData.eventData[httpRequestEventTypeIndex].metaData,
+        ...retainedData
+    }
+}
 //This type of functions should be moved to typescript utils file so errors/missing params in tabData can be easily found.
 export function copyRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromData) {
     let referenceEventData = toBeCopiedFromData ? toBeCopiedFromData.eventData : null,
@@ -191,6 +220,7 @@ export function copyRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromDa
             hasChanged: true,
             grpcConnectionSchema: toBeCopiedFromData.grpcConnectionSchema,
         }
+        retainEventMetaData(tabData, httpRequestEvent);
         return tabData;
     }
 }

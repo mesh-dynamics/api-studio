@@ -21,12 +21,13 @@ import SaveToCollection from './SaveToCollection.tsx';
 import SplitSlider from "../../components/SplitSlider.tsx";
 import EditableLabel from "./EditableLabel";
 import { hasTabDataChanged } from "../../utils/http_client/utils";
-import { isRequestTypeGrpc, getGrpcTabName } from "../../utils/http_client/grpc-utils";
+import { isRequestTypeGrpc } from "../../utils/http_client/grpc-utils";
 import Tippy from "@tippy.js/react";
 import RequestMatchType from './RequestMatchType.tsx';
 import { HttpRequestFields } from "./HttpRequestFields";
 import { httpClientConstants } from "../../constants/httpClientConstants";
 import RunButton from "./components/RunButton";
+import TabInfo from "./components/TabInfo";
 
 const newStyles = {
     variables: {
@@ -158,11 +159,11 @@ class HttpClient extends Component {
     //         value.paramsType = 'showBody';
     //         value.payloadRequestEventName = 'GRPCRequestPayload';
     //         value.payloadResponseEventName = 'GRPCResponsePayload';
-    //         value.tabName = getGrpcTabName(currentSelectedTab.grpcConnectionSchema)
+    //        // value.tabName = getGrpcTabName(currentSelectedTab.grpcConnectionSchema)
     //     } else {
     //         value.bodyType = 'rawData';
     //         value.paramsType = 'showQueryParams';
-    //         value.tabName = currentSelectedTab.httpURL;
+    //         //value.tabName = currentSelectedTab.httpURL;
     //         value.payloadRequestEventName = 'HTTPRequestPayload';
     //         value.payloadResponseEventName = 'HTTPResponsePayload';
     //     }
@@ -481,16 +482,17 @@ class HttpClient extends Component {
         const responseBody = isGrpc && isDataReceivedAfterResponse ? selectedTraceTableReqTab.responseBody : "";
         return (<>
             <div>
-                <div style={{display: "flex"}}>
-                    <div style={{ display: "flex", justifyContent: "flex-start", flex: 1}}>
+                <div style={{display: "flex", justifyContent : "space-between"}}>
+                    <div style={{ display: "flex"}}>
                         <RunButton handleClick={this.handleClick} requestRunning={currentSelectedTab.requestRunning}/>
                         <SaveToCollection 
                         disabled={currentSelectedTab.httpURL.length === 0} 
                         visible={currentSelectedTab.showSaveBtn} 
                         tabId={currentSelectedTab.id}
                         />
+                        <TabInfo tabId={currentSelectedTab.id} />
                     </div>
-                    <div style={{ display: "flex", justifyContent: "flex-end", flex: 1}}>
+                    <div style={{ display: "flex"}}>
                         <div>
                             <div className="btn btn-sm cube-btn text-center" style={{ display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
                                 <Glyphicon glyph="random" /> DIFF
