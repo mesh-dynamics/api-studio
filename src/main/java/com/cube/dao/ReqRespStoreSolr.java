@@ -64,9 +64,7 @@ import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.Pair;
 
-import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.ServerUtils;
-import com.cube.golden.TemplateSet;
 import com.cube.learning.DynamicInjectionGeneratedToActualConvertor;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;

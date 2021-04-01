@@ -51,7 +51,6 @@ import io.md.utils.Constants;
 
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
-import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 
 /**

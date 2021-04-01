@@ -10,12 +10,11 @@ import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.TemplateKey.Type;
 import static io.md.dao.Recording.RecordingStatus;
 import static io.md.services.DataStore.TemplateNotFoundException;
-
+import io.md.dao.TemplateSet;
 import com.cube.core.ServerUtils;
 import com.cube.dao.ApiTraceFacetQuery;
 
 import com.cube.dao.RecordingBuilder;
-import com.cube.golden.TemplateSet;
 import com.cube.learning.CompareTemplatesLearner;
 import com.cube.learning.TemplateEntryMeta;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -41,10 +40,8 @@ import io.md.dao.ReqRespMatchResult;
 import io.md.dao.RequestPayload;
 import io.md.dao.ResponsePayload;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -81,7 +78,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
