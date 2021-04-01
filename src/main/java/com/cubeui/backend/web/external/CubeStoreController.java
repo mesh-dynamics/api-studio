@@ -423,6 +423,12 @@ public class CubeStoreController {
         return cubeServerService.fetchPostResponse(request, Optional.of(custAppCfg));
     }
 
+    @PostMapping("/setFilterTransform/{customerId}/{app}")
+    public ResponseEntity setFilterTransform(HttpServletRequest request, @RequestBody Optional<String> updatedFilterTransform , @PathVariable String customerId, @PathVariable String app, Authentication authentication) {
+        validation.validateCustomerName(authentication, customerId);
+        return cubeServerService.fetchPostResponse(request, updatedFilterTransform);
+    }
+
     @PostMapping("/preRequest/{recordingOrReplayId}/{runId}")
     public ResponseEntity preRequest(HttpServletRequest request, @PathVariable String recordingOrReplayId,
         @PathVariable String runId, @RequestBody DynamicInjectionEventDao dynamicInjectionEventDao,
