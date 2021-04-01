@@ -2240,10 +2240,6 @@ public class CubeStore {
                 String filePath = inpDir + "/" + uniqueFileName;
                 Files.deleteIfExists(Paths.get(filePath));
                 File targetFile = new File(filePath);
-                File parent = targetFile.getParentFile();
-                if (!parent.isDirectory() && !parent.mkdirs()) {
-                    throw new IOException("Failed to create directory " + parent);
-                }
                 OutputStream outStream = FileUtils.openOutputStream(targetFile);
                 byte[] fileBytes = fileContent.getBytes(StandardCharsets.UTF_8);
                 outStream.write(fileBytes);
