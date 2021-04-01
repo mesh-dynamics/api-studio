@@ -66,6 +66,8 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import io.md.dao.*;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -2242,7 +2244,7 @@ public class CubeStore {
                 if (!parent.isDirectory() && !parent.mkdirs()) {
                     throw new IOException("Failed to create directory " + parent);
                 }
-                OutputStream outStream = new FileOutputStream(targetFile);
+                OutputStream outStream = FileUtils.openOutputStream(targetFile);
                 byte[] fileBytes = fileContent.getBytes(StandardCharsets.UTF_8);
                 outStream.write(fileBytes);
                 //Add to the list of commands
