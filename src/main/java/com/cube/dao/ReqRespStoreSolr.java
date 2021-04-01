@@ -153,15 +153,23 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(templateSetQuery, TYPEF, Types.TemplateSet.toString());
         addFilter(templateSetQuery, CUSTOMERIDF , customerId);
         addFilter(templateSetQuery, APPF, appId);
-      if(templateSetName.isPresent() && !templateSetName.get().isEmpty()) {
-          addOrFilterInFields(templateSetQuery,
-              Map.of(TEMPLATE_SET_NAME_F, templateSetName.get(), VERSIONF, templateSetName.get() + "*"));
-      }
-      if(templateSetLabel.isPresent() && !templateSetLabel.get().isEmpty()) {
-          addOrFilterInFields(templateSetQuery,
-              Map.of(TEMPLATE_SET_LABEL_F, templateSetLabel.get(), VERSIONF, "*" + templateSetLabel.get()));
-      }
-        return SolrIterator.getResults(solr, templateSetQuery, numOfResults,  solrDoc ->
+        String version;
+        // check templateSetLabel for empty so we don't add :: to the query
+      /**
+       * Check TemplateSetLabel is empty
+       * if yes, add version filter only with templateSetName followed by any String(takes empty label in consideration e.g DefaultMovieInfo)
+       * Else will add filter for version like Test::467
+       */
+       if(templateSetLabel.isEmpty()) {
+           version = templateSetName.orElse("*") + "*";
+       } else {
+           version = Utils.createTemplateSetVersion(templateSetName.orElse("*"), templateSetLabel.get());
+       }
+       addFilter(templateSetQuery, VERSIONF, version);
+      addSort(templateSetQuery, TIMESTAMPF, false);
+      //sort on ID is added for the templateSets having timestamp same
+      addSort(templateSetQuery, IDF, true);
+      return SolrIterator.getResults(solr, templateSetQuery, numOfResults,  solrDoc ->
             solrDocToTemplateSet(solrDoc, false), start);
 
 	}
