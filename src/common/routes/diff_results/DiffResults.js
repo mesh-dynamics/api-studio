@@ -575,7 +575,6 @@ class DiffResults extends Component {
             dispatch(cubeActions.updateGoldenSet(result));
             dispatch(cubeActions.getTestIds(this.state.app));
             dispatch(apiCatalogActions.fetchGoldenCollectionList(this.state.app, "Golden"));
-            dispatch(cubeActions.getTemplateSetNameLabels(this.state.app))
         } catch (error) {
 
             dispatch(cubeActions.clearGolden());

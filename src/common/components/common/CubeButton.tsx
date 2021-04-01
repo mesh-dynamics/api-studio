@@ -16,6 +16,7 @@ export interface ICubeButton{
   className?: string;
   disabled?: boolean;
   size?: "sm" | "lg" | "md";
+  style?: React.CSSProperties | undefined;
 }
 
 export function CubeButton(props: ICubeButton) {
@@ -33,6 +34,7 @@ export function CubeButton(props: ICubeButton) {
       className={classes}
       onClick={props.onClick}
       title={props.title}
+      style={props.style}
     >
       {faIcon}
       {props.label ? " " + props.label : ""}

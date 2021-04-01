@@ -356,24 +356,27 @@ const getNewTemplateVerInfo = async (customerId: string, app: string, currentTem
     }
 };
 
-const getTemplateSetNameLabels = async (customerId: string, app: string | null) => {
+const getTemplateSetNameLabels = async (customerId: string, app: string | null, start: number = 0, numResults: number, nameFilter: string, labelFilter: string) => {
     try {
-        const response = await api.get(`${config.analyzeBaseUrl}/getTemplateSetLabels/${customerId}/${app}`)
+        let searchParams = new URLSearchParams();
+        searchParams.set("start", start.toString())
+        numResults && searchParams.set("numResults", numResults.toString())
+        nameFilter && searchParams.set("templateSetName", nameFilter)
+        labelFilter && searchParams.set("templateSetLabel", labelFilter)
+
+        const response = await api.get(`${config.analyzeBaseUrl}/getTemplateSetLabels/${customerId}/${app}?${searchParams.toString()}`)
         let templateSetList: ITemplateSetNameLabel[] = []
+        let totalNumResults = 0
         if (response) {
             templateSetList = response.response
-                                .sort((a: ITemplateSetNameLabel, b: ITemplateSetNameLabel) => {
-                                    let compare = a.name.localeCompare(b.name)
-                                    // if strings are equal, compare based on timestamp
-                                    if ((compare == 0) && a.timestamp && b.timestamp) {
-                                        compare = Date.parse(b.timestamp) - Date.parse(a.timestamp)
-                                    }
-                                    return compare
-                                })
+            totalNumResults = response.numResults
         }
-        return templateSetList;
+        return {
+            templateSetNameLabelsList: templateSetList || [], 
+            totalNumResults: totalNumResults,
+        };
     } catch (error) {
-        console.log("Error getting template set labels", error);
+        console.log("Error getting comparison rules labels", error);
         return [];
     }
 }

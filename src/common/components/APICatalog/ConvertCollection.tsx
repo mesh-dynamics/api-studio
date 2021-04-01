@@ -44,7 +44,6 @@ export interface IConvertCollectionProps {
   username: string;
   app: string;
   dispatch: any;
-  templateSetNameLabelsList: ITemplateSetNameLabel[];
 }
 
 class ConvertCollection extends Component<
@@ -305,7 +304,7 @@ class ConvertCollection extends Component<
 
                 {!isGolden && 
                   <FormGroup controlId="templateSetSelection">
-                    <ControlLabel>Template Set</ControlLabel>
+                    <ControlLabel>Comparison Rules</ControlLabel>
                     {this.renderTemplateSetNameLabelSelection()}
                   </FormGroup>
                 }
@@ -356,7 +355,7 @@ const mapStateToProps = (state: IStoreState) => {
 
   const username = (state.authentication.user as IUserAuthDetails).username;
 
-  const {templateSetNameLabelsList, selectedApp} = state.cube;
+  const {selectedApp} = state.cube;
 
   return {
     selectedSource,
@@ -366,7 +365,6 @@ const mapStateToProps = (state: IStoreState) => {
     collectionList,
     username,
     app: selectedApp,
-    templateSetNameLabelsList,
   };
 };
 

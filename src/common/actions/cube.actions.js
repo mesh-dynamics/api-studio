@@ -53,8 +53,6 @@ export const cubeActions = {
     hideHttpClient,
     resetCubeToInitialState,
     setDoNotShowGettingStartedAgain,
-    getTemplateSetNameLabels,
-    setSelectedTemplateSetNameLabel
 };
 
 function clearPreviousData() {
@@ -114,7 +112,6 @@ function getApps () {
                 dispatch(cubeActions.getTestConfigByAppId(defaultSelectedApp.id));
                 dispatch(cubeActions.getTestIds(defaultSelectedApp.name));
                 dispatch(cubeActions.getAppImages());
-                dispatch(cubeActions.getTemplateSetNameLabels(defaultSelectedApp.name));
             }
         } catch (error) {
             dispatch(failure("Failed to getApps", Date.now()));
@@ -317,23 +314,6 @@ function setSelectedApp (app) {
             dispatch(httpClientActions.loadUserCollections());
             dispatch(httpClientActions.loadProtoDescriptor());
         });
-    }
-}
-
-function getTemplateSetNameLabels (app) {
-    return async (dispatch, getState) => {
-        const { user: { customer_name: customerId } } = getState().authentication;
-        const templateSetNameLabelsList = await cubeService.getTemplateSetNameLabels(customerId, app)
-        dispatch({type: cubeConstants.SET_TEMPLATE_SET_NAME_LABELS_LIST, data: templateSetNameLabelsList})
-
-        const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name}) => (name===`Default${app}`)) || null // set default if available
-        dispatch({type: cubeConstants.SET_SELECTED_TEMPLATE_SET_NAME_LABEL, data: selectedTemplateSetNameLabel})
-    }
-}
-
-function setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel) {
-    return dispatch => {
-        dispatch({type: cubeConstants.SET_SELECTED_TEMPLATE_SET_NAME_LABEL, data: selectedTemplateSetNameLabel})
     }
 }
 

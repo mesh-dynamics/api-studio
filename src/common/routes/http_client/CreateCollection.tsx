@@ -64,19 +64,22 @@ class CreateCollection extends Component<
     this.getCreateCollectionModal = this.getCreateCollectionModal.bind(this);
   }
 
-  componentDidMount() {
-    const {cube: {templateSetNameLabelsList, selectedApp}} = this.props;
-    const selectedTemplateSetNameLabel = (templateSetNameLabelsList || []).find(({name}) => (name===`Default${selectedApp}`)) // set default if available
+
+  setDefaultTemplateSet = async () => {
+    const {cube : {selectedApp}, user} = this.props;
+    const {templateSetNameLabelsList} = await cubeService.getTemplateSetNameLabels(user.customer_name, selectedApp, 0, 1, `Default${selectedApp}`, "")
+    const selectedTemplateSetNameLabel = templateSetNameLabelsList[0]
     const {name, label} = selectedTemplateSetNameLabel || {name: "", label: ""}
     this.setState({selectedTemplateSetName: name, selectedTemplateSetLabel: label})
   }
 
-  handleCreateCollectionModalShow() {
+  async handleCreateCollectionModalShow() {
     this.setState({
       newCollectionName: "",
       modalCreateCollectionMessage: "",
       showCreateCollectionModal: true,
     });
+    await this.setDefaultTemplateSet()
   }
 
   onCloseCreateCollectionModal() {
@@ -84,6 +87,8 @@ class CreateCollection extends Component<
       newCollectionName: "",
       modalCreateCollectionMessage: "",
       showCreateCollectionModal: false,
+      selectedTemplateSetName: "",
+      selectedTemplateSetLabel: "",
     });
   }
 
@@ -126,7 +131,7 @@ class CreateCollection extends Component<
       });
     } else if(!selectedTemplateSetName) {
       this.setState({
-        modalCreateCollectionMessage: "Please select template set",
+        modalCreateCollectionMessage: "Please select comparison rules",
       });
     }else {
       const app = selectedApp;
@@ -196,7 +201,7 @@ class CreateCollection extends Component<
             />
 
             <div className="margin-top-5">
-              <ControlLabel>Template Set</ControlLabel>
+              <ControlLabel>Comparison Rules</ControlLabel>
               {this.renderTemplateSetNameLabelSelection()}
             </div>
           </FormGroup>

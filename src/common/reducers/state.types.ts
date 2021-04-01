@@ -258,8 +258,6 @@ export interface ICubeState {
   testIdsReqStatus: string;
   timelineData: ITimelineData[];
   isGettingStartedHidden?: boolean;
-  templateSetNameLabelsList: ITemplateSetNameLabel[];
-  selectedTemplateSetNameLabel: ITemplateSetNameLabel | null;
 }
 
 //Golden State

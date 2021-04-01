@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Modal, ModalHeader } from "react-bootstrap";
+import { Modal, Button } from "react-bootstrap";
 import { connect } from "react-redux";
 import { CubeButton } from "../../components/common/CubeButton";
 import { cubeConstants } from "../../constants";
@@ -9,6 +9,7 @@ import {
 } from "../../reducers/state.types";
 import { cubeService } from "../../services";
 import "./TemplateSetBrowse.css";
+import classNames from "classnames";
 
 export interface ITemplateSetBrowseProps {
   templateSetName: string;
@@ -19,9 +20,6 @@ export interface ITemplateSetBrowseProps {
   ) => void;
   selectedApp: string;
   customerId: string;
-  setListInRedux: (
-    templateSetNameLabelList: ITemplateSetNameLabel[]
-  ) => void;
 }
 
 export interface ITemplateSetBrowseState {
@@ -30,8 +28,15 @@ export interface ITemplateSetBrowseState {
   showBrowseModal: boolean;
   loadingList: boolean;
   templateSetNameLabelsList: ITemplateSetNameLabel[];
-  selectedRowIndex: number;
+  selectedRowName: string;
+  selectedRowLabel: string;
+  start: number;
+  totalNumResults: number;
+  nameFilter: string;
+  labelFilter: string;
 }
+
+const numResults = 20;
 
 class TemplateSetBrowse extends Component<
   ITemplateSetBrowseProps,
@@ -45,7 +50,12 @@ class TemplateSetBrowse extends Component<
       showBrowseModal: false,
       loadingList: false,
       templateSetNameLabelsList: [],
-      selectedRowIndex: 0,
+      selectedRowName: props.templateSetName,
+      selectedRowLabel: props.templateSetLabel,
+      start: 0,
+      totalNumResults: 0,
+      nameFilter: "",
+      labelFilter: "",
     };
   }
 
@@ -61,15 +71,20 @@ class TemplateSetBrowse extends Component<
     const {
       selectedApp,
       customerId,
-      setListInRedux,
     } = this.props;
+
+    const {start, nameFilter, labelFilter} = this.state;
+
     this.setState({ loadingList: true });
-    const templateSetNameLabelsList = await cubeService.getTemplateSetNameLabels(
+    const {templateSetNameLabelsList, totalNumResults} = await cubeService.getTemplateSetNameLabels(
       customerId,
-      selectedApp
+      selectedApp,
+      start,
+      numResults,
+      nameFilter, 
+      labelFilter
     );
-    setListInRedux(templateSetNameLabelsList);
-    this.setState({ loadingList: false, templateSetNameLabelsList });
+    this.setState({ loadingList: false, templateSetNameLabelsList, totalNumResults });
   };
 
   onBrowseClick = () => {
@@ -78,34 +93,75 @@ class TemplateSetBrowse extends Component<
   };
 
   onHideBrowseModal = () => {
-    this.setState({ showBrowseModal: false });
+    this.setState({ showBrowseModal: false, start: 0 }); 
   };
 
   onSelectBtnClick = () => {
-    const { templateSetNameLabelsList, selectedRowIndex } = this.state;
-    const { name, label } = templateSetNameLabelsList[selectedRowIndex];
-    this.props.handleTemplateSetNameLabelSelect(name, label);
+    const { templateSetNameLabelsList, selectedRowName, selectedRowLabel } = this.state;
+    this.props.handleTemplateSetNameLabelSelect(selectedRowName, selectedRowLabel);
     this.setState({ showBrowseModal: false });
   };
 
-  onRowSelectClick = (rowIndex: number) => {
-    this.setState({ selectedRowIndex: rowIndex });
+  onRowSelectClick = (name: string, label: string) => {
+    this.setState({ selectedRowName: name, selectedRowLabel: label});
   };
 
-  onRowSelectDblClick = (rowIndex: number) => {
-    this.setState({ selectedRowIndex: rowIndex }, this.onSelectBtnClick);
+  onRowSelectDblClick = (name: string, label: string) => {
+    this.setState({ selectedRowName: name, selectedRowLabel: label}, this.onSelectBtnClick);
   };
+
+  goToNextPage = () => {
+    let {start} = this.state;
+    start += numResults
+    this.setState({start}, this.loadList)
+  }
+
+  goToPrevPage = () => {
+    let {start} = this.state;
+    start -= numResults
+    this.setState({start}, this.loadList)
+  }
+
+  setNameFilter = (name: string) => {
+    this.setState({nameFilter: name})
+  }
+
+  setLabelFilter = (label: string) => {
+    this.setState({labelFilter: label})
+  }
+
+  onSearchClick = () => {
+    this.setState({start: 0}, this.loadList)
+  }
 
   renderModals = () => {
-    const { templateSetNameLabelsList, selectedRowIndex, loadingList } = this.state;
+    const { templateSetNameLabelsList, selectedRowName, selectedRowLabel, loadingList, start, nameFilter, labelFilter, totalNumResults } = this.state;
     return (
       <>
         <Modal
           show={this.state.showBrowseModal}
           onHide={this.onHideBrowseModal}
         >
-          <Modal.Header closeButton>Browse Template Sets</Modal.Header>
+          <Modal.Header closeButton>Browse Comparison Rules</Modal.Header>
           <Modal.Body>
+          <div className="margin-bottom-10 gcBrowse-modal-body-container">
+              <div className="row margin-bottom-10">
+                  <div className="col-md-4">
+                      <div className="label-n">NAME</div>
+                      <div className="value-n">
+                          <input value={nameFilter} onChange={(event) => this.setNameFilter(event.target.value)} className="width-100 h-20px" type="text" />
+                      </div>
+                  </div>
+                  {/* <div className="col-md-2"></div> */}
+                  <div className="col-md-4">
+                      <div className="label-n">LABEL</div>
+                      <div className="value-n">
+                          <input value={labelFilter} onChange={(event) => this.setLabelFilter(event.target.value)} className="width-100 h-20px" type="text" />
+                      </div>
+                  </div>
+                  <div className="col-md-4"><CubeButton size="sm" label="Search" onClick={this.onSearchClick} className="margin-top-10"/></div>
+              </div>
+          </div>
             {
               loadingList ? 
                 <div className="tsBrowse-spinner-root">
@@ -123,12 +179,12 @@ class TemplateSetBrowse extends Component<
                     </thead>
                     <tbody>
                       {templateSetNameLabelsList.map(
-                        ({ name, label, timestamp }, index) => (
+                        ({ name, label, timestamp }) => (
                           <tr
-                            onClick={() => this.onRowSelectClick(index)}
-                            onDoubleClick={() => this.onRowSelectDblClick(index)}
+                            onClick={() => this.onRowSelectClick(name, label)}
+                            onDoubleClick={() => this.onRowSelectDblClick(name, label)}
                             className={
-                              index === selectedRowIndex ? "selected-row" : ""
+                              (name === selectedRowName && label === selectedRowLabel) ? "selected-row" : ""
                             }
                           >
                             <td>{name}</td>
@@ -143,6 +199,21 @@ class TemplateSetBrowse extends Component<
               }
           </Modal.Body>
           <Modal.Footer>
+            <div className="pull-left">
+                <CubeButton 
+                  faIcon="fa-caret-left" 
+                  onClick={this.goToPrevPage} 
+                  className={classNames({"disabled": start <= 0})} 
+                  style={{marginRight: 0}}
+                />
+                <CubeButton 
+                  faIcon="fa-caret-right" 
+                  onClick={this.goToNextPage} 
+                  className={classNames({"disabled": start + templateSetNameLabelsList.length >= totalNumResults})} 
+                  style={{marginLeft: 0}}
+                />
+              <span>{loadingList ? "Loading..." : <>Displaying <strong>{start} - {start + templateSetNameLabelsList.length}</strong> of {totalNumResults}</>}</span>
+            </div>
             <CubeButton label="Select" onClick={this.onSelectBtnClick} />
           </Modal.Footer>
         </Modal>
@@ -155,9 +226,9 @@ class TemplateSetBrowse extends Component<
     return (
       <div style={{display: 'flex', justifyContent: "space-between"}}>
         <div style={{display: 'flex',  alignItems: 'center'}}>
-          <span>{selectedTemplateSetName} {selectedTemplateSetLabel}</span>
+          {selectedTemplateSetName ? <span>{selectedTemplateSetName} {selectedTemplateSetLabel}</span> : <span>No Comparison Rules selected</span>}
         </div>
-        <CubeButton label="" onClick={this.onBrowseClick} faIcon="fa-folder-open" title="Browse Template Sets"></CubeButton>
+        <CubeButton label="" onClick={this.onBrowseClick} faIcon="fa-folder-open" title="Browse Comparison Rules"></CubeButton>
         {this.renderModals()}
       </div>
     );
@@ -178,13 +249,7 @@ const mapStateToProps = (state: IStoreState) => {
 };
 
 const mapDispatchToProps = (dispatch: any) => ({
-  setListInRedux: (
-    templateSetNameLabelsList: ITemplateSetNameLabel[]
-  ) =>
-    dispatch({
-      type: cubeConstants.SET_TEMPLATE_SET_NAME_LABELS_LIST,
-      data: templateSetNameLabelsList,
-    }),
+  
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(TemplateSetBrowse);
