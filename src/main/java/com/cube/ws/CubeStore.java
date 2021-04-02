@@ -2478,7 +2478,7 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAppConfiguration(@Context UriInfo uriInfo,
                                               @PathParam("customerId") String customerId, @PathParam("app") String app) {
-        Optional<CustomerAppConfig> custAppConfig = rrstore.getAppConfiguration(customerId, app);
+        Optional<CustomerAppConfig> custAppConfig = custAppConfigCache.getCustomerAppConfig(customerId, app);
         Response resp = custAppConfig.map(d -> Response.ok(d , MediaType.APPLICATION_JSON).build())
             .orElse(Response.status(Response.Status.NOT_FOUND).entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
                 "CustomerAppConfig object not found")).build());
@@ -2511,13 +2511,14 @@ public class CubeStore {
     public Response setAppConfiguration(CustomerAppConfig custAppCfg ) {
         //Todo: remove this part of existing config check untill wallmart deployment
         // all the id fields has been corrected (solrid -> builder.recalculateId) in our all deployments
-        Optional<CustomerAppConfig> existing = rrstore
-            .getAppConfiguration(custAppCfg.customerId, custAppCfg.app);
+        Optional<CustomerAppConfig> existing = custAppConfigCache.getCustomerAppConfig(custAppCfg.customerId, custAppCfg.app);
         //If the existing app cfg Id in solr is different then autoCalculated
         if (existing.isPresent() && !existing.get().id.equals(custAppCfg.id)) {
             CustomerAppConfig.Builder builder = new Builder(custAppCfg.customerId, custAppCfg.app);
             custAppCfg.tracer.ifPresent(builder::withTracer);
             custAppCfg.apiGenericPaths.ifPresent(builder::withApiGenericPaths);
+            builder.withStopWaitInterval(custAppCfg.stopWaitInterval);
+            builder.withFilterTransform(custAppCfg.filterTransform);
             builder.withId(existing.get().id);
             custAppCfg = builder.build();
         }
@@ -2529,6 +2530,32 @@ public class CubeStore {
         }
 
         return Response.serverError().type(MediaType.APPLICATION_JSON).entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE , "Error saving the customer app config")).build();
+    }
+
+    @POST
+    @Path("setFilterTransform/{customerId}/{app}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response setFilterTransform(@PathParam("customerId") String customerId , @PathParam("app") String app , List<FilterTransform> filterTransform ) {
+        //Todo: remove this part of existing config check untill wallmart deployment
+        // all the id fields has been corrected (solrid -> builder.recalculateId) in our all deployments
+        CustomerAppConfig custAppCfg = custAppConfigCache.getCustomerAppConfig(customerId, app).orElseGet(()->new CustomerAppConfig.Builder(customerId , app).build());
+        //should have a newBuilder api to copy
+        CustomerAppConfig.Builder builder = new Builder(customerId, app);
+        custAppCfg.tracer.ifPresent(builder::withTracer);
+        custAppCfg.apiGenericPaths.ifPresent(builder::withApiGenericPaths);
+        builder.withStopWaitInterval(custAppCfg.stopWaitInterval);
+        builder.withFilterTransform(filterTransform);
+        builder.withId(custAppCfg.id);
+        custAppCfg = builder.build();
+
+        if(rrstore.saveConfig(custAppCfg) && rrstore.commit()){
+            return Response.ok().entity(
+                buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of(Constants.MESSAGE, "The customer app config filter transform has been updated",
+                    Constants.CUSTOMER_ID_FIELD, custAppCfg.customerId, Constants.APP_FIELD, custAppCfg.app , "ID" , custAppCfg.id )))).build();
+        }
+
+        return Response.serverError().entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE , "Error saving the customer app config")).build();
     }
 
     @POST

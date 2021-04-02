@@ -83,6 +83,7 @@ import io.md.core.CompareTemplate.ComparisonType;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
 import io.md.dao.FnReqRespPayload.RetStatus;
+import io.md.services.CustAppConfigCache;
 import io.md.services.DSResult;
 import io.md.services.FnResponse;
 import io.md.utils.FnKey;
@@ -140,7 +141,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public boolean saveConfig(CustomerAppConfig cfg) {
-        return saveDocs(customerAppConfigToDoc(cfg));
+        boolean success = saveDocs(customerAppConfigToDoc(cfg));
+        // clear the customerId & app specific cache keys from all the inMem cache
+        config.pubSubMgr.publish(PubSubContext.IN_MEM_CACHE , Map.of(
+            io.md.cache.Constants.CUSTOMER_ID , cfg.customerId ,
+            io.md.cache.Constants.APP , cfg.app ));
+
+        return success;
     }
 
 	@Override
@@ -186,7 +193,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         try (Jedis jedis = config.jedisPool.getResource()) {
             if (jedis.exists(collectionKey.toString())) {
                 String shadowKey = Constants.REDIS_SHADOW_KEY_PREFIX + collectionKey.toString();
-                int waitBeforeStopInt = getAppConfiguration(collectionKey.customerId,
+                int waitBeforeStopInt = CustAppConfigCache.getInstance(this).getCustomerAppConfig(collectionKey.customerId,
                     collectionKey.app).map(appConfig -> appConfig.stopWaitInterval)
                     .orElse(com.cube.ws.Config.REDIS_DELETE_TTL);
                 Long result = jedis.expire(shadowKey, waitBeforeStopInt);
