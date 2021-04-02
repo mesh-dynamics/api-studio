@@ -25,11 +25,10 @@ import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.Utils;
+import io.md.dao.TemplateSet;
 
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
-import com.cube.golden.TemplateSet;
-import com.cube.utils.AnalysisUtils;
 import com.cube.ws.Config;
 
 public class TemplateSerializationTest {

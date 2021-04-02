@@ -1,7 +1,8 @@
 package com.cube.learning;
 
-import com.cube.learning.InjectionExtractionMeta.ExtractionConfig;
 import io.md.injection.DynamicInjectionConfig;
+import io.md.injection.InjectionExtractionMeta;
+import io.md.injection.InjectionExtractionMeta.ExtractionConfig;
 import java.util.*;
 
 public class DynamicInjectionGeneratedToActualConvertor {
@@ -78,7 +79,8 @@ public class DynamicInjectionGeneratedToActualConvertor {
         }
 
         return new DynamicInjectionConfig(version, customerId, app, Optional.empty(),
-            actualExtractionConfigList, actualInjectionConfigList, Collections.emptyList());
+            actualExtractionConfigList, actualInjectionConfigList, Collections.emptyList(),
+            injectionExtractionMetaList);
 
     }
 

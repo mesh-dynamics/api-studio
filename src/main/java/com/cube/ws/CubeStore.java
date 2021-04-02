@@ -15,6 +15,7 @@ import com.cube.queue.StoreUtils;
 import io.md.cache.Constants.PubSubContext;
 import io.md.core.ApiGenPathMgr;
 import io.md.core.CollectionKey;
+import io.md.core.FilterTransformMgr;
 import io.md.dao.CustomerAppConfig.Builder;
 import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.dao.Event.EventType;
@@ -32,7 +33,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -42,6 +42,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -63,6 +66,8 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import io.md.dao.*;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -79,7 +84,6 @@ import org.msgpack.value.ValueType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.JsonObject;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
@@ -120,7 +124,6 @@ import com.cube.dao.WrapperEvent;
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
 import com.cube.sequence.SeqMgr;
-import com.cube.utils.AnalysisUtils;
 import com.cube.utils.ScheduledCompletable;
 import com.cube.ws.SanitizationFilters.BadStatuses;
 import com.cube.ws.SanitizationFilters.IgnoreStaticContent;
@@ -394,14 +397,14 @@ public class CubeStore {
                             Event[] events = jsonMapper.readValue(messageBytes , Event[].class);
                             boolean success = true;
                             if (direct) {
-                                success = rrstore.save(Arrays.stream(events).map(this::mapApiGenPath));
+                                success = rrstore.save(Arrays.stream(events).map(this::mapEventTransformOp));
                             } else {
                                 if (events.length > 0) {
                                     Event event = events[0];
                                     Optional<RecordOrReplay> recordOrReplay =
                                         rrstore.getRecordOrReplayFromCollection(event.customerId, event.app,
                                             event.getCollection());
-                                    StoreUtils.processEvents(Arrays.stream(events).map(this::mapApiGenPath), rrstore,
+                                    StoreUtils.processEvents(Arrays.stream(events).map(this::mapEventTransformOp), rrstore,
                                         Optional.of(config.protoDescriptorCache), recordOrReplay);
                                 }
                             }
@@ -434,7 +437,7 @@ public class CubeStore {
             return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(
                 Status.BAD_REQUEST.toString(), Constants.ERROR, e.getMessage())).build();
         }
-        mapApiGenPath(event);
+        mapEventTransformOp(event);
         boolean success = true;
         if (direct) {
             success = rrstore.save(event) && rrstore.commit();
@@ -446,8 +449,18 @@ public class CubeStore {
             : Response.serverError().entity("Event save error").build();
     }
 
+    private Event mapEventTransformOp(Event event){
+        event = mapApiGenPath(event);
+        event = mapFilterTransform(event);
+        return event;
+    }
+
     private Event mapApiGenPath(Event event){
         apiGenPathMgr.getGenericPath(event).ifPresent(event::setApiPath);
+        return event;
+    }
+    private Event mapFilterTransform(Event event){
+        filterTransformMgr.filterTransform(event);
         return event;
     }
 
@@ -493,7 +506,7 @@ public class CubeStore {
             }
             event = wrapperEvent.cubeEvent;
             event.validateEvent();
-            mapApiGenPath(event);
+            mapEventTransformOp(event);
         } catch (IOException e) {
             LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Error parsing Event JSON")),e);
@@ -2157,7 +2170,8 @@ public class CubeStore {
         String NO_PROTO_SPECIAL_KEY = "NO_PROTO_SPECIAL_KEY";
 
         try {
-            String tmpDir = io.md.constants.Constants.TEMP_DIR;
+            String tmpDir = io.md.constants.Constants.TEMP_DIR.concat("/")
+                .concat(UUID.randomUUID().toString());
             String descFileName = "tmp_" + UUID.randomUUID() +  ".desc";
             List<String> commandList = new ArrayList<>();
 
@@ -2167,12 +2181,11 @@ public class CubeStore {
                     .getLatestProtoDescriptorDAO(customerId, app);
                 existingProtoDescriptorDAOOptional.ifPresent(UtilException.rethrowConsumer(existingProtoDescriptorDAO ->
                 {
-                    if(!existingProtoDescriptorDAO.protoFileMap.containsKey(NO_PROTO_SPECIAL_KEY))
-                    {
-                        existingProtoDescriptorDAO.protoFileMap.forEach(UtilException.rethrowBiConsumer(
-                            (uniqueFileName,fileContent) -> {
-                                protoFileMap.put(uniqueFileName, fileContent);
-                            }));
+                    if (!existingProtoDescriptorDAO.protoFileMap
+                        .containsKey(NO_PROTO_SPECIAL_KEY)) {
+                        existingProtoDescriptorDAO.protoFileMap
+                            .forEach(UtilException.rethrowBiConsumer(
+                                protoFileMap::put));
                     }
                 }));
             }
@@ -2182,9 +2195,24 @@ public class CubeStore {
 
                 BodyPartEntity bodyPartEntity = (BodyPartEntity) bodyPart.getEntity();
                 String fileName = bodyPart.getContentDisposition().getFileName();
-                String uniqueFileName = "TAG_" + UUID.randomUUID() + "_" + fileName;
-                byte[] fileBytes = bodyPartEntity.getInputStream().readAllBytes();
-                protoFileMap.put(uniqueFileName, new String(fileBytes, StandardCharsets.UTF_8));
+                if (fileName.endsWith(".zip")) {
+                    ZipInputStream zis = new ZipInputStream(bodyPartEntity.getInputStream());
+                    ZipEntry zipEntry = zis.getNextEntry();
+                    while (zipEntry != null) {
+                        if (!zipEntry.isDirectory()) {
+                            String relativePath = zipEntry.getName();
+                            String content = new String(zis.readAllBytes(), StandardCharsets.UTF_8);
+                            protoFileMap.put(relativePath, content);
+                        }
+                        zipEntry = zis.getNextEntry();
+                    }
+                    zis.closeEntry();
+                    zis.close();
+                } else {
+                    byte[] fileBytes = bodyPartEntity.getInputStream().readAllBytes();
+                    protoFileMap.put(fileName, new String(fileBytes, StandardCharsets.UTF_8));
+                }
+
             }
 
             generateProtocCommandList(protoFileMap, tmpDir, commandList, descFileName);
@@ -2213,14 +2241,14 @@ public class CubeStore {
 
         commandList.add("protoc");
         commandList.add("--descriptor_set_out=" + descFileName);
-
+        commandList.add("--proto_path=" + inpDir);
         protoFileMap.forEach(UtilException.rethrowBiConsumer(
             (uniqueFileName, fileContent) -> {
 
                 String filePath = inpDir + "/" + uniqueFileName;
                 Files.deleteIfExists(Paths.get(filePath));
                 File targetFile = new File(filePath);
-                OutputStream outStream = new FileOutputStream(targetFile);
+                OutputStream outStream = FileUtils.openOutputStream(targetFile);
                 byte[] fileBytes = fileContent.getBytes(StandardCharsets.UTF_8);
                 outStream.write(fileBytes);
                 //Add to the list of commands
@@ -2450,7 +2478,7 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAppConfiguration(@Context UriInfo uriInfo,
                                               @PathParam("customerId") String customerId, @PathParam("app") String app) {
-        Optional<CustomerAppConfig> custAppConfig = rrstore.getAppConfiguration(customerId, app);
+        Optional<CustomerAppConfig> custAppConfig = custAppConfigCache.getCustomerAppConfig(customerId, app);
         Response resp = custAppConfig.map(d -> Response.ok(d , MediaType.APPLICATION_JSON).build())
             .orElse(Response.status(Response.Status.NOT_FOUND).entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
                 "CustomerAppConfig object not found")).build());
@@ -2483,13 +2511,14 @@ public class CubeStore {
     public Response setAppConfiguration(CustomerAppConfig custAppCfg ) {
         //Todo: remove this part of existing config check untill wallmart deployment
         // all the id fields has been corrected (solrid -> builder.recalculateId) in our all deployments
-        Optional<CustomerAppConfig> existing = rrstore
-            .getAppConfiguration(custAppCfg.customerId, custAppCfg.app);
+        Optional<CustomerAppConfig> existing = custAppConfigCache.getCustomerAppConfig(custAppCfg.customerId, custAppCfg.app);
         //If the existing app cfg Id in solr is different then autoCalculated
         if (existing.isPresent() && !existing.get().id.equals(custAppCfg.id)) {
             CustomerAppConfig.Builder builder = new Builder(custAppCfg.customerId, custAppCfg.app);
             custAppCfg.tracer.ifPresent(builder::withTracer);
             custAppCfg.apiGenericPaths.ifPresent(builder::withApiGenericPaths);
+            builder.withStopWaitInterval(custAppCfg.stopWaitInterval);
+            builder.withFilterTransform(custAppCfg.filterTransform);
             builder.withId(existing.get().id);
             custAppCfg = builder.build();
         }
@@ -2501,6 +2530,32 @@ public class CubeStore {
         }
 
         return Response.serverError().type(MediaType.APPLICATION_JSON).entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE , "Error saving the customer app config")).build();
+    }
+
+    @POST
+    @Path("setFilterTransform/{customerId}/{app}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response setFilterTransform(@PathParam("customerId") String customerId , @PathParam("app") String app , List<FilterTransform> filterTransform ) {
+        //Todo: remove this part of existing config check untill wallmart deployment
+        // all the id fields has been corrected (solrid -> builder.recalculateId) in our all deployments
+        CustomerAppConfig custAppCfg = custAppConfigCache.getCustomerAppConfig(customerId, app).orElseGet(()->new CustomerAppConfig.Builder(customerId , app).build());
+        //should have a newBuilder api to copy
+        CustomerAppConfig.Builder builder = new Builder(customerId, app);
+        custAppCfg.tracer.ifPresent(builder::withTracer);
+        custAppCfg.apiGenericPaths.ifPresent(builder::withApiGenericPaths);
+        builder.withStopWaitInterval(custAppCfg.stopWaitInterval);
+        builder.withFilterTransform(filterTransform);
+        builder.withId(custAppCfg.id);
+        custAppCfg = builder.build();
+
+        if(rrstore.saveConfig(custAppCfg) && rrstore.commit()){
+            return Response.ok().entity(
+                buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of(Constants.MESSAGE, "The customer app config filter transform has been updated",
+                    Constants.CUSTOMER_ID_FIELD, custAppCfg.customerId, Constants.APP_FIELD, custAppCfg.app , "ID" , custAppCfg.id )))).build();
+        }
+
+        return Response.serverError().entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE , "Error saving the customer app config")).build();
     }
 
     @POST
@@ -2705,6 +2760,7 @@ public class CubeStore {
 		this.tagConfig = new TagConfig(config.rrstore);
 		this.factory = new DynamicInjectorFactory(rrstore, jsonMapper);
 		this.apiGenPathMgr = ApiGenPathMgr.getInstance(rrstore);
+		this.filterTransformMgr = FilterTransformMgr.getInstance(rrstore);
 		this.custAppConfigCache = CustAppConfigCache.getInstance(rrstore);
 	}
 
@@ -2716,6 +2772,7 @@ public class CubeStore {
 	TagConfig tagConfig;
     DisruptorEventQueue eventQueue;
     ApiGenPathMgr apiGenPathMgr;
+    FilterTransformMgr filterTransformMgr;
     CustAppConfigCache custAppConfigCache;
 
 	private Optional<String> getCurrentCollectionIfEmpty(Optional<String> collection,
