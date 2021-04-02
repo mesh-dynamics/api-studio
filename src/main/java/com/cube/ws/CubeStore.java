@@ -42,6 +42,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -63,6 +66,8 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import io.md.dao.*;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -2165,7 +2170,8 @@ public class CubeStore {
         String NO_PROTO_SPECIAL_KEY = "NO_PROTO_SPECIAL_KEY";
 
         try {
-            String tmpDir = io.md.constants.Constants.TEMP_DIR;
+            String tmpDir = io.md.constants.Constants.TEMP_DIR.concat("/")
+                .concat(UUID.randomUUID().toString());
             String descFileName = "tmp_" + UUID.randomUUID() +  ".desc";
             List<String> commandList = new ArrayList<>();
 
@@ -2175,12 +2181,11 @@ public class CubeStore {
                     .getLatestProtoDescriptorDAO(customerId, app);
                 existingProtoDescriptorDAOOptional.ifPresent(UtilException.rethrowConsumer(existingProtoDescriptorDAO ->
                 {
-                    if(!existingProtoDescriptorDAO.protoFileMap.containsKey(NO_PROTO_SPECIAL_KEY))
-                    {
-                        existingProtoDescriptorDAO.protoFileMap.forEach(UtilException.rethrowBiConsumer(
-                            (uniqueFileName,fileContent) -> {
-                                protoFileMap.put(uniqueFileName, fileContent);
-                            }));
+                    if (!existingProtoDescriptorDAO.protoFileMap
+                        .containsKey(NO_PROTO_SPECIAL_KEY)) {
+                        existingProtoDescriptorDAO.protoFileMap
+                            .forEach(UtilException.rethrowBiConsumer(
+                                protoFileMap::put));
                     }
                 }));
             }
@@ -2190,9 +2195,24 @@ public class CubeStore {
 
                 BodyPartEntity bodyPartEntity = (BodyPartEntity) bodyPart.getEntity();
                 String fileName = bodyPart.getContentDisposition().getFileName();
-                String uniqueFileName = "TAG_" + UUID.randomUUID() + "_" + fileName;
-                byte[] fileBytes = bodyPartEntity.getInputStream().readAllBytes();
-                protoFileMap.put(uniqueFileName, new String(fileBytes, StandardCharsets.UTF_8));
+                if (fileName.endsWith(".zip")) {
+                    ZipInputStream zis = new ZipInputStream(bodyPartEntity.getInputStream());
+                    ZipEntry zipEntry = zis.getNextEntry();
+                    while (zipEntry != null) {
+                        if (!zipEntry.isDirectory()) {
+                            String relativePath = zipEntry.getName();
+                            String content = new String(zis.readAllBytes(), StandardCharsets.UTF_8);
+                            protoFileMap.put(relativePath, content);
+                        }
+                        zipEntry = zis.getNextEntry();
+                    }
+                    zis.closeEntry();
+                    zis.close();
+                } else {
+                    byte[] fileBytes = bodyPartEntity.getInputStream().readAllBytes();
+                    protoFileMap.put(fileName, new String(fileBytes, StandardCharsets.UTF_8));
+                }
+
             }
 
             generateProtocCommandList(protoFileMap, tmpDir, commandList, descFileName);
@@ -2221,14 +2241,14 @@ public class CubeStore {
 
         commandList.add("protoc");
         commandList.add("--descriptor_set_out=" + descFileName);
-
+        commandList.add("--proto_path=" + inpDir);
         protoFileMap.forEach(UtilException.rethrowBiConsumer(
             (uniqueFileName, fileContent) -> {
 
                 String filePath = inpDir + "/" + uniqueFileName;
                 Files.deleteIfExists(Paths.get(filePath));
                 File targetFile = new File(filePath);
-                OutputStream outStream = new FileOutputStream(targetFile);
+                OutputStream outStream = FileUtils.openOutputStream(targetFile);
                 byte[] fileBytes = fileContent.getBytes(StandardCharsets.UTF_8);
                 outStream.write(fileBytes);
                 //Add to the list of commands
