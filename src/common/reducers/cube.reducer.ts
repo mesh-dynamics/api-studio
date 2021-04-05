@@ -46,8 +46,6 @@ const initialState : ICubeState = {
     collectionTemplateVersion: null,
     golden: null,
     goldenTimeStamp: null,
-    templateSetNameLabelsList: [],
-    selectedTemplateSetNameLabel: null,
 
     replayId: null,
 
@@ -246,18 +244,6 @@ export function cube (state = initialState, action: ICubeAction) : ICubeState {
                 testIdsReqErr: '',
                 testIds: action.data
             };
-
-        case cubeConstants.SET_TEMPLATE_SET_NAME_LABELS_LIST: 
-            return {
-                ...state,
-                templateSetNameLabelsList: action.data,
-            }
-
-        case cubeConstants.SET_SELECTED_TEMPLATE_SET_NAME_LABEL:
-            return {
-                ...state,
-                selectedTemplateSetNameLabel: action.data,
-            }
 
         case cubeConstants.TESTIDS_FAILURE: 
             return {

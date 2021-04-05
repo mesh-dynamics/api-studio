@@ -8,6 +8,7 @@ declare type HandleEditComplete = (updatedLabelString: string) => void;
 interface EditableLabelProps {
     label: string
     handleEditComplete: HandleEditComplete;
+    onEditCanceled? : Function,
     /** To remotely control the edit mode set this else default is undefined */
     allowEdit?: boolean; 
 }
@@ -39,6 +40,7 @@ const EditableLabel: FC<EditableLabelProps> = (props) => {
     const handleBlur = () => {
         setAllowEdit(false);
         setLabelString(label);
+        props.onEditCanceled && props.onEditCanceled();
     }
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {

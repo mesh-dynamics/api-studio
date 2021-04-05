@@ -8,6 +8,7 @@ import { getCurrentEnvironment } from "../../utils/http_client/envvar";
 import { getCurrentMockConfig } from "../../utils/http_client/utils";
 import { httpClientActions } from '../../actions/httpClientActions';
 import { IHttpClientStoreState, IStoreState, IEnvironmentConfig, IUserAuthDetails, IMockConfig, ICubeState, IMockConfigValue, IConfigVars } from '../../reducers/state.types';
+import commonUtils from '../../utils/commonUtils';
 import { isTrueOrUndefined } from '../../utils/http_client/httpClientUtils';
 import commonConstants from '../../utils/commonConstants';
 
@@ -153,7 +154,7 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
         this.setState({selectedEditMockConfig, addNewMockConfig: true})
     }
 
-    showMockConfigList = (show) => {
+    showMockConfigList = (show: boolean) => {
         const {dispatch} = this.props;
         dispatch(httpClientActions.showMockConfigList(show));
     }
@@ -181,7 +182,7 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
         dispatch(httpClientActions.removeMockConfig(id, key))
     }
 
-    handleRemoveServiceConfig = (index) => {
+    handleRemoveServiceConfig = (index: Number) => {
         let {selectedEditMockConfig} = this.state;
         selectedEditMockConfig.serviceConfigs.splice(index, 1)
         this.setMockConfigStatusText("", false)
@@ -242,7 +243,7 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
         dispatch(httpClientActions.updateMockConfig(selectedEditMockConfigId, selectedEditMockConfig));
     }
 
-    setMockConfigStatusText = (text, isError) => {
+    setMockConfigStatusText =  (text: string, isError: boolean) => {
         const {dispatch} = this.props;
         dispatch(httpClientActions.setMockConfigStatusText(text, isError))
     }
@@ -440,6 +441,50 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
         this.props.hideModal();
     }
 
+    handleMockConfigExport = (mockConfig) => {
+        const configData = JSON.parse(mockConfig.value);
+        const configFileName = `${configData.name}.json`;
+        
+        commonUtils.downloadAFileToClient(configFileName, mockConfig.value);
+    }
+
+    handleImportedFileContent = (fileContent: string) => {
+        const { dispatch } = this.props;
+
+        try {
+            const importedServiceConfig = JSON.parse(fileContent);
+
+            if (!this.validateMockConfig(importedServiceConfig)) {
+                return
+            }
+    
+            dispatch(httpClientActions.saveMockConfig(importedServiceConfig));
+        } catch(e) {
+            this.setMockConfigStatusText("Error importing config file.", true)
+        }
+    }
+
+    handleImportServiceConfigButtonClick = () => {
+        const importFileButton = document.getElementById("fileInput");
+        importFileButton.value = null;
+        importFileButton?.click();
+    }
+
+    handleImportServiceConfigFileImportChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+
+        this.resetMockConfigStatusText();
+
+        const environmentConfigClass = this;
+        
+        const fileReader = new FileReader();
+
+        fileReader.onload = function(){
+            environmentConfigClass.handleImportedFileContent(String(fileReader.result));
+        }
+
+        fileReader.readAsText(event?.target?.files[0]);
+    }
+
     renderSessionVariableConfigFooter = () => {
         const { sessionVars } = this.state;     
         return (
@@ -537,7 +582,8 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
                                         {mockConfig.key}
                                     </td>
                                     <td style={{width: "10%", textAlign: "right"}}>
-                                        <i className="fas fa-trash pointer" onClick={() => this.handleRemoveMockConfig(index)}/>
+                                        <i title="Export" style={{ marginRight: "10px" }} onClick={() => this.handleMockConfigExport(mockConfig)} className="fas fa-download pointer" aria-hidden="true"></i>
+                                        <i title="Delete" className="fas fa-trash pointer" onClick={() => this.handleRemoveMockConfig(index)}/>
                                     </td>
                                 </tr>)
                             )}
@@ -652,37 +698,62 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
         return (
             <>
                 <span className="pull-left" style={{color: mockConfigStatusIsError ? "red" : ""}}>{mockConfigStatusText}</span>
-                    {selectedTabKey == 0 && !showMockConfigList &&                         
+                {
+                    
+                    showMockConfigList 
+                    && 
+                    (
                         <>
-                            <span 
+                            <span
                                 className="cube-btn margin-right-10 margin-left-15" 
-                                onClick={this.handleBackMockConfig}
+                                onClick={this.handleImportServiceConfigButtonClick}
                             >
-                                <i className="fa fa-arrow-circle-left"></i>
-                                &nbsp;BACK
+                                <Glyphicon glyph="import" /> Import Service Config
                             </span>
-                        
-                            { 
-                                addNewMockConfig 
-                                ? 
-                                    <span 
-                                        className="cube-btn margin-right-10" 
-                                        onClick={this.handleSaveMockConfig}
-                                    >
-                                        <i className="fa fa-save"></i>&nbsp;SAVE
-                                    </span>
-                                :   <span 
-                                        className="cube-btn margin-right-10" 
-                                        onClick={this.handleUpdateMockConfig}
-                                    >
-                                        <i className="fa fa-save"></i>&nbsp;UPDATE A
-                                    </span>
-                            }
+                            <input 
+                                
+                                id="fileInput"
+                                type="file"
+                                onChange={this.handleImportServiceConfigFileImportChange}
+                                accept=".json"
+                                style={{ display: "none" }} 
+                            />
                         </>
-                    }
-                    {!showMockConfigList && <span className="cube-btn margin-left-15" onClick={this.handleBackMockConfig}>BACK</span>}
-                    {!showMockConfigList && addNewMockConfig && <span className="cube-btn margin-left-15" onClick={this.handleSaveMockConfig}>SAVE</span>}
-                    {!showMockConfigList && !addNewMockConfig && <span className="cube-btn margin-left-15" onClick={this.handleUpdateMockConfig}>SAVE</span>}
+                    )
+                }
+                {
+                    selectedTabKey == 0 && 
+                    !showMockConfigList &&                         
+                    <>
+                        <span 
+                            className="cube-btn margin-right-10 margin-left-15" 
+                            onClick={this.handleBackMockConfig}
+                        >
+                            <i className="fa fa-arrow-circle-left"></i>
+                            &nbsp;BACK
+                        </span>
+                    
+                        { 
+                            addNewMockConfig 
+                            ? 
+                                <span 
+                                    className="cube-btn margin-right-10" 
+                                    onClick={this.handleSaveMockConfig}
+                                >
+                                    <i className="fa fa-save"></i>&nbsp;SAVE
+                                </span>
+                            :   <span 
+                                    className="cube-btn margin-right-10" 
+                                    onClick={this.handleUpdateMockConfig}
+                                >
+                                    <i className="fa fa-save"></i>&nbsp;UPDATE A
+                                </span>
+                        }
+                    </>
+                }
+                {!showMockConfigList && <span className="cube-btn margin-left-15" onClick={this.handleBackMockConfig}>BACK</span>}
+                {!showMockConfigList && addNewMockConfig && <span className="cube-btn margin-left-15" onClick={this.handleSaveMockConfig}>SAVE</span>}
+                {!showMockConfigList && !addNewMockConfig && <span className="cube-btn margin-left-15" onClick={this.handleUpdateMockConfig}>SAVE</span>}
             </>
         );
     }
