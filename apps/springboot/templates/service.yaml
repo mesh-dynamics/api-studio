@@ -16,12 +16,18 @@ spec:
   selector:
     component: receiver-replay
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: receiver-replay
   namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: receiver-replay
 spec:
+  selector:
+    matchLabels:
+      component: receiver-replay
   replicas: 1
   strategy:
     rollingUpdate:
@@ -42,11 +48,11 @@ spec:
         imagePullPolicy: Always
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            memory: "512Mi"
+            cpu: "500m"
           limits:
             memory: "2048Mi"
-            cpu: "500m"
+            cpu: "1000m"
         ports:
         - containerPort: 8080
         env:
@@ -88,12 +94,18 @@ spec:
   selector:
     component: receiver-record
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: receiver-record
   namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: receiver-record
 spec:
+  selector:
+    matchLabels:
+      component: receiver-record
   replicas: 1
   strategy:
     rollingUpdate:
@@ -114,11 +126,11 @@ spec:
         imagePullPolicy: Always
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            memory: "512Mi"
+            cpu: "500m"
           limits:
             memory: "2048Mi"
-            cpu: "500m"
+            cpu: "1000m"
         ports:
         - containerPort: 8080
         env:
@@ -161,12 +173,18 @@ spec:
   selector:
     component: transformer
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: transformer
   namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: transformer
 spec:
+  selector:
+    matchLabels:
+      component: transformer
   replicas: 1
   strategy:
     rollingUpdate:
@@ -187,10 +205,10 @@ spec:
         imagePullPolicy: IfNotPresent
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
             memory: "512Mi"
             cpu: "500m"
+          limits:
+            memory: "1024Mi"
+            cpu: "1000m"
         ports:
         - containerPort: 8081

@@ -27,7 +27,7 @@
         }
       }
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx-proxy
@@ -36,6 +36,9 @@ metadata:
     app: moviebook
     component: proxy
 spec:
+  selector:
+    matchLabels:
+      component: proxy
   replicas: 1
   template:
     metadata:
@@ -47,6 +50,7 @@ spec:
       containers:
       - name: nginx
         image: nginx
+        imagePullPolicy: IfNotPresent
         volumeMounts:
         - mountPath: /etc/nginx/conf.d/default.conf
           name: nginx-config

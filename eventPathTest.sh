@@ -46,7 +46,7 @@ record() {
 --header 'Content-Type: application/json' \
 --header "Authorization: Bearer $AUTH_TOKEN" \
 --data-raw "$DATA"
-sleep 35
+sleep 10
   RESPONSE=$(curl -X POST \
   $CUBE_ENDPOINT/api/cs/start/CubeCorp/springboot_demo/$INSTANCE_ID/$TEMPLATE \
   -H 'Content-Type: application/x-www-form-urlencoded' \
@@ -81,7 +81,7 @@ sleep 1
 stop_recording() {
   curl -X POST $CUBE_ENDPOINT/api/cs/stop/$RECORDING_ID \
   -H "Authorization: Bearer $AUTH_TOKEN"
-  sleep 20
+  sleep 10
 
   curl -X POST $CUBE_ENDPOINT/api/cs/forcestop/$RECORDING_ID \
   -H "Authorization: Bearer $AUTH_TOKEN"
@@ -99,7 +99,7 @@ replay() {
 --header 'Content-Type: application/json' \
 --header "Authorization: Bearer $AUTH_TOKEN" \
 --data-raw "$DATA"
-sleep 35
+sleep 25
   BODY="endPoint=$SPRINGBOOT_HOST&instanceId=$INSTANCE_ID&templateSetVer=$TEMPLATE&userId=$USER_ID&service=order"
   COUNT=0
 	while [ "$http_code" != "200" ] || [ "$REPLAY_ID" = "none" ] && [ "$COUNT" != "5" ]; do
@@ -133,7 +133,7 @@ analyze() {
 	# Stop replay before analyze
 	curl --location --request POST $CUBE_ENDPOINT/api/rs/forcecomplete/$REPLAY_ID \
 	-H "Authorization: Bearer $AUTH_TOKEN"
-	sleep 30
+	sleep 5
   ANALYZE=$(curl -X POST $CUBE_ENDPOINT/api/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: Bearer $AUTH_TOKEN" -H 'cache-control: no-cache')
   REQCOUNT=$(echo $ANALYZE | jq .reqCnt )
 	RESPNOTMATCHED=$(echo $ANALYZE | jq .respNotMatched)
@@ -180,21 +180,21 @@ main() {
 	# DRONE_COMMIT="411e4ee4dfeb290932122f3ad56141c5b8ec6b15"
 	# DRONE_COMMIT_AUTHOR="ethicalaakash"
 	# DRONE_BUILD_NUMBER="test108"
-  CUBE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
+  CUBE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.meshdynamics.io
 	CONFIG_FILE="temp"
   TEMPLATE=DEFAULT
   USER_ID=CubeCorp
-  SPRINGBOOT_HOST=http://$DRONE_COMMIT_AUTHOR-springboot.dev.cubecorp.io
+  SPRINGBOOT_HOST=http://$DRONE_COMMIT_AUTHOR-springboot.dev.meshdynamics.io
   INSTANCE_ID=$DRONE_COMMIT
   AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s"
 	register_config
-	sleep 20
+	sleep 10
   record
-	sleep 20
+	sleep 15
   generate_traffic 5
-  sleep 20
   stop_recording
-  sleep 20
+  curl --location --request POST "$SPRINGBOOT_HOST:8080/orders/flushAll" \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ'
   replay
   analyze
 	clean $DRONE_COMMIT_AUTHOR-springboot springboot

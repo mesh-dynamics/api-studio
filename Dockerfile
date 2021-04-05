@@ -11,7 +11,6 @@ mkdir code
 
 COPY . /code/
 
-RUN mv /code/certs ~/.kube/ && \
-mv /code/config ~/.kube/
+RUN mv /code/config ~/.kube/
 
 WORKDIR /code

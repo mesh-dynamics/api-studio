@@ -41,7 +41,7 @@ spec:
   gateways:
   - {{namespace}}-logcollector-gateway
   hosts:
-  - "logcollector.dev.cubecorp.io"
+  - "{{logcollector_url}}"
   http:
   - match:
     - uri:
