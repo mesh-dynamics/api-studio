@@ -154,7 +154,7 @@ spec:
               local buf = {'{'}
               local listdelim = ', '
               logEvent(buf,handle,cubeEvent, 'HTTPResponsePayload')
-              buf[#buf+1] = listdelim .. string.format('"status":%q', handle:headers():get(":status") or "")
+              buf[#buf+1] = listdelim .. string.format('"status":%s', handle:headers():get(":status") or "0")
               buf[#buf+1] = ' } ] }'
               data = table.concat(buf)
               callStoreEvent(handle, data)
