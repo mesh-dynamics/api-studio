@@ -66,7 +66,7 @@ export const apiCatalogActions: IActionsType = {
 
         cubeService.fetchCollectionList(user, app, recordingType)
             .then((data) => {
-                const result = (data as any as ICollectionListApiResponse).recordings;
+                const result = data.recordings;
                 if (recordingType === "UserGolden") {
                     dispatch({
                         type: apiCatalogConstants.UPDATE_COLLECTION_LIST,

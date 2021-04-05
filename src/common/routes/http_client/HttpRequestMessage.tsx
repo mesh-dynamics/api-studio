@@ -14,6 +14,7 @@ import ServiceSelector from './components/ServiceSelector';
 import { getDefaultServiceName, joinPaths } from '../../utils/http_client/httpClientUtils';
 import { getApiPathAndServiceFromUrl } from '../../utils/http_client/httpClientTabs.utils';
 import MockConfigUtils from '../../utils/http_client/mockConfigs.utils';
+import AutoCompleteBox from './components/AutoCompleteBox';
 export interface IHttpRequestMessageProps {
     bodyType: string;
     httpMethod: string;
@@ -170,9 +171,9 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
             const urlWithQueryParams = generateUrlWithQueryParams(httpURL, queryStringParams);
             const urlRendered = this.generateUrlTooltip(urlWithQueryParams);
             const urlTextBox = (<div style={{display: "inline-block", width: "82%"}}>
-            <FormGroup bsSize="small" style={{marginBottom: "0px", fontSize: "12px"}}>
-                <FormControl type="text" placeholder="https://...." style={{fontSize: "12px"}} readOnly={this.props.readOnly} disabled={this.props.disabled} name="httpURL" value={urlWithQueryParams} onChange={this.handleURLChange}/>
-            </FormGroup>
+                <FormGroup className="autocomplete" bsSize="small" style={{marginBottom: "0px", fontSize: "12px"}}>
+                    <AutoCompleteBox id="urlTextBox" placeholder="https://...." style={{fontSize: "12px"}} readOnly={this.props.readOnly} disabled={this.props.disabled} name="httpURL" value={urlWithQueryParams} onChange={this.handleURLChange}/>
+                </FormGroup>
             </div>);
 
             return (<Tippy content={urlRendered} arrow={false} arrowType="round" enabled={!this.props.disabled} interactive={true} theme={"google"} size="large" placement="bottom-start" onShow={this.onTippyShow}>
@@ -195,10 +196,10 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
         const urlRendered = this.generateUrlTooltip(joinPaths(domain, pathWithQueryParams));
               
              const urlTextBox = (<div style={{display: "inline-block", width: "82%"}}>
-                <FormGroup bsSize="small" style={{marginBottom: "0px", fontSize: "12px"}}>
+                <FormGroup className="autocomplete" bsSize="small" style={{marginBottom: "0px", fontSize: "12px"}}>
                 <InputGroup>
                 <InputGroup.Addon style={{fontSize: "11px"}}>{domain}</InputGroup.Addon>
-                    <FormControl type="text" placeholder="/request/path?with=query" style={{fontSize: "12px"}} readOnly={this.props.readOnly} disabled={this.props.disabled} name="requestPathURL" value={pathWithQueryParams} onChange={this.handleApiPathChange}/>
+                    <AutoCompleteBox id="apiPathURLTextBox" placeholder="/request/path?with=query" style={{fontSize: "12px"}} readOnly={this.props.readOnly} disabled={this.props.disabled} name="requestPathURL" value={pathWithQueryParams} onChange={this.handleApiPathChange}/>
                 </InputGroup>
                 </FormGroup>
                 </div>);

@@ -26,6 +26,7 @@ import gcbrowseActions from '../actions/gcBrowse.actions.ts';
 import { defaultCollectionItem } from "../constants";
 import {setStrictMock} from "./../helpers/httpClientHelpers"
 import { fetchGoldenMeta } from "../services/golden.service";
+import TemplateSetBrowse from "./TemplateSetBrowse/TemplateSetBrowse";
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
         super(props)
@@ -81,16 +82,19 @@ class ViewSelectedTestConfig extends React.Component {
             ignoreStaticContent: false,
             stopInProgress: false,
             fcReplayUserId: "",
+            selectedTemplateSetName: "",
+            selectedTemplateSetLabel: "",
         };
         //this.statusInterval;
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         const { dispatch, cube: { selectedGolden } } = this.props;
         dispatch(cubeActions.clearPreviousData());
         if(!this.props.cube.testConfig && selectedGolden){
             this.fetchServicesForGoldenSelected(selectedGolden);
         }
+        await this.setDefaultTemplateSet()
     }
 
     handleRecordingModeChange = (value) => this.setState({ recordingMode: value, goldenNameErrorMessage: "" });
@@ -203,7 +207,7 @@ class ViewSelectedTestConfig extends React.Component {
     }
 
     handleChangeInBrowseCollection = (selectedCollectionObject) => {
-        const { dispatch, cube: {testConfig, templateSetNameLabelsList} } = this.props;
+        const { dispatch, cube: {testConfig} } = this.props;
         const { 
             name,
             id: golden,
@@ -215,16 +219,22 @@ class ViewSelectedTestConfig extends React.Component {
         
         dispatch(cubeActions.clearPreviousData());
         
-        const selectedTemplateSetNameLabel = (templateSetNameLabelsList || []).find(({name, label}) => (name===templateSetName && label===templateSetLabel))
-        if(selectedTemplateSetNameLabel){
-            dispatch(cubeActions.setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel))
-        }
+        this.setState({selectedTemplateSetName: templateSetName, selectedTemplateSetLabel: templateSetLabel})
+
         dispatch(cubeActions.setSelectedTestIdAndVersion(collectionId, version, golden, name));
         if(!testConfig){
             this.fetchServicesForGoldenSelected(golden);
         }
     };
     
+    setDefaultTemplateSet = async () => {
+        const {cube : {selectedApp}, authentication: {user}} = this.props;
+        const {templateSetNameLabelsList} = await cubeService.getTemplateSetNameLabels(user.customer_name, selectedApp, 0, 1, `Default${selectedApp}`, "")
+        const selectedTemplateSetNameLabel = templateSetNameLabelsList[0]
+        const {name, label} = selectedTemplateSetNameLabel || {name: "", label: ""}
+        this.setState({selectedTemplateSetName: name, selectedTemplateSetLabel: label})
+    }
+
     showCT = () => this.setState({showCT: true});
     
     handleCloseOnReplayModal = () => {
@@ -281,7 +291,7 @@ class ViewSelectedTestConfig extends React.Component {
         templateSetWarningModalVisible: true,
         userAlertMessage: {
             header: "Alert",
-            message: "Select a Template Set to proceed."
+            message: "Select comparison rules to proceed."
         }
     });
     
@@ -1200,30 +1210,21 @@ class ViewSelectedTestConfig extends React.Component {
         return panel[pathname] ? panel[pathname]() : (<div />);
     };
 
-    handleTemplateSetNameLabelChange = (e) => {
-        const targetOption = e.target.options[e.target.selectedIndex]
-        const templateSetName = targetOption.getAttribute("data-name")
-        const templateSetLabel = targetOption.getAttribute("data-label")
-        const { cube: {templateSetNameLabelsList}, dispatch} = this.props;
-        const selectedTemplateSetNameLabel = (templateSetNameLabelsList || []).find(({name, label}) => (name===templateSetName && label===templateSetLabel))
-        dispatch(cubeActions.setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel))
+    handleTemplateSetNameLabelChange = (name, label) => {
+        this.setState({selectedTemplateSetName: name, selectedTemplateSetLabel: label});
     }
 
     renderTemplateSetNameLabelSelection = () => {
-        const { cube: {templateSetNameLabelsList, selectedTemplateSetNameLabel, selectedApp} } = this.props;
-        const options = (templateSetNameLabelsList || []).map(({name, label}) => {
-            return <option key={`${name}-${label}`} value={`${name}-${label}`} data-name={name} data-label={label}>{name} {label && label}</option>
-        })
+        const {selectedTemplateSetName, selectedTemplateSetLabel} = this.state
 
-        const {name, label} = selectedTemplateSetNameLabel
-                            || {name: "", label: ""}
         return (
             <div className="margin-top-10">
-                <div className="label-n">SELECT TEMPLATE SET</div>
-                <select className="r-att" onChange={this.handleTemplateSetNameLabelChange} value={`${name}-${label}`}>
-                    <option disabled value="-">Select Template Set</option>
-                    {options}
-                </select>
+                <div className="label-n">SELECT COMPARISON RULES</div>
+                <TemplateSetBrowse
+                    templateSetName={selectedTemplateSetName}
+                    templateSetLabel={selectedTemplateSetLabel}
+                    handleTemplateSetNameLabelSelect={this.handleTemplateSetNameLabelChange}
+                />
             </div>
         )
     }

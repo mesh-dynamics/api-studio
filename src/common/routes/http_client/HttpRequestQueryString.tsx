@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Glyphicon, FormGroup, Button, FormControl, Radio, ControlLabel, Checkbox } from 'react-bootstrap';
+import AutoCompleteBox from './components/AutoCompleteBox';
 import "./HttpClient.css";
 // import "./styles_here.css";
 
@@ -89,16 +90,15 @@ class HttpRequestQueryString extends Component<IHttpRequestQueryStringProps> {
                             </FormGroup>
                         </div>
                         <div className="cell cell-2"> 
-                            <FormGroup>
-                                <FormControl type="text" placeholder="" 
-                                readOnly={this.props.readOnly} 
+                            <FormGroup className="autocomplete">
+                                <AutoCompleteBox readOnly={this.props.readOnly} id={"name" + eachParam.id}
                                 value={eachParam.name} name="name" onChange={this.handleChange.bind(this, eachParam.id)}/>
                             </FormGroup>
                         </div>
                         <div className="cell cell-3">
-                            <FormGroup>
-                                <FormControl type="text"
-                                readOnly={this.props.readOnly}  placeholder="" value={eachParam.value} name="value" onChange={this.handleChange.bind(this, eachParam.id)} />
+                            <FormGroup className="autocomplete">
+                                <AutoCompleteBox readOnly={this.props.readOnly} id={"value" + eachParam.id}
+                                    value={eachParam.value} name="value" onChange={this.handleChange.bind(this, eachParam.id)}/>
                             </FormGroup>
                         </div>
                         <div className="cell cell-4" onClick={this.handleDelete.bind(this, eachParam.id)} > 

@@ -20,6 +20,7 @@ import { cubeService } from "../../services";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { cubeActions } from "../../actions";
 import classNames from "classnames";
+import TemplateSetBrowse from "../../components/TemplateSetBrowse/TemplateSetBrowse";
 
 export interface IConvertCollectionState {
   isPopupVisible: boolean;
@@ -43,7 +44,6 @@ export interface IConvertCollectionProps {
   username: string;
   app: string;
   dispatch: any;
-  templateSetNameLabelsList: ITemplateSetNameLabel[];
 }
 
 class ConvertCollection extends Component<
@@ -231,37 +231,18 @@ class ConvertCollection extends Component<
       });
   };
 
-  handleTemplateSetNameLabelChange = (e) => {
-    const targetOption = e.target.options[e.target.selectedIndex]
-    const templateSetName = targetOption.getAttribute("data-name")
-    const templateSetLabel = targetOption.getAttribute("data-label")
-
-    const { templateSetNameLabelsList } = this.props;
-    const selectedTemplateSetNameLabel = (templateSetNameLabelsList || []).find(({name, label}) => (name===templateSetName && label===templateSetLabel)) || {name: "", label: ""}
-    const {name: collTemplateSetName, label: collTemplateSetLabel} = selectedTemplateSetNameLabel
-    this.setState({collTemplateSetName, collTemplateSetLabel})
+  handleTemplateSetNameLabelChange = (name: string, label: string) => {
+    this.setState({collTemplateSetName: name, collTemplateSetLabel: label})
   }
 
   renderTemplateSetNameLabelSelection = () => {
-      const { templateSetNameLabelsList } = this.props;
-      const { collTemplateSetName: name, collTemplateSetLabel: label} = this.state;
+    const { collTemplateSetName, collTemplateSetLabel } = this.state;
 
-      const options = (templateSetNameLabelsList || []).map(({name, label}) => {
-        return <option key={`${name}-${label}`} value={`${name}-${label}`} data-name={name} data-label={label}>{name} {label && label}</option>
-      })
-
-      return (
-        <FormControl
-        componentClass="select"
-        placeholder="Template Set"
-        value={`${name}-${label}`}
-        onChange={this.handleTemplateSetNameLabelChange}
-        className="btn-sm md-env-select"
-        >
-          <option disabled value="-">Select Template Set</option>
-          {options}
-       </FormControl>
-      )
+    return <TemplateSetBrowse
+        templateSetName={collTemplateSetName}
+        templateSetLabel={collTemplateSetLabel}
+        handleTemplateSetNameLabelSelect={this.handleTemplateSetNameLabelChange}
+      />
   }
 
   render() {
@@ -323,7 +304,7 @@ class ConvertCollection extends Component<
 
                 {!isGolden && 
                   <FormGroup controlId="templateSetSelection">
-                    <ControlLabel>Template Set</ControlLabel>
+                    <ControlLabel>Comparison Rules</ControlLabel>
                     {this.renderTemplateSetNameLabelSelection()}
                   </FormGroup>
                 }
@@ -374,7 +355,7 @@ const mapStateToProps = (state: IStoreState) => {
 
   const username = (state.authentication.user as IUserAuthDetails).username;
 
-  const {templateSetNameLabelsList, selectedApp} = state.cube;
+  const {selectedApp} = state.cube;
 
   return {
     selectedSource,
@@ -384,7 +365,6 @@ const mapStateToProps = (state: IStoreState) => {
     collectionList,
     username,
     app: selectedApp,
-    templateSetNameLabelsList,
   };
 };
 

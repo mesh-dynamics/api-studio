@@ -1,35 +1,38 @@
 import { connect } from "react-redux";
-import React, { useState } from "react";
-import { cubeService } from "../../services";
-import { Modal } from "react-bootstrap";
-import HttpRequestMessage from "./HttpRequestMessage";
+import React, { useEffect, useState } from "react";
+import { Modal, Grid, Row, Col } from "react-bootstrap";
 
 import _ from "lodash";
-import { UpdateParamHandler } from "./HttpResponseHeaders";
-import { formatHttpEventToTabObject } from "../../utils/http_client/utils";
 import Tippy from "@tippy.js/react";
-import { HttpRequestFields } from "./HttpRequestFields";
-import { IStoreState } from "../../reducers/state.types";
+import { IMetaData, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
+import { getCollectionDetailsById } from "../../utils/http_client/httpClientUtils";
+import { DiffRequestIds } from "./components/DiffRequestIds";
 
 interface IRequestMatchTypeProps {
-  matchType: string;
-  matchedRequestId: string;
+  metaData: IMetaData;
   app: string;
-  user: any; //Replace 'any' with actual User definition from types
+  user: IUserAuthDetails;
+  originalReqId: string;
   onClick: (matchedRequestId: string) => void;
 }
 
-type visibleRadioButton = "showHeaders" | "showQueryParams" | "showBody";
-
 function RequestMatchType(props: IRequestMatchTypeProps) {
   const [matchRequestShowPopup, setMatchRequestShowPopup] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [apiEvent, setApiEvent] = useState<any>();
-  const [paramsType, setParamsType] = useState<visibleRadioButton>("showBody");
+  const [collectionName, setCollectionName] = useState("");
 
+  const isCollectionMatched = props.metaData.collectionMatched == "true";
+  const traceIdMatched = props.metaData.traceIdMatched == "true";
+  const payloadKeyMatched = props.metaData.payloadKeyMatched == "true";
+
+  let matchType = "NoMatch";
+  if (isCollectionMatched && traceIdMatched && payloadKeyMatched) {
+    matchType = "ExactMatch";
+  } else if (isCollectionMatched || traceIdMatched || payloadKeyMatched) {
+    matchType = "FuzzyMatch";
+  }
   let titleText = "",
     fillColor = "red";
-  switch (props.matchType) {
+  switch (matchType) {
     case "ExactMatch":
       titleText = "Exact Match";
       fillColor = "green";
@@ -46,127 +49,86 @@ function RequestMatchType(props: IRequestMatchTypeProps) {
 
   const onClick = React.useCallback(
     (event: React.MouseEvent<Element>) => {
-      const matchId = props.matchedRequestId;
-      if (matchId && props.matchType === "FuzzyMatch") {
-        const {
-          app,
-          user: { customer_name: customerId },
-        } = props;
-        const requestIds = [matchId];
-        errorMessage && setErrorMessage("");
-        cubeService
-          .fetchAPIEventData(customerId, app, requestIds, ["HTTPRequest"])
-          .then((result: any) => {
-            setApiEvent(result.objects);
-            setMatchRequestShowPopup(true);
-          })
-          .catch((error) => {
-            console.error(error);
-            apiEvent && setApiEvent(null);
-            setErrorMessage("Failed to load request.");
-            setMatchRequestShowPopup(true);
-          });
-      }
+      setMatchRequestShowPopup(true);
     },
-    [props.matchedRequestId]
+    [props.metaData.matchedRequestId]
   );
+
+  useEffect(() => {
+    const collectionId = props.metaData.matchedCollectionName;
+    setCollectionName("");
+    if (collectionId && matchRequestShowPopup) {
+      getCollectionDetailsById(collectionId).then((collection) => {
+        const collectionName = collection ? `${collection.name} (${collection.label})` : `Collection Id ${collectionId} not found`;
+        setCollectionName(collectionName);
+      });
+    }
+  }, [props.metaData.matchedCollectionName, props.originalReqId, matchRequestShowPopup]);
 
   const onHidePopup = React.useCallback(() => {
     setMatchRequestShowPopup(false);
   }, []);
 
-  const updateParamHandler: UpdateParamHandler = React.useCallback(
-    (
-      isOutgoingRequest: boolean,
-      tabId: string,
-      type: string,
-      key: string,
-      value: string | boolean
-    ) => {
-      if (key == "paramsTypematchType") {
-        //here we need only param radio buttons, not other "key" types
-        setParamsType(value as visibleRadioButton);
-      }
-    },
-    [setParamsType]
-  );
-
-  let apiEventsFormatted = null;
-  if (apiEvent) {
-    apiEventsFormatted = formatHttpEventToTabObject(
-      props.matchedRequestId,
-      [],
-      apiEvent
+  const getIcon = (value: boolean) => {
+    return value ? (
+      <i className="fa fa-check" style={{ color: "green", border: "1px #9ec59e solid" }}></i>
+    ) : (
+      <i className="fa fa-times" style={{ color: "red", border: "1px #ff9393 solid" }}></i>
     );
-  }
+  };
+
+  const {originalReqId, metaData: {matchedRequestId} } = props;
 
   return (
     <>
-      <div onClick={onClick} className={"requestMatch " + props.matchType}>
-        <Tippy content={titleText}  arrow={true} placement="bottom">
+      <div onClick={onClick} className={"requestMatch " + matchType}>
+        <Tippy content={titleText} arrow={true} placement="bottom">
           <svg width="25" height="13">
-            <rect
-              width="25"
-              height="13"
-              style={{ fill: fillColor, strokeWidth: 1, stroke: "gray" }}
-            />
+            <rect width="25" height="13" style={{ fill: fillColor, strokeWidth: 1, stroke: "gray" }} />
           </svg>
         </Tippy>
       </div>
-      <Modal show={matchRequestShowPopup} onHide={onHidePopup}>
-        <Modal.Header>
+      <Modal show={matchRequestShowPopup} onHide={onHidePopup} bsSize="large">
+        <Modal.Header closeButton>
           <Modal.Title>Matched Request Details</Modal.Title>
         </Modal.Header>
 
         <Modal.Body className={"text-center padding-15"}>
-          <div className="requestMatchTypeBody">
-            {apiEventsFormatted && (
-              <>
-              <HttpRequestMessage
-                id="matchType"
-                httpMethod={apiEventsFormatted.httpMethod}
-                httpURL={apiEventsFormatted.httpURL}
-                headers={apiEventsFormatted.headers}
-                queryStringParams={apiEventsFormatted.queryStringParams}
-                formData={apiEventsFormatted.formData}
-                multipartData={apiEventsFormatted.multipartData}
-                grpcData={apiEventsFormatted.grpcData}
-                rawData={apiEventsFormatted.rawData} //Check
-                rawDataType={apiEventsFormatted.rawDataType}
-                paramsType={paramsType}
-                bodyType={apiEventsFormatted.bodyType}
-                updateBodyOrRawDataType={() => {}}
-                isOutgoingRequest={false}
-                tabId=""
-                service={apiEventsFormatted.service}
-                updateParam={updateParamHandler}
-                readOnly={true}
-                disabled={false}
-              ></HttpRequestMessage>
-              <HttpRequestFields 
-                  tabId={""}
-                  showBody={false}
-                  showHeaders={false}
-                  showQueryParams={false}
-                  headers={apiEventsFormatted.headers} 
-                  queryStringParams={apiEventsFormatted.queryStringParams}
-                  formData={apiEventsFormatted.formData} 
-                  multipartData={apiEventsFormatted.multipartData} 
-                  rawData={apiEventsFormatted.rawData}
-                  rawDataType={apiEventsFormatted.rawDataType}
-                  paramsType={paramsType}
-                  grpcData={apiEventsFormatted.grpcData}
-                  addOrRemoveParam={() => {}} 
-                  updateParam={updateParamHandler}
-                  updateAllParams={() => {}}
-                  updateBodyOrRawDataType={() => {}}
-                  isOutgoingRequest={false} 
-                  id="matchType" 
-                  readOnly={true}
-              /></>
+          <Grid className="margin-left-15 text-left">
+            <Row>
+              <Col md={6}>
+                <label>Matched with current collection</label>
+              </Col>
+              <Col md={6}>{getIcon(isCollectionMatched)}</Col>
+            </Row>
+            {collectionName && (
+              <Row>
+                <Col md={6} style={{ paddingLeft: "42px" }}>
+                  <span className="text-muted">- Matched collection name</span>
+                </Col>
+                <Col md={6}>{collectionName}</Col>
+              </Row>
             )}
-            {errorMessage && <div style={{ color: "red" }}>{errorMessage}</div>}
-          </div>
+
+            <Row>
+              <Col md={6}>
+                <label>Matched with trace id</label>
+              </Col>
+              <Col md={6}>{getIcon(traceIdMatched)}</Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <label>Request matched exactly</label>
+              </Col>
+              <Col md={6}>{getIcon(payloadKeyMatched)}</Col>
+            </Row>
+          </Grid>
+          {originalReqId && matchedRequestId && matchRequestShowPopup && !payloadKeyMatched && (
+            <div className="requestMatchTypeBody">
+              <DiffRequestIds lhsReqId={originalReqId} rhsReqId={matchedRequestId} />
+            </div>
+          )}
         </Modal.Body>
 
         <Modal.Footer>
