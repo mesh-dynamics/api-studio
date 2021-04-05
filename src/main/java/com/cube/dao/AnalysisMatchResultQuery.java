@@ -12,7 +12,7 @@ import io.md.utils.Constants;
 
 public class AnalysisMatchResultQuery {
 
-	public final String replayId;
+	public final List<String> replayId;
 	public final Optional<String> service;
 	public final List<String> apiPaths;
 	public final Optional<Comparator.MatchType> reqMatchType;
@@ -30,7 +30,7 @@ public class AnalysisMatchResultQuery {
 	/*public final Optional<String> recParentSpanId;
 	public final Optional<String> replayParentSpanId*/
 
-	public AnalysisMatchResultQuery(String replayId) {
+	public AnalysisMatchResultQuery(List<String> replayId) {
 		this.replayId = replayId;
 		service = Optional.empty();
 		apiPaths = Collections.emptyList();
@@ -48,9 +48,13 @@ public class AnalysisMatchResultQuery {
 
 	}
 
+	public AnalysisMatchResultQuery(String replayId) {
+	    this(Collections.singletonList(replayId));
+    }
+
 
 	public AnalysisMatchResultQuery(String replayId, MultivaluedMap<String, String> queryParams) {
-		this.replayId =replayId;
+		this.replayId = Collections.singletonList(replayId);
 		this.service = Optional
 			.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
         this.apiPaths = Optional.ofNullable(queryParams.get(Constants.PATH_FIELD)) // the path to drill down on

@@ -27,9 +27,9 @@ import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
 
 import io.md.injection.DynamicInjectionConfig.StaticValue;
+import io.md.injection.InjectionExtractionMeta;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.text.NumberFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,11 +64,8 @@ import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.Pair;
 
-import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.ServerUtils;
-import com.cube.golden.TemplateSet;
 import com.cube.learning.DynamicInjectionGeneratedToActualConvertor;
-import com.cube.learning.InjectionExtractionMeta;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -86,6 +83,7 @@ import io.md.core.CompareTemplate.ComparisonType;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
 import io.md.dao.FnReqRespPayload.RetStatus;
+import io.md.services.CustAppConfigCache;
 import io.md.services.DSResult;
 import io.md.services.FnResponse;
 import io.md.utils.FnKey;
@@ -143,20 +141,40 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public boolean saveConfig(CustomerAppConfig cfg) {
-        return saveDocs(customerAppConfigToDoc(cfg));
+        boolean success = saveDocs(customerAppConfigToDoc(cfg));
+        // clear the customerId & app specific cache keys from all the inMem cache
+        config.pubSubMgr.publish(PubSubContext.IN_MEM_CACHE , Map.of(
+            io.md.cache.Constants.CUSTOMER_ID , cfg.customerId ,
+            io.md.cache.Constants.APP , cfg.app ));
+
+        return success;
     }
 
 	@Override
 	public Result<TemplateSet> getTemplateSetList(String customerId, String appId,
       Optional<String> templateSetName, Optional<String> templateSetLabel, Optional<Integer> start,
-      boolean includeEmpty) {
+      Optional<Integer> numOfResults) {
         SolrQuery templateSetQuery = new SolrQuery("*:*");
         addFilter(templateSetQuery, TYPEF, Types.TemplateSet.toString());
         addFilter(templateSetQuery, CUSTOMERIDF , customerId);
         addFilter(templateSetQuery, APPF, appId);
-        addFilter(templateSetQuery, TEMPLATE_SET_NAME_F, templateSetName, true, includeEmpty);
-        addFilter(templateSetQuery, TEMPLATE_SET_LABEL_F, templateSetLabel, true, includeEmpty);
-        return SolrIterator.getResults(solr, templateSetQuery, Optional.empty(),  solrDoc ->
+        String version;
+        // check templateSetLabel for empty so we don't add :: to the query
+      /**
+       * Check TemplateSetLabel is empty
+       * if yes, add version filter only with templateSetName followed by any String(takes empty label in consideration e.g DefaultMovieInfo)
+       * Else will add filter for version like Test::467
+       */
+       if(templateSetLabel.isEmpty()) {
+           version = templateSetName.orElse("*") + "*";
+       } else {
+           version = Utils.createTemplateSetVersion(templateSetName.orElse("*"), templateSetLabel.get());
+       }
+       addFilter(templateSetQuery, VERSIONF, version);
+      addSort(templateSetQuery, TIMESTAMPF, false);
+      //sort on ID is added for the templateSets having timestamp same
+      addSort(templateSetQuery, IDF, true);
+      return SolrIterator.getResults(solr, templateSetQuery, numOfResults,  solrDoc ->
             solrDocToTemplateSet(solrDoc, false), start);
 
 	}
@@ -175,7 +193,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         try (Jedis jedis = config.jedisPool.getResource()) {
             if (jedis.exists(collectionKey.toString())) {
                 String shadowKey = Constants.REDIS_SHADOW_KEY_PREFIX + collectionKey.toString();
-                int waitBeforeStopInt = getAppConfiguration(collectionKey.customerId,
+                int waitBeforeStopInt = CustAppConfigCache.getInstance(this).getCustomerAppConfig(collectionKey.customerId,
                     collectionKey.app).map(appConfig -> appConfig.stopWaitInterval)
                     .orElse(com.cube.ws.Config.REDIS_DELETE_TTL);
                 Long result = jedis.expire(shadowKey, waitBeforeStopInt);
@@ -1613,12 +1631,18 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return String.format(queryFmt, fieldname, startVal, endVal);
     }
 
-
     private static void addOrDateRangeFilter(SolrQuery query, List<String> fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive,
             boolean endInclusive) {
         String rangeQuery = fieldname.stream().map(v -> getDateRangeFilterString(v, startDate, endDate, startInclusive, endInclusive))
             .collect(Collectors.joining(" OR ", "( ", " )"));
         query.addFilterQuery(rangeQuery);
+    }
+
+    private static void addOrFilterInFields(SolrQuery query, Map<String, String> fieldValues) {
+        String orQuery = fieldValues.entrySet().stream().map
+            (entry -> String.format("%s:%s", entry.getKey(), SolrIterator.escapeQueryChars(entry.getValue())))
+            .collect(Collectors.joining(" OR ", "( ", " )"));
+        query.addFilterQuery(orQuery);
     }
 
     private static void addDateRangeFilter(SolrQuery query,String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
@@ -2112,13 +2136,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String EXTRACTION_METAS_TXT_JSON = CPREFIX + Constants.EXTRACTION_METAS_JSON_FIELD + TEXT_SUFFIX;
     private static final String INJECTION_METAS_STR_JSON = CPREFIX + Constants.INJECTION_METAS_JSON_FIELD + STRING_SUFFIX;
     private static final String INJECTION_METAS_TXT_JSON = CPREFIX + Constants.INJECTION_METAS_JSON_FIELD + TEXT_SUFFIX;
+    private static final String INJECTION_EXTRACTION_METAS_NI_JSON = CPREFIX + Constants.INJECTION_EXTRACTION_METAS_JSON_FIELD + NOTINDEXED_SUFFIX;
     private static final String STATIC_VALUES_TXT_JSON = CPREFIX + Constants.STATIC_INJECTION_MAP_FIELD + TEXT_SUFFIX;
     private static final String PARTIALMATCH = CPREFIX + "partialmatch" + STRING_SUFFIX;
 
 
     private static final String TRACERF = CPREFIX + TRACER_FIELD + STRING_SUFFIX;
     private static final String API_GEN_PATHS_F = CPREFIX + API_GEN_PATHS_FIELD + NOTINDEXED_SUFFIX;
-    private static final String STOP_WAIT_INTERVAL_F = CPREFIX + STOP_WAIT_INTERVAL_FIELD + INT_SUFFIX; ;
+    private static final String STOP_WAIT_INTERVAL_F = CPREFIX + STOP_WAIT_INTERVAL_FIELD + INT_SUFFIX;
+    private static final String FILTER_TRANSFORM_F = CPREFIX + FILTER_TRANSFORM_FIELD + NOTINDEXED_SUFFIX;
+
 
     static {
         fieldNameSolrMap.put(Constants.EVENT_TYPE_FIELD , EVENTTYPEF);
@@ -3438,11 +3465,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final Optional<String> tracer = getStrField(doc, TRACERF);
         final Optional<Map<String , String[]>> apiGenericPaths = getStrFieldMVFirst(doc , API_GEN_PATHS_F).flatMap(src-> deserialize(src , new TypeReference<Map<String , String[]>>(){} , "apiGenericPaths" ));
         final Optional<Integer> stopWaitInterval = getIntField(doc, STOP_WAIT_INTERVAL_F);
+        final Optional<List<FilterTransform>> filterTransforms = getStrFieldMVFirst(doc , FILTER_TRANSFORM_F).flatMap(src-> deserialize(src , new TypeReference<List<FilterTransform>>(){} , "filterTransforms" ));
 
         CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder(customerId.get() , app.get());
         tracer.ifPresent(builder::withTracer);
         apiGenericPaths.ifPresent(builder::withApiGenericPaths);
         stopWaitInterval.ifPresent(builder::withStopWaitInterval);
+        filterTransforms.ifPresent(builder::withFilterTransform);
         builder.withId(id.get());
 
         return Optional.of(builder.build());
@@ -3456,14 +3485,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(IDF , cfg.id);
         cfg.tracer.ifPresent(tracer->doc.setField(TRACERF , tracer));
         cfg.apiGenericPaths.ifPresent(genPaths->{
-            String genPathStr = null;
-            try{
-                genPathStr = this.config.jsonMapper.writeValueAsString(genPaths);
-            }catch(Exception e){
-                LOGGER.error("genPath serialization error" , e);
-            }
-            doc.setField(API_GEN_PATHS_F , genPathStr);
+            ServerUtils.serialize(genPaths).ifPresent(genPathStr->doc.setField(API_GEN_PATHS_F , genPathStr));
         });
+        if(!cfg.filterTransform.isEmpty()){
+            ServerUtils.serialize(cfg.filterTransform).ifPresent(filterTransformStr->doc.setField(FILTER_TRANSFORM_F , filterTransformStr));
+        }
         doc.setField(STOP_WAIT_INTERVAL_F , cfg.stopWaitInterval);
         return doc;
     }
@@ -3802,12 +3828,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         String extractionMetas;
         String injectionMetas;
         String staticValues;
+        String injectionExtractionMetas;
 
         final SolrInputDocument doc = new SolrInputDocument();
         try {
             extractionMetas = this.config.jsonMapper.writeValueAsString(dynamicInjectionConfig.extractionMetas);
             injectionMetas = this.config.jsonMapper.writeValueAsString(dynamicInjectionConfig.injectionMetas);
             staticValues = this.config.jsonMapper.writeValueAsString(dynamicInjectionConfig.staticValues);
+            injectionExtractionMetas = this.config.jsonMapper
+                .writeValueAsString(dynamicInjectionConfig.injectionExtractionMetas);
         } catch (Exception e) {
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
                 "Unable to convert extraction/injection metas to string")), e);
@@ -3821,6 +3850,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(EXTRACTION_METAS_TXT_JSON, extractionMetas);
         doc.setField(INJECTION_METAS_TXT_JSON, injectionMetas);
         doc.setField(STATIC_VALUES_TXT_JSON, staticValues);
+        doc.setField(INJECTION_EXTRACTION_METAS_NI_JSON, injectionExtractionMetas);
         doc.setField(APPF , dynamicInjectionConfig.app);
         doc.setField(CUSTOMERIDF , dynamicInjectionConfig.customerId);
         doc.setField(DYNAMIC_INJECTION_CONFIG_VERSIONF, dynamicInjectionConfig.version);
@@ -3864,6 +3894,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         List<StaticValue> staticValues = (List<StaticValue>) getStrField(doc, STATIC_VALUES_TXT_JSON)
             .flatMap(im -> deserialize(im, new TypeReference<List<StaticValue>>() {},
                 "staticValues")).orElse(Collections.emptyList());
+        List<InjectionExtractionMeta> injectionExtractionMetas = (List<InjectionExtractionMeta>) getStrFieldMVFirst(doc,
+            INJECTION_EXTRACTION_METAS_NI_JSON)
+            .flatMap(im -> deserialize(im, new TypeReference<List<InjectionExtractionMeta>>() {},
+                "injectionExtractionMetas")).orElse(Collections.emptyList());
 
         Optional<DynamicInjectionConfig> dynamicInjectionConfig = Optional.empty();
         Optional<String> app = getStrField(doc, APPF);
@@ -3874,7 +3908,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if(app.isPresent() && customerId.isPresent() && version.isPresent() && extractionMetas.isPresent() && injectionMetas.isPresent()) {
             dynamicInjectionConfig = Optional
                 .of(new DynamicInjectionConfig(version.get(), customerId.get(), app.get(), timestamp, extractionMetas.get(),
-                    injectionMetas.get(), staticValues));
+                    injectionMetas.get(), staticValues, injectionExtractionMetas));
         }
         else {
             LOGGER.error(new ObjectMessage(Map.of(

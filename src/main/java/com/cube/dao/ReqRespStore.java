@@ -18,6 +18,7 @@ import io.md.dao.ProtoDescriptorDAO;
 import io.md.dao.Recording.RecordingType;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
+import io.md.injection.InjectionExtractionMeta;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.AbstractMap;
@@ -46,12 +47,10 @@ import io.md.dao.Recording.RecordingStatus;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
 import io.md.injection.DynamicInjectionConfig;
-import com.cube.learning.InjectionExtractionMeta;
 import io.md.utils.Constants;
 
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
-import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 
 /**
@@ -736,7 +735,7 @@ public interface ReqRespStore extends DataStore {
 
 	Result<TemplateSet> getTemplateSetList (String customerId, String appId,
 			Optional<String> templateSetName, Optional<String> templateSetLabel, Optional<Integer> start,
-			boolean includeEmpty);
+			Optional<Integer> numOfResults);
 
 	public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp
 		, Optional<Predicate<Event>> eventFilter);
