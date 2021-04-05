@@ -550,7 +550,8 @@ class HttpClientTabs extends Component {
                 const parsedUrl = URL.parse(url),
                     parsedQueryParams = parse(parsedUrl.search);
                 let apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
-                let service = parsedUrl.host ? parsedUrl.host : "NA";
+                const httpURL = parsedUrl.href.replace(parsedUrl.search, "");
+                let service = getDefaultServiceName();
                 const traceDetails = getTraceDetailsForCurrentApp()
                 let {traceKeys, traceIdDetails: {traceId, traceIdForEvent}, spanId, parentSpanId} = traceDetails;
                 const customerId = user.customer_name;
@@ -587,7 +588,7 @@ class HttpClientTabs extends Component {
                         rawData = requestBody.raw;
                     }
                 }
-                const eventData = httpClientTabUtils.generateEventdata(app, customerId, traceDetails, service, unescape(apiPath), method, headers, queryParams, formData, rawData);
+                const eventData = httpClientTabUtils.generateEventdata(app, customerId, traceDetails, service, unescape(apiPath), method, headers, queryParams, formData, rawData, httpURL);
                 httpEventPairs.push({
                     request: eventData[0],
                     response: eventData[1]
