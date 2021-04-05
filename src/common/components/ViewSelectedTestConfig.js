@@ -373,8 +373,8 @@ class ViewSelectedTestConfig extends React.Component {
             this.showInstanceWarningModal();
             return;
         } 
-
-        if(!cube.selectedTemplateSetNameLabel) {
+        const {selectedTemplateSetName} = this.state;
+        if(!selectedTemplateSetName) {
             this.showTemplateSetWarningModal()
             return 
         }
@@ -533,7 +533,8 @@ class ViewSelectedTestConfig extends React.Component {
             return;
         }
 
-        if(!cube.selectedTemplateSetNameLabel) {
+        const {selectedTemplateSetName} = this.state;
+        if(!selectedTemplateSetName) {
             this.showTemplateSetWarningModal()
             return   
         }
@@ -648,7 +649,6 @@ class ViewSelectedTestConfig extends React.Component {
             cube: { 
                 selectedApp, 
                 selectedInstance,
-                selectedTemplateSetNameLabel,
             }, 
             authentication: { 
                 user: {
@@ -659,9 +659,8 @@ class ViewSelectedTestConfig extends React.Component {
             },
             dispatch 
         } = this.props;
-        const { recName } = this.state;
+        const { recName, selectedTemplateSetName, selectedTemplateSetLabel } = this.state;
         const recLabel = Date.now().toString();
-        const {name: selectedTemplateSetName, label: selectedTemplateSetLabel} = selectedTemplateSetNameLabel
 
         const recordUrl = `${config.recordBaseUrl}/start/${customer_name}/${selectedApp}/${selectedInstance}/${selectedTemplateSetName}`;
         const statusUrl = `${config.recordBaseUrl}/status/${customer_name}/${selectedApp}/${recName}/${recLabel}`;
@@ -764,7 +763,6 @@ class ViewSelectedTestConfig extends React.Component {
                 selectedGolden,
                 selectedApp, 
                 testConfig,
-                selectedTemplateSetNameLabel,
             }, 
             authentication: { 
                 user: { 
@@ -800,7 +798,7 @@ class ViewSelectedTestConfig extends React.Component {
         // const gatewayEndpointNoProtocol = encodeURIComponent(gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, '')); // drop the protocol
         const gatewayEndpointNoProtocol = gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, ''); // drop the protocol
 
-        const {name: selectedTemplateSetName, label: selectedTemplateSetLabel} = selectedTemplateSetNameLabel
+        const {selectedTemplateSetName, selectedTemplateSetLabel} = this.state;
         
         const searchParams = new URLSearchParams();
         searchParams.set('endPoint', gatewayEndpoint);
