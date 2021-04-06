@@ -258,7 +258,7 @@ export function setAsReferenceForEachRequest(tabToBeProcessed) {
 }
 
 
-export function generateEventdata(app, customerId, traceDetails, service, apiPath, method, requestHeaders, requestQueryParams, requestFormParams, rawData) {
+export function generateEventdata(app, customerId, traceDetails, service, apiPath, method, requestHeaders, requestQueryParams, requestFormParams, rawData, httpURL) {
     const timestamp = Date.now() / 1000;
     let path = apiPath ? apiPath.replace(/^\/|\/$/g, '') : "";
     let {traceIdDetails: {traceIdForEvent}, spanId, parentSpanId} = traceDetails;
@@ -287,7 +287,7 @@ export function generateEventdata(app, customerId, traceDetails, service, apiPat
         ],
         recordingType: "UserGolden",
         metaData: {
-
+            httpURL
         }
     };
     
@@ -320,7 +320,8 @@ export function generateEventdata(app, customerId, traceDetails, service, apiPat
         ],
         recordingType: "UserGolden",
         metaData: {
-
+            httpURL,
+            httpResolvedURL: httpURL
         }
     };
 

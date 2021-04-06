@@ -116,9 +116,24 @@ const mergeApplicationProtoFiles = (protoData) => {
     let mergedProtoData = {};
 
     if(files && files.length !== 0) {
-        files.forEach(key => { 
-            const packageName = protoData[key].package || "_"; //Some key value will be required in package name.
-            mergedProtoData[packageName] = { ...mergedProtoData[packageName], ...protoData[key] };
+        files.forEach(key => {
+            const protoDataSchemas = protoData[key];
+            
+            // check if there are entries other than the package,
+            // and that they also contain service/method schemas,
+            // and only then add them
+            let serviceMethodPresent = false; 
+            Object.entries(protoDataSchemas).forEach(([k, v]) => {
+                if (k !== "package" && v !== null && typeof(v) === "object") {
+                    serviceMethodPresent = true
+                }
+            })
+            if (!serviceMethodPresent) {
+                return
+            }
+
+            const packageName = protoDataSchemas.package || "_"; //Some key value will be required in package name
+            mergedProtoData[packageName] = { ...mergedProtoData[packageName], ...protoDataSchemas };
         });
     }
     return mergedProtoData;
