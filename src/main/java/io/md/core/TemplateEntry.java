@@ -183,7 +183,7 @@ public class TemplateEntry {
 			}
 		} else {
 			// ct is ignore and em is default - hence no need for further comparisons
-			return OK;
+			return OK_Ignore;
 		}
 	}
 
