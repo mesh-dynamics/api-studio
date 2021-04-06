@@ -67,7 +67,7 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
         });
         const currentService = mockConfigUtils.getCurrentService(this.props.service);
         const domain = currentService?.url || this.props.service;
-        if (!this.props.readOnly && (prevProps.selectedMockConfig !== this.props.selectedMockConfig || this.props.httpURL.indexOf(domain) != 0)) {
+        if (!this.props.readOnly && (prevProps.selectedMockConfig !== this.props.selectedMockConfig || (this.props.httpURL.indexOf(domain) != 0 && !this.props.isOutgoingRequest))) {
           this.handleServiceChange(this.props.service);
         }
     }
