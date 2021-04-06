@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.md.dao.MatchResultAggregate;
 import io.md.dao.Replay;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -79,6 +80,10 @@ public class TestReportController {
       String body = new String(responseForTimeliners.getBody());
       JsonNode json = jsonMapper.readTree(body);
       ArrayNode timelineResults = (ArrayNode) json.get("timelineResults");
+      final List<String> paths = new ArrayList<>();
+      if(!replay.paths.isEmpty() && !replay.excludePaths) {
+        paths.addAll(replay.paths);
+      }
       TimeLineData timeLineData = new TimeLineData();
       timelineResults.forEach(tr -> {
         String resultsBody = tr.get("results").toString();
@@ -86,8 +91,13 @@ public class TestReportController {
           List<MatchResultAggregate> results = jsonMapper
               .readValue(resultsBody, new TypeReference<List<MatchResultAggregate>>() {
               });
+          String resultReplayId = tr.get("replayId").asText();
+          if(resultReplayId.equals(replayId) && replay.excludePaths) {
+            List<String> currentReplayPaths = results.stream().filter(r -> r.path.isPresent()).map(r1-> r1.path.get()).collect(Collectors.toList());
+            paths.addAll(currentReplayPaths);
+          }
           results = results.stream()
-              .filter(r -> r.path.isPresent() && replay.paths.contains(r.path.get()))
+              .filter(r -> r.path.isPresent() && paths.contains(r.path.get()))
               .collect(Collectors.toList());
           results.forEach(result -> {
             PathResults pathResult;
