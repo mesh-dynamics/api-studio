@@ -24,7 +24,7 @@ public class AttributeMapSaveTest {
             // , @JsonProperty("customization") Optional<String> customization) {
             //
             ruleMap.put("/timestamp" , new TemplateEntry("/timestamp", CompareTemplate.DataType.Default,
-                CompareTemplate.PresenceType.Default, CompareTemplate.ComparisonType.Ignore
+                CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Ignore
                 , CompareTemplate.ExtractionMethod.Default, Optional.empty(), Optional.empty()));
 
             AttributeRuleMap attributeRuleMap = new AttributeRuleMap(ruleMap);

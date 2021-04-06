@@ -227,8 +227,6 @@ public class CompareTemplatesLearner {
         switch (resolution) {
 
             case OK_Ignore:
-            case OK_DefaultCT:
-            case OK_DefaultPT:
             case OK_Optional:
             case OK_OtherValInvalid:
                 // Diff conforms to existing rules, so no action required
@@ -328,21 +326,15 @@ public class CompareTemplatesLearner {
             PresenceType effectivePt = tm.getNewPt().orElse(tm.getCurrentPt());
             ComparisonType effectiveCt = tm.getNewCt().orElse(tm.getCurrentCt());
 
-            if (effectiveCt != ComparisonType.Default && effectivePt != PresenceType.Default){
-                // TODO: Handle the case when only one of them gets updated in the learned rules.
-                // Curerntly, we don't support creating a TemplateEntry with either Comparison
-                // or Presence types as Default.
-                CompareTemplate compareTemplate = templatesMap.computeIfAbsent(templateKey,
-                    k -> new CompareTemplateVersioned(Optional.of(tm.service), Optional.of(tm.apiPath),
-                        tm.getMethod(), tm.reqOrResp, new CompareTemplate()));
+            CompareTemplate compareTemplate = templatesMap.computeIfAbsent(templateKey,
+                k -> new CompareTemplateVersioned(Optional.of(tm.service), Optional.of(tm.apiPath),
+                    tm.getMethod(), tm.reqOrResp, new CompareTemplate()));
 
-                compareTemplate.addRule(
-                    new TemplateEntry(tm.getJsonPath(), tm.getDt(), effectivePt,
-                        effectiveCt, tm.getEm(), Optional.empty(),
-                        Optional.empty()));
-            }else{
-                LOGGER.error("Found default presence or comparison type for template " + tm.toString());
-            }
+            compareTemplate.addRule(
+                new TemplateEntry(tm.getJsonPath(), tm.getDt(), effectivePt,
+                    effectiveCt, tm.getEm(), Optional.empty(),
+                    Optional.empty()));
+
         });
 
         return new TemplateSet(customer, app, Instant.now(),
