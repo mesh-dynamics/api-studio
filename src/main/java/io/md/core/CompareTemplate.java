@@ -32,22 +32,20 @@ import io.md.utils.CommonUtils;
  *
  * Semantics:
  * Presence Type:
- * Required => if value missing in rhs -> ERR_Required
- * 		       if value missing in lhs, but present in rhs
- * 					if (comparison type is Ignore or Default)
- * 			    		-> OK_Ignore or OK
- *                  else
- * 			    		-> OK_OtherValInvalid
+ * Required =>            if value missing in rhs -> ERR_Required
+ *                        if value missing in lhs -> ERR_RequiredGolden
  *
- * Optional => If value missing in rhs -> OK_Optional
- *             If value missing in lhs -> OK_OtherValInvalid
+ * Optional =>            If value missing in rhs -> OK_Optional
+ *                        If value missing in lhs -> OK_Optional
  *
- * Default => If value missing in rhs -> OK_DefaultPT
- *            If value missing in lhs, but present in rhs
- * 				if (comparison type is Ignore or Default)
- * 			    	-> OK_Ignore or OK_DefaultCT
- *              else
- * 			    	-> OK_OtherValInvalid
+ * RequiredIfInGolden =>  If value missing in rhs -> ERR_Req
+ *                        If value missing in lhs -> OK_Optional
+ *
+ * RequiredIdentical =>   If value missing in rhs -> Err_Required
+ *                        If value missing in lhs -> Err_NewField
+ *
+ * ComparisonType and other types checked only for keys present in both lhs and rhs.
+ *
  */
 public class CompareTemplate {
 
@@ -77,17 +75,17 @@ public class CompareTemplate {
 	}
 
 	public enum PresenceType {
-		Required,
-		Optional,
-		Default // if not specified
+		Required, // Key should be present in both LHS and RHS
+		RequiredIdentical, // RHS should have exactly the same keys as LHS
+		RequiredIfInGolden, // RHS should at least have the keys in LHS
+		Optional
 	}
 
 	public enum ComparisonType {
 		Equal,
 		EqualOptional, // this is for cases where equality is desired, but not required.
 		// In retrieval scenario, objects satisfying equality should scored higher
-		Ignore,
-		Default // if not specified
+		Ignore
 	}
 
 	public enum ExtractionMethod {
@@ -231,52 +229,16 @@ public class CompareTemplate {
 		JsonPointer parentPointer = pathPointer.head();
 		if (parentPointer!=null) {
 			return get(parentPointer).flatMap(rule -> {
-				// Assumption is that rule.pt or rule.ct will never be set to default when the rule is being
-				// explicitly stated for a path. This will be ensured through validating template before registering.
-				if(rule.ct == ComparisonType.Default || rule.pt == PresenceType.Default) { // Ideally these should never be default
-					LOGGER.error("Internal logical error - ComparisonType/PresenceType is explicitly set to Default");
-					return Optional.empty();
-				} else {
-					return Optional.of(new TemplateEntryAsRule(origPath, DataType.Default, rule.pt, rule.ct
-						, CompareTemplate.ExtractionMethod.Default, Optional.empty(), Optional.empty()
+				return Optional
+					.of(new TemplateEntryAsRule(origPath, DataType.Default, rule.ptInheritance,
+						rule.ct, CompareTemplate.ExtractionMethod.Default, Optional.empty(),
+						Optional.empty()
 						, Optional.of(parentPointer.toString()), false));
-				}
+
 			}).orElseGet(() -> getInheritedRule(parentPointer, origPath));
 		} else {
-			return new TemplateEntryAsRule(new TemplateEntry(origPath, DataType.Default, PresenceType.Default, ComparisonType.Default)
+			return new TemplateEntryAsRule(new TemplateEntry(origPath, DataType.Default, PresenceType.Optional, ComparisonType.Ignore)
 				, Optional.empty(), false) ;
-		}
-	}
-
-	public void checkMatch(MultivaluedMap<String, String> lhsfmap, MultivaluedMap<String, String> rhsfmap,
-		Comparator.Match match, boolean needDiff) {
-
-		for (TemplateEntry rule: getRules()) {
-			List<String> lvals = CommonUtils.getCaseInsensitiveMatches(lhsfmap , rule.path);
-			List<String> rvals = CommonUtils.getCaseInsensitiveMatches(rhsfmap , rule.path);
-			if (rule.ct == ComparisonType.Equal || rule.ct == ComparisonType.EqualOptional) {
-				Comparator.Resolution resolution = OK;
-				Set<String> lset = new HashSet<>(lvals);
-				Set<String> rset = new HashSet<>(rvals);
-				// check if all values match
-				if (!lset.equals(rset)) {
-					if (rule.ct == ComparisonType.EqualOptional) { // for soft match, its ok to not match on the field val
-						resolution = OK_OptionalMismatch;
-					} else {
-						resolution = ERR_ValMismatch;
-					}
-				}
-				match.mergeStr(resolution, rule.path, needDiff, prefixpath, Optional.of(rset.toString()), Optional.of(lset.toString()));
-			} else {
-				// consider only the first val of the multivals
-				// TODO: mav have to revisit this later
-				Optional<String> lval = lvals.stream().findFirst();
-				Optional<String> rval = rvals.stream().findFirst();
-				rule.checkMatchStr(lval, rval, match, needDiff, prefixpath);
-			}
-			if ((match.mt == Comparator.MatchType.NoMatch) && !needDiff) {
-				break; // short circuit
-			}
 		}
 	}
 
@@ -287,14 +249,6 @@ public class CompareTemplate {
 	public ValidateCompareTemplate validate() {
 		boolean isValid = true;
 		String message = "";
-		Optional<TemplateEntry> invalidRuleOptional = getRules().stream().filter(rule -> (rule.ct == ComparisonType.Default || rule.pt == PresenceType.Default)).findFirst();
-		if(invalidRuleOptional.isPresent()) {
-			TemplateEntry invalidRule = invalidRuleOptional.get();
-			isValid = false;
-			message = "Invalid rule for path " + invalidRule.path + " :";
-			message += invalidRule.ct == ComparisonType.Default ? " ComparisonType set to Default." : "";
-			message += invalidRule.pt == PresenceType.Default ? " PresenceType set to Default." : "";
-		}
 		ValidateCompareTemplate validateCompareTemplate = new ValidateCompareTemplate(isValid, Optional.of(message));
 		return validateCompareTemplate;
 	}
@@ -319,7 +273,7 @@ public class CompareTemplate {
 	 */
 	public void addRule(TemplateEntry rule) {
 		TemplateEntry normalisedRule = new TemplateEntry(getNormalisedPath(rule.path).toString(),
-			rule.dt, rule.pt, rule.ct, rule.em, rule.customization, rule.arrayComparisionKeyPath);
+			rule.dt, rule.pt, null, rule.ct, rule.em, rule.customization, rule.arrayComparisionKeyPath);
 		rules.put(normalisedRule.path, normalisedRule);
 	}
 

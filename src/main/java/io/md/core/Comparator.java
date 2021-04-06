@@ -114,8 +114,6 @@ public interface Comparator {
 		OK_CustomMatch,
 		OK_OtherValInvalid, // the val to compare against does not exist or is not of right type
 		OK_OptionalMismatch, // vals mismatched but comparison type was EqualOptional (used in scoring case for prioritizing)
-		OK_DefaultPT, // Return when presence type is default.
-		OK_DefaultCT, // Return when both are present and ComparisonType is set to Default.
 		ERR_Required,
 		ERR_RequiredGolden,
 		ERR_ValMismatch,
