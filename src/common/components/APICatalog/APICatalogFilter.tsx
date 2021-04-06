@@ -144,15 +144,15 @@ class APICatalogFilter extends Component<IAPICatalogFilterProps> {
 
     render() {
         const { currentPage, cube, apiCatalog, gcBrowse: { userGoldens, actualGoldens } } = this.props;
-        const { diffRequestLeft, diffRequestRight, compareRequests, selectedSource, selectedService, selectedApiPath, selectedCollection, selectedGolden } = apiCatalog;
+        const { diffRequestLeft, diffRequestRight, compareRequests, selectedSource, selectedCollection, selectedGolden } = apiCatalog;
         const selectedItem: ICollectionDetails = findGoldenOrCollectionInSource({
                                 selectedSource, 
                                 selectedCollection, 
                                 selectedGolden, 
                                 userGoldens, 
-                                actualGoldens
+                                actualGoldens                               
                             });
-
+                                
         return (
             <div>
                 <AppManager />
