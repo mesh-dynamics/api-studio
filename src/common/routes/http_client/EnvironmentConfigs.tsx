@@ -28,6 +28,7 @@ export interface IMockConfigsProps{
     cube: ICubeState;
     dispatch: any;
     hideModal: () => void;
+    addServiceName? : string;
 }
 class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
     constructor(props: IMockConfigsProps) {
@@ -85,12 +86,23 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
 
 
             const currentMockConfigObject: any = mockConfigList.find(eachMockConfig => eachMockConfig.key === selectedMockConfig);
-
-            this.setState({ 
-                addNewMockConfig: false, 
-                selectedEditMockConfig: currentMockConfig, 
-                selectedEditMockConfigId: currentMockConfigObject.id 
-            });
+            if(currentMockConfigObject){
+                if(this.props.addServiceName){
+                    currentMockConfig.serviceConfigs.push({
+                        isMocked: false,
+                        service: this.props.addServiceName,
+                        url: "",
+                        servicePrefix: ""
+                    })
+                }
+                this.setState({ 
+                    addNewMockConfig: false, 
+                    selectedEditMockConfig: currentMockConfig, 
+                    selectedEditMockConfigId: currentMockConfigObject.id
+                });
+            }else{
+                this.handleAddNewMockConfig()
+            }
         }
 
         this.handleSelectedTabChange(tabIndexForEdit);
@@ -147,8 +159,13 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
 
     handleAddNewMockConfig = () => {
         let selectedEditMockConfig = {
-            name: "",
-            serviceConfigs: [],
+            name: this.props.addServiceName || "",
+            serviceConfigs: this.props.addServiceName ? [{
+                service: this.props.addServiceName, 
+                servicePrefix: "", 
+                url: "", 
+                isMocked: false,
+            }] : []
         }
         this.showMockConfigList(false)
         this.setState({selectedEditMockConfig, addNewMockConfig: true})

@@ -1103,7 +1103,8 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             const { service } = data;
             return {
                 ...state,
-                serviceToAddAction: service
+                serviceToAddAction: service,
+                showMockConfigList: !!service
             }
         }
         case httpClientConstants.DELETE_OUTGOING_REQ: {

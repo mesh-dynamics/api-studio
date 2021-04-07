@@ -38,6 +38,7 @@ class EnvironmentSection extends React.Component<
   IEnvironmentSectionProps,
   IEnvironmentSectionState
 > {
+  private serviceToAddAction = "";
   constructor(props : IEnvironmentSectionProps) {
     super(props);
     this.state = {
@@ -51,6 +52,7 @@ class EnvironmentSection extends React.Component<
   componentDidUpdate(){
     if(this.props.serviceToAddAction != this.state.prevServiceToAddAction){
       if(this.props.serviceToAddAction){
+        this.serviceToAddAction = this.props.serviceToAddAction;
         this.setState({tabIndexForEdit: 1, showMockConfigModal: true, prevServiceToAddAction: this.props.serviceToAddAction});
         this.props.dispatch(httpClientActions.updateAddToService(undefined))
       }else{
@@ -144,6 +146,7 @@ class EnvironmentSection extends React.Component<
   hideMockConfigModal = () => {
     const { dispatch } = this.props;
     dispatch(httpClientActions.resetMockConfigStatusText());
+    this.serviceToAddAction = "";
     this.setState({ showMockConfigModal: false, tabIndexForEdit: 0 });
   };
 
@@ -339,6 +342,7 @@ class EnvironmentSection extends React.Component<
           <EnvironmentConfigs 
             tabIndexForEdit={tabIndexForEdit}
             hideModal={this.hideMockConfigModal} 
+            addServiceName={this.serviceToAddAction}
           />
         </Modal>
       </Fragment>
