@@ -3,6 +3,8 @@
  */
 package com.cube.ws;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Executors;
@@ -96,12 +98,14 @@ public class Config {
     public final PubSubMgr pubSubMgr;
 
     public static class JedisConnResourceProvider {
+    	public static final Duration PING_WAIT = Duration.ofMillis(1000);
 	    private final GenericObjectPoolConfig poolConfig;
 	    private final String redisHost;
 	    private final int redisPort;
 	    private final int timeout;
 	    private final String redisPassword;
     	private JedisPool pool;
+    	private Instant lastPingTime = Instant.now();
 
 	    private JedisPool getPool(){
 			return new JedisPool(poolConfig , redisHost, redisPort , timeout,  redisPassword);
@@ -120,8 +124,8 @@ public class Config {
 	    	Jedis jedis;
 		    try{
 			    jedis = pool.getResource();
-			    jedis.ping();
-		    } catch (JedisException e) {
+			    pingIfRequired(jedis);
+		    } catch (Exception e) {
 		    	LOGGER.error("Jedis pool resource fetch error "+e.getMessage() , e);
 			    pool.destroy();
 			    LOGGER.info("destroyed redis Pool. Creating again");
@@ -130,6 +134,14 @@ public class Config {
 			    jedis = pool.getResource();
 		    }
 		    return jedis;
+	    }
+
+	    private void pingIfRequired(Jedis jedis){
+	    	Instant now = Instant.now();
+		    if(Duration.between(lastPingTime , now).compareTo(PING_WAIT)>0){
+				jedis.ping();
+				lastPingTime = now;
+		    }
 	    }
 
 	    public JedisPool getJedisPool() {
