@@ -4,25 +4,22 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.cache.Constants.PubSubContext;
 import io.md.utils.CubeObjectMapperProvider;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 
-import com.cube.ws.Config.JedisPoolResourceProvider;
+import com.cube.ws.Config.JedisConnResourceProvider;
 
 public class PubSubMgr {
 
 	Logger LOGGER = LogManager.getLogger(PubSubMgr.class);
-	private final JedisPoolResourceProvider jedisPool;
+	private final JedisConnResourceProvider jedisPool;
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
-	public PubSubMgr(JedisPoolResourceProvider jedisPool){
+	public PubSubMgr(JedisConnResourceProvider jedisPool){
 		this.jedisPool = jedisPool;
 	}
 

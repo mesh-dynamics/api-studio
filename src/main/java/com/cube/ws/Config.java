@@ -40,7 +40,6 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.exceptions.JedisException;
 
-import com.cube.cache.ComparatorCache;
 import com.cube.cache.RedisPubSub;
 import com.cube.cache.TemplateCache;
 import com.cube.dao.ReqRespStore;
@@ -70,7 +69,7 @@ public class Config {
 	// Adding a compare template cache
     public final TemplateCache templateCache;
 
-	public final JedisPoolResourceProvider jedisPool;
+	public final JedisConnResourceProvider jedisPool;
 
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
@@ -96,7 +95,7 @@ public class Config {
 
     public final PubSubMgr pubSubMgr;
 
-    public static class JedisPoolResourceProvider{
+    public static class JedisConnResourceProvider {
 	    private final GenericObjectPoolConfig poolConfig;
 	    private final String redisHost;
 	    private final int redisPort;
@@ -107,7 +106,7 @@ public class Config {
 	    private JedisPool getPool(){
 			return new JedisPool(poolConfig , redisHost, redisPort , timeout,  redisPassword);
 	    }
-	    JedisPoolResourceProvider(GenericObjectPoolConfig poolConfig, String host, int port, int timeout, String password){
+	    JedisConnResourceProvider(GenericObjectPoolConfig poolConfig, String host, int port, int timeout, String password){
 	    	this.poolConfig = poolConfig;
 	    	this.redisHost = host;
 	    	this.redisPort = port;
@@ -189,7 +188,7 @@ public class Config {
             JedisPoolConfig poolConfig = new JedisPoolConfig();
             poolConfig.setTestOnBorrow(true);
             //poolConfig.setTestOnReturn(true);
-	        jedisPool = new JedisPoolResourceProvider(poolConfig , redisHost, redisPort , 2000,  redisPassword);
+	        jedisPool = new JedisConnResourceProvider(poolConfig , redisHost, redisPort , 2000,  redisPassword);
             REDIS_DELETE_TTL = Integer.parseInt(fromEnvOrProperties("redis_delete_ttl"
                 , "20"));
             LOGGER.info("REDIS TTL for record/replay after stop : " + REDIS_DELETE_TTL + " sec");
