@@ -14,14 +14,16 @@ import io.md.utils.CubeObjectMapperProvider;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import com.cube.ws.Config.JedisPoolResourceProvider;
+
 public class PubSubMgr {
 
 	Logger LOGGER = LogManager.getLogger(PubSubMgr.class);
-	private final Jedis jedis;
+	private final JedisPoolResourceProvider jedisPool;
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
-	public PubSubMgr(JedisPool pool){
-		jedis = pool.getResource();
+	public PubSubMgr(JedisPoolResourceProvider jedisPool){
+		this.jedisPool = jedisPool;
 	}
 
 	public Long publish(PubSubContext context , Map data){
@@ -29,7 +31,7 @@ public class PubSubMgr {
 		try {
 			String strMsg =  jsonMapper.writeValueAsString(new ChannelMsg(context , data));
 			LOGGER.info("Publishing Msg "+strMsg);
-			return jedis.publish(PubSubChannel.MD_PUBSUB_CHANNEL_NAME, strMsg);
+			return jedisPool.getResource().publish(PubSubChannel.MD_PUBSUB_CHANNEL_NAME, strMsg);
 		} catch (JsonProcessingException e) {
 			LOGGER.error("Publish Msg Json Serialization error "+e.getMessage() , e);
 			return -1L;
