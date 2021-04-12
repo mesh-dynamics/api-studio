@@ -17,7 +17,7 @@ const platformNames = {
 
 const jreZipFileName = {
     LINUX: 'OpenJDK14U-jre_x64_linux_openj9_14.0.2_12_openj9-0.21.0.tar.gz',
-    MAC: 'OpenJDK14U-jre_x64_mac_openj9_14.0.2_12_openj9-0.21.0.tar.gz',
+    MAC: 'jdk-14.0.2+12-jre.tar.gz',
     WINDOWS: 'OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip'
     // LINUX: 'jre-8u281-linux-i586.tar.gz',
     // MAC: 'jre-8u281-macosx-x64.tar.gz',
