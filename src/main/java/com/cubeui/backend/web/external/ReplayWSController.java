@@ -229,6 +229,6 @@ public class ReplayWSController {
                     file.getOriginalFilename()));
             }
         }
-        return cubeServerService.fetchGetResponse(request, body);
+        return cubeServerService.fetchPostResponse(request, body);
     }
 }
