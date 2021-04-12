@@ -641,6 +641,7 @@ export interface IHttpClientStoreState {
   userApiTraceHistory: IUserApiTraceHistory[];
   userCollectionId: string;
   userCollections: ICollectionDetails[];
+  allUserCollections: ICollectionDetails[];
   userHistoryCollection: ICollectionDetails | null;
   mockContextLookupCollection: string;
   mockContextSaveToCollection: ICollectionDetails;

@@ -313,6 +313,7 @@ function setSelectedApp (app) {
             dispatch(httpClientActions.loadFromHistory());
             dispatch(httpClientActions.loadUserCollections());
             dispatch(httpClientActions.loadProtoDescriptor());
+            dispatch(httpClientActions.addAllUserCollections([]));
         });
     }
 }

@@ -153,6 +153,10 @@ export const httpClientActions: IActionsType = {
     addUserCollections: (userCollections) => {
         return {type: httpClientConstants.ADD_USER_COLLECTIONS, data: {userCollections, isCollectionLoading: false}};
     },
+
+    addAllUserCollections: (userCollections) => {
+        return {type: httpClientConstants.ADD_ALL_USER_COLLECTIONS, data: {userCollections}};
+    },
     deleteUserCollection: (userCollectionId) => {
         return {type: httpClientConstants.DELETE_USER_COLLECTION, data: userCollectionId};
     },
@@ -572,6 +576,20 @@ export const httpClientActions: IActionsType = {
                 dispatch(httpClientActions.setCollectionTabState({...collectionTabState, currentPage: (collectionTabState.currentPage - 1)}));
                 dispatch(httpClientActions.loadUserCollections(false));
             }
+        } catch (error) {
+            console.error("Error ", error);
+            throw new Error("Error");
+        }
+    },
+    loadAllUserCollections: (numResults: number) => async(dispatch, getState) =>{
+        const { cube: {selectedApp}, httpClient: {collectionTabState}, authentication: { user } } = getState();
+        let app = selectedApp;
+        try {
+            const response = await cubeService.fetchCollectionList(user, app!, "UserGolden", true, numResults);
+            const serverRes = response.recordings;
+            const userCollections = serverRes.filter((eachCollection) => (eachCollection.recordingType !== "History"))
+            dispatch(httpClientActions.addAllUserCollections(userCollections));
+            
         } catch (error) {
             console.error("Error ", error);
             throw new Error("Error");

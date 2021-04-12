@@ -737,6 +737,13 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 isCollectionLoading: data.isCollectionLoading
             }
         }
+
+        case httpClientConstants.ADD_ALL_USER_COLLECTIONS: {
+            return {
+                ...state,
+                allUserCollections: data.userCollections
+            }
+        }
         case httpClientConstants.DELETE_USER_COLLECTION: {
             let deletedCollection: ICollectionDetails;
             const userCollections = state.userCollections.filter(collection => {
