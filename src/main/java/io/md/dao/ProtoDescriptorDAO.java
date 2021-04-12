@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -126,21 +127,29 @@ public class ProtoDescriptorDAO {
 					String fieldName = fieldDescriptor.getName();
 					String type = fieldDescriptor.getType().name();
 					String typeName = fieldDescriptor.getTypeName();
+					String label = fieldDescriptor.getLabel().name();
+					JsonNode valueNode = null;
 					if (type.equals("TYPE_INT32") || type.equals("TYPE_INT64") ||
 						type.equals("TYPE_UINT32") || type.equals("TYPE_UINT64") ||
 						type.equals("TYPE_SINT32") || type.equals("TYPE_FIXED32") ||
 						type.equals("TYPE_FIXED64")) {
-						typeNode.set(fieldName, JsonNodeFactory.instance.numberNode(10));
+						valueNode = JsonNodeFactory.instance.numberNode(10);
 					} else if (type.equals("TYPE_FLOAT") || type.equals("TYPE_DOUBLE")) {
-						typeNode.set(fieldName, JsonNodeFactory.instance.numberNode(1.1));
+						valueNode = JsonNodeFactory.instance.numberNode(1.1);
 					} else if (type.equals("TYPE_BOOL")) {
-						typeNode.set(fieldName, JsonNodeFactory.instance.booleanNode(true));
+						valueNode =  JsonNodeFactory.instance.booleanNode(true);
 					} else if (type.equals("TYPE_STRING")) {
-						typeNode.set(fieldName, JsonNodeFactory.instance.textNode("Hello"));
+						valueNode =  JsonNodeFactory.instance.textNode("Hello");
 					} else if (type.equals("TYPE_MESSAGE")) {
-						typeNode.set(fieldName, typeMap
-							.get(typeName.substring(typeName.lastIndexOf(".") + 1)));
+						valueNode = typeMap
+							.get(typeName.substring(typeName.lastIndexOf(".") + 1));
 					}
+					if (valueNode!=null  && !label.isEmpty() && label.equals("LABEL_REPEATED")) {
+						ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
+						arrayNode.add(valueNode);
+						valueNode = arrayNode;
+					}
+					if (valueNode != null) typeNode.set(fieldName, valueNode);
 				}
 			});
 
