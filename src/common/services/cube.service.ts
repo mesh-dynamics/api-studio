@@ -108,7 +108,7 @@ const getTestConfigByAppId = async (appId: string) => {
     }
 };
 
-const createUserCollection = async (user: IUserAuthDetails, collectionName: string, app: string, templateSetName: string, templateSetLabel: string) => {
+const createUserCollection = async (user: IUserAuthDetails, collectionName: string, app: string, templateSetName: string, templateSetLabel: string="") => {
     const userId = user.username;
     const searchParams = new URLSearchParams();
 
@@ -116,7 +116,7 @@ const createUserCollection = async (user: IUserAuthDetails, collectionName: stri
     searchParams.set("userId", userId);
     searchParams.set("label", userId);
     searchParams.set("recordingType", "UserGolden");
-    searchParams.set("templateSetLabel", templateSetLabel);
+    templateSetLabel && searchParams.set("templateSetLabel", templateSetLabel);
 
     const configForHTTP = {
         headers: {
