@@ -4,7 +4,7 @@ import React from "react";
  */
 export interface IExternalLinkProps {
   link: string;
-  children: React.ReactChild[];
+  children: React.ReactChild[] | React.ReactChild;
 }
 
 export function ExternalLink(props: IExternalLinkProps) {

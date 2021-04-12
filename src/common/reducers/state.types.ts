@@ -535,6 +535,7 @@ export interface IHttpClientTabDetails {
   grpcConnectionSchema: IGrpcConnect;
   hideInternalHeaders: boolean;
   requestPathURL: string;
+  authorized?: any;
 }
 
 export interface IHttpTrailers {

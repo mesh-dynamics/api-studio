@@ -100,8 +100,8 @@ export const httpClientActions: IActionsType = {
         return {type: httpClientConstants.PRE_DRIVE_REQUEST, data: {tabId, responseStatus, showCompleteDiff, runId}}; 
     },
 
-    postSuccessDriveRequest: (tabId, responseStatus, responseStatusText, responseHeaders, responseBody, responseTrailers) => {
-        return {type: httpClientConstants.POST_SUCCESS_DRIVE_REQUEST, data: {tabId, responseStatus, responseStatusText, responseHeaders, responseBody, responseTrailers}}; 
+    postSuccessDriveRequest: (tabId, responseStatus, responseStatusText, responseHeaders, responseBody, responseTrailers, authorized) => {
+        return {type: httpClientConstants.POST_SUCCESS_DRIVE_REQUEST, data: {tabId, responseStatus, responseStatusText, responseHeaders, responseBody, responseTrailers, authorized}}; 
     },
 
     afterResponseReceivedData: (tabId, responseBody) => {
@@ -728,8 +728,8 @@ export const httpClientActions: IActionsType = {
         return { type: httpClientConstants.TOGGLE_HIDE_INTERNAL_HEADERS, data : {tabId} }
     },
 
-    updateTabWithNewData: (tabId, reqData, collectionId, recordingId) => {
-        return {type: httpClientConstants.UPDATE_TAB_WITH_NEW_DATA, data: {tabId, reqData, collectionId, recordingId}}   
+    updateTabWithNewData: (tabId, reqData, collectionId, recordingId, collectionName) => {
+        return {type: httpClientConstants.UPDATE_TAB_WITH_NEW_DATA, data: {tabId, reqData, collectionId, recordingId, collectionName}}   
     },
 
     updateOutgoingTabWithNewData: (tabId, outgoingTabId, reqData, collectionId, recordingId) => {

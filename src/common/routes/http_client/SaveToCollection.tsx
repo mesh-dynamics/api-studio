@@ -216,7 +216,8 @@ class SaveToCollection extends React.Component<
           tabToProcess.id,
           savedIngressRequestData,
           collection!.collec,
-          collection!.id))
+          collection!.id,
+          collection!.name))
 
         // update outgoing requests
         for(let i = 0; i < tabToProcess.outgoingRequests.length; i++) {

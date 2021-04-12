@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { FormGroup, FormControl, Grid, Row, Col } from "react-bootstrap";
 import _ from "lodash";
+import Tippy from '@tippy.js/react';
 // import "./styles_here.css";
 
 import HttpResponseHeaders, {
@@ -8,6 +9,7 @@ import HttpResponseHeaders, {
 } from "./HttpResponseHeaders";
 import HttpResponseBody, { IHttpResponseBodyProps } from "./HttpResponseBody";
 import ResponseStatusEditable from "./ResponseStatusEditable";
+import { ExternalLink } from "../app/ExternalLink";
 
 export interface IHttpResponseMessageProps
   extends IHttpResponseHeadersProps,
@@ -276,6 +278,14 @@ class HttpResponseMessage extends Component<
                   isGrpc={isGrpcRHS}
                 />
               </span>
+              {
+                !isGrpcRHS && !requestRunning && [401, 403, "401", "403"].includes(responseStatus) &&
+                <ExternalLink link="https://meshdynamics.helpdocs.io/article/muxhovnqf7-using-bearer-tokens"> 
+                  <Tippy content="Please refer to our documentation on how to propagate auth tokens for APIs that require authentication." arrow={false} arrowType="round" interactive={true} size="large" placement="top">
+                     <i className="far fa-question-circle margin-left-5"></i>
+                  </Tippy>
+                </ExternalLink>
+              }
 
               <div style={{ float: "right" }}>
                 <span

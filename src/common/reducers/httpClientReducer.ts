@@ -564,8 +564,9 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab["responseStatus"] = data.responseStatus;
                         eachTab["responseStatusText"] = data.responseStatusText;
                         eachTab["progressState"] = httpClientConstants.POST_SUCCESS_DRIVE_REQUEST;
-                        eachTab["responsePayloadState"] = "WrappedEncoded"
-                        eachTab["responseTrailers"] = data.responseTrailers
+                        eachTab["responsePayloadState"] = "WrappedEncoded";
+                        eachTab["responseTrailers"] = data.responseTrailers;
+                        eachTab["authorized"] = data.authorized;
                     }
                     return eachTab;
                 })
@@ -1237,13 +1238,14 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
             if (tabIndex < 0) return state;
             tabs[tabIndex] = {...tabs[tabIndex]};
-            const {reqData, collectionId, recordingId} = data;
+            const {reqData, collectionId, recordingId, collectionName} = data;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab.requestId = reqData.newReqId;
                         eachTab.collectionIdAddedFromClient = collectionId;
+                        eachTab.collectionNameAddedFromClient = collectionName;
                         eachTab.traceIdAddedFromClient = reqData.newTraceId;
                         eachTab.recordingIdAddedFromClient = recordingId;
                         eachTab.eventData[0].reqId = reqData.newReqId;

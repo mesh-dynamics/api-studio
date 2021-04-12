@@ -783,11 +783,11 @@ class HttpClientTabs extends Component {
         }
     }
 
-    async driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData, responseTrailers={}, preRequestResult){
+    async driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData, responseTrailers={}, preRequestResult, authorized){
         const {httpClient: { userHistoryCollection}, dispatch} = this.props;
         const resTimestamp = Date.now() / 1000;
     
-        dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders), bodyData, responseTrailers));
+        dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders), bodyData, responseTrailers, authorized));
         this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment, preRequestResult);
     }
      async driveRequestHandleError(error, tabId, runId){
@@ -964,7 +964,7 @@ class HttpClientTabs extends Component {
                             bodyData = await response.text();
                         }
 
-                        this.driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData, responseTrailers, preRequestResult);
+                        this.driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData, responseTrailers, preRequestResult, response.authorized);
                     } catch (error) {
                         this.driveRequestHandleError(error, tabId, runId);
                     }
