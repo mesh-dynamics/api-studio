@@ -143,7 +143,7 @@ const afterResponse = async (recordingId: string, data: any, apiConfig = {}, env
     return api.post(urlToPost, data, apiConfig);
 }
 
-const fetchCollectionList = async (user: IUserAuthDetails, app: string, recordingType = "", forCurrentUser = false, numResults = 0, start = 0) => {
+const fetchCollectionList = async (user: IUserAuthDetails, app: string, recordingType = "", forCurrentUser = false, numResults = 0, start = 0, nameFilter: string, codeVersionFilter: string, branchFilter: string, recordingIdFilter: string) => {
     try {
         let url = `${config.recordBaseUrl}/searchRecording`;
         const params = new URLSearchParams();
@@ -155,6 +155,11 @@ const fetchCollectionList = async (user: IUserAuthDetails, app: string, recordin
         forCurrentUser && params.set("userId", user.username);
         numResults && params.set("numResults", `${numResults}`);
         start && params.set("start", `${start}`);
+        
+        nameFilter && params.set("golden_name", nameFilter)
+        codeVersionFilter && params.set("code_version", codeVersionFilter)
+        branchFilter && params.set("branch", branchFilter)
+        recordingIdFilter && params.set("recordingId", recordingIdFilter)
 
         return await api.get(url + "?" + params.toString()) as any as ICollectionListApiResponse;
     } catch (error) {

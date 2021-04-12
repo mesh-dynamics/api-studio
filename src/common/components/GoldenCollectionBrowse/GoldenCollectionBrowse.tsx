@@ -13,6 +13,7 @@ import commonUtils from '../../utils/commonUtils';
 import gcbrowseActions from '../../actions/gcBrowse.actions';
 import './GoldenCollectionBrowse.css';
 import { defaultCollectionItem } from '../../constants';
+import { CubeButton } from "../../components/common/CubeButton";
 
 declare type SelectedSourceType = "UserGolden" | "Golden";
 export interface IGoldenCollectionBrowseProps {
@@ -28,9 +29,11 @@ export interface IGoldenCollectionBrowseProps {
     selectedGoldenOrCollectionItem: ICollectionDetails;
     handleViewGoldenClick?: () => void;
     deleteGolden: (selectedItemId: string, selectedSource: string) => void,
-    fetchGoldensCollections: (selectedSource: SelectedSourceType) => void;
+    fetchGoldensCollections: (selectedSource: SelectedSourceType, start: number, numResults: number, nameFilter: string, versionFilter: string, branchFilter: string, idFilter: string) => void;
     handleChangeCallback: (selectedItem: ICollectionDetails) => void;
 }
+
+const numResults = 20
 
 const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
     const {
@@ -67,6 +70,8 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
 
     const [versionFilter, setVersionFilter] = useState('');
 
+    const [start, setStart] = useState(0);
+
     const goldenCollectionSelectorClass = classNames("gcBrowse-selected-item-wrapper", {
         ["gcBrowse-selected-group"]: showGrouping
     })
@@ -88,7 +93,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
      */
 
     const handleShowGoldenFilter = () => {
-        fetchGoldensCollections(selectedSource);
+        setStart(0)
         setShowGoldenCollectionModal(true);
     };
 
@@ -119,14 +124,18 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
         setShowDeleteGoldenConfirm(false);
     }
 
+    const handleCancelClick = () => {
+        setShowGoldenCollectionModal(false);
+    }
+
     // End of handlers
 
     /**
      * Effects are here
      */
     useEffect(
-        () => { fetchGoldensCollections(selectedSource) },
-        [selectedSource, selectedApp]
+        () => { fetchGoldensCollections(selectedSource, start, numResults, nameFilter ? nameFilter + "*" : "", versionFilter, branchFilter, idFilter ? idFilter + "*" : "") },
+        [selectedSource, selectedApp, start, nameFilter, branchFilter, versionFilter, idFilter]
     );
     // End of Effects
 
@@ -134,22 +143,6 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
     const renderCollectionTable = () => {
         // let collectionList = cube.testIds;
         let collectionList: ICollectionDetails[] = (selectedSource === 'Golden' ? actualGoldens.recordings : userGoldens.recordings);
-
-        if (nameFilter) {
-            collectionList = collectionList.filter(item => item.name.toLowerCase().includes(nameFilter.toLowerCase()));
-        }
-
-        if (branchFilter) {
-            collectionList = collectionList.filter(item => item.branch && item.branch.toLowerCase().includes(branchFilter.toLowerCase()));
-        }
-
-        if (versionFilter) {
-            collectionList = collectionList.filter(item => item.codeVersion && item.codeVersion.toLowerCase().includes(versionFilter.toLowerCase()));
-        }
-
-        if (idFilter) {
-            collectionList = collectionList.filter(item => item.id.toLowerCase().includes(idFilter.toLowerCase()));
-        }
 
         if (!collectionList || collectionList.length == 0) {
             return <tr><td colSpan={5}>NO DATA FOUND</td></tr>
@@ -165,7 +158,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
                 <td>{item.name}</td>
                 <td>{item.label}</td>
                 <td>{item.id}</td>
-                <td>{commonUtils.getFormattedDate(new Date(item.timestmp * 1000))}</td>
+                <td>{new Date(item.timestmp * 1000).toLocaleString()}</td>
                 <td>{item.userId}</td>
                 <td>{item.prntRcrdngId}</td>
             </tr>
@@ -175,7 +168,16 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
         return trList;
     }
 
+    const goToNextPage = () => {
+        setStart(start + numResults)
+    }
 
+    const goToPrevPage = () => {
+        setStart(start - numResults)
+    }
+
+    const totalNumResults = (selectedSource === 'Golden' ? actualGoldens.numFound : userGoldens.numFound)
+    const numResultsLength = (selectedSource === 'Golden' ? actualGoldens.recordings.length : userGoldens.recordings.length)
     return (
         <div className="margin-top-10">
             <div className="label-n">
@@ -291,8 +293,8 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
                                                 <td className="bold">Name</td>
                                                 <td className="bold" style={{ minWidth: "100px" }}>Label</td>
                                                 <td className="bold" style={{ minWidth: "175px" }}>ID</td>
-                                                <td className="bold">Date</td>
-                                                <td className="bold">Created By</td>
+                                                <td className="bold">Created on</td>
+                                                <td className="bold">Created by</td>
                                                 <td className="bold">Parent ID</td>
                                             </tr>
                                         </thead>
@@ -306,9 +308,24 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
 
                 </Modal.Body>
                 <Modal.Footer>
+                    <div className="pull-left">
+                        <CubeButton 
+                        faIcon="fa-caret-left" 
+                        onClick={goToPrevPage} 
+                        className={classNames({"disabled": start <= 0})} 
+                        style={{marginRight: 0}}
+                        />
+                        <CubeButton 
+                        faIcon="fa-caret-right" 
+                        onClick={goToNextPage} 
+                        className={classNames({"disabled": start + numResults >= totalNumResults})} 
+                        style={{marginLeft: 0}}
+                        />
+                        <span>{isCollectionLoading ? "Loading..." : <>Displaying <strong>{start} - {start + numResultsLength}</strong> of {totalNumResults}</>}</span>
+                    </div>
                     <span onClick={selectHighlighted} className={selectedFilterItem.collec ? "cube-btn" : "disabled cube-btn"}>Select</span>&nbsp;&nbsp;
-                        {showDeleteOption && <span onClick={() => setShowDeleteGoldenConfirm(true)} className={selectedFilterItem.collec ? "cube-btn" : "disabled cube-btn"}>Delete</span>}&nbsp;&nbsp;
-                        <span onClick={() => setShowGoldenCollectionModal(false)} className="cube-btn">Cancel</span>
+                    {showDeleteOption && <span onClick={() => setShowDeleteGoldenConfirm(true)} className={selectedFilterItem.collec ? "cube-btn" : "disabled cube-btn"}>Delete</span>}&nbsp;&nbsp;
+                    <span onClick={handleCancelClick} className="cube-btn">Cancel</span>
                 </Modal.Footer>
             </Modal>
             <Modal show={showDeleteGoldenConfirm} onHide={() => { }}>
@@ -336,8 +353,8 @@ const mapStateToProps = (state: IStoreState) => ({
 
 const mapDispatchToProps = (dispatch: any) => ({
     fetchGoldensCollections:
-        (selectedSource: SelectedSourceType) =>
-            dispatch(gcbrowseActions.fetchGoldensCollections(selectedSource)),
+        (selectedSource: SelectedSourceType, start: number, numResults: number, nameFilter: string, versionFilter: string, branchFilter: string, idFilter: string) =>
+            dispatch(gcbrowseActions.fetchGoldensCollections(selectedSource, start, numResults, nameFilter, versionFilter, branchFilter, idFilter)),
 
     deleteGolden:
         (selectedItemId: string, selectedSource: string) =>
