@@ -103,29 +103,6 @@ public class RealMocker implements Mocker {
                 });
             }
             
-            if(mockWColl.isDevtool && !matchingResponse.isPresent()){
-                LOGGER.info(createMockReqErrorLogMessage(reqEvent,
-                        "Did not find any valid success response. Giving first match resp"));
-                //If there is no success match then get the first latest match.
-                //JoinQuery - Empty
-                eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
-                    false , lowerBoundForMatching, mockWColl.recordCollection ,
-                    payloadFieldFilterList , Optional.empty() , mockWColl.isDevtool , Optional.empty() , true);
-                res = cube.getEvents(eventQuery);
-                matchingResponse = res.getObjects().findFirst().flatMap(getRespEventForReqEvent);
-            }
-
-            if (!matchingResponse.isPresent()) {
-                LOGGER.info(createMockReqErrorLogMessage(reqEvent,
-                    "Using default response(as no matching request event found)"));
-                EventQuery defaultEventQuery = buildDefaultRespEventQuery(reqEvent);
-                res = cube.getEvents(defaultEventQuery);
-                matchingResponse = res.getObjects().findFirst();
-                if (!matchingResponse.isPresent()) {
-                    LOGGER.error(createMockReqErrorLogMessage(reqEvent,
-                        "Unable to mock request since no default response found"));
-                }
-            }
             matchingResponse.ifPresent(di::inject);
             matchingResponse.ifPresent(si::inject);
 
