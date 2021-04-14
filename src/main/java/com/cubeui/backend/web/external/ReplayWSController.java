@@ -208,4 +208,27 @@ public class ReplayWSController {
         return cubeServerService.fetchGetResponse(request, body);
 
     }
+
+    @GetMapping("/staticInjectionConfig/{customerId}/{app}/{version}")
+    public ResponseEntity staticInjectionConfig(HttpServletRequest request, @PathVariable String customerId,
+        @PathVariable String app, @PathVariable String version, @RequestBody Optional<String> body,
+        Authentication authentication) {
+        validation.validateCustomerName(authentication, customerId);
+        return cubeServerService.fetchGetResponse(request, body);
+    }
+
+    @PostMapping("/staticInjectionConfig/{customerId}/{app}/{version}")
+    public ResponseEntity staticInjectionConfig(HttpServletRequest request, @PathVariable String customerId,
+        @PathVariable String app, @PathVariable String version, @RequestBody Optional<String> body,
+        Authentication authentication, @RequestParam(value = "file") MultipartFile[] files) throws IOException {
+        validation.validateCustomerName(authentication, customerId);
+        LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+        for (MultipartFile file : files) {
+            if (!file.isEmpty()) {
+                map.add("file", new MultipartInputStreamFileResource(file.getInputStream(),
+                    file.getOriginalFilename()));
+            }
+        }
+        return cubeServerService.fetchPostResponse(request, body);
+    }
 }
