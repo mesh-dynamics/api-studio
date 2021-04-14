@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.cache.Constants.PubSubContext;
 import io.md.utils.CubeObjectMapperProvider;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import com.cube.ws.Config.JedisConnResourceProvider;
 
@@ -36,6 +37,10 @@ public class PubSubMgr {
 		} catch (JsonProcessingException e) {
 			LOGGER.error("Publish Msg Json Serialization error "+e.getMessage() , e);
 			return -1L;
+		} catch (JedisConnectionException e){
+			LOGGER.error("redis connection broken" , e);
+			this.jedis = jedisPool.getResource();
+			return publish(context , data);
 		}
 	}
 
