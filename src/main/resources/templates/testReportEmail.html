@@ -90,7 +90,7 @@
           <td th:text="${timeLineData.currentAllResponseMismatches}"></td>
           <td th:text="${#numbers.formatDecimal(timeLineData.currentAllMismatchFraction * 100, 1, 2) + '%'}"></td>
           <td th:text="${timeLineData.previousAverage} > 0 ? ${#numbers.formatDecimal(timeLineData.previousAverage * 100, 1, 2) + '%'} : 'N/A'"></td>
-          <td th:text="${timeLineData.previousAll95CIRespMismatches} > 0 ? ${timeLineData.previousAll95CIRespMismatches} : 'N/A'"></td>
+          <td th:text="${timeLineData.previousAll95CIRespMismatches} > 0 ? ${#numbers.formatDecimal(timeLineData.previousAll95CIRespMismatches * 100, 1, 2) + '%'}: 'N/A'"></td>
         </tr>
         </tbody>
       </table>
@@ -119,7 +119,7 @@
           <td th:text="${entry.value.currentResponseMismatches}"></td>
           <td th:text="${#numbers.formatDecimal(entry.value.currentMismatchFraction * 100, 1, 2) +'%'}"></td>
           <td th:text="${entry.value.previousMismatchFraction} > 0 ? ${#numbers.formatDecimal(entry.value.previousMismatchFraction * 100, 1, 2) + '%'} : 'N/A'"</td>
-          <td th:text="${entry.value.previous95CIRespMismatches} > 0 ? ${entry.value.previous95CIRespMismatches} : 'N/A'"></td>
+          <td th:text="${entry.value.previous95CIRespMismatches} > 0 ? ${#numbers.formatDecimal(entry.value.previous95CIRespMismatches * 100, 1, 2) + '%'} : 'N/A'"></td>
         </tr>
         </tbody>
       </table>

@@ -46,7 +46,7 @@ public class Utils {
 		}
 	}
 
-	public static int calculate95CI(List<Double> previousMismatches) {
+	public static double calculate95CI(List<Double> previousMismatches) {
 		if (previousMismatches.size() >= com.cubeui.backend.security.Constants.MIN_ENTRIES_FOR_GAUSSIAN) {
 			DoubleSummaryStatistics summaryStatistics = previousMismatches.stream()
 					.mapToDouble((x) -> x).summaryStatistics();
@@ -57,8 +57,8 @@ public class Utils {
 				sumOfDiff[0] += sq;
 			});
 			int size = previousMismatches.size();
-			int sigma = size <= 1 ? 0 : (int) Math.sqrt(sumOfDiff[0] / (size - 1));
-			return  Math.min((int) average + 2 * sigma, 1);
+			double sigma = size <= 1 ? 0 : Math.sqrt(sumOfDiff[0] / (size - 1));
+			return  Math.min(average + 2 * sigma, 1);
 		}
 		return 0;
 	}
