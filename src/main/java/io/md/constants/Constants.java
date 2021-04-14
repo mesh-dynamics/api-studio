@@ -152,6 +152,7 @@ public class Constants {
 	public static final String SPAN_ID_FIELD = "spanId";
 	public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
 	public static final String EXCLUDE_PATH_FIELD = "excludePath";
+	public static final String JOIN_QUERY = "joinQuery";
 
 	public static final String PAYLOAD_FIELDS_FIELD = "payloadFields";
 	public static final String PAYLOAD_FIELDS_FIELD_PATH = "/"+PAYLOAD_FIELDS_FIELD;
@@ -186,6 +187,8 @@ public class Constants {
 	public static final String STOP_WAIT_INTERVAL_FIELD = "stopWaitInterval";
 	public static final String FILTER_TRANSFORM_FIELD = "filterTransform";
 	public static final String PROTO_FILE_MAP_FIELD ="protoFileMap";
+
+	public static final String MAX ="max";
 
 
 	public static final String ROOT_RECORDING_FIELD = "root_recording_id";

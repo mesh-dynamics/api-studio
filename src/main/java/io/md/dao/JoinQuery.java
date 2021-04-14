@@ -22,8 +22,14 @@ public class JoinQuery {
         return andConds;
     }
 
+    public Map<String, String> getJoinParams() {
+        return joinParams;
+    }
+
+
     private final String joinFrom;
     private final String joinTo;
+    private final Map<String,String> joinParams;
 
     private final Map<String , String> orConds;
     private final Map<String , String> andConds;
@@ -33,12 +39,14 @@ public class JoinQuery {
         this.joinTo = builder.joinTo;
         this.orConds = builder.orConds;
         this.andConds = builder.andConds;
+        this.joinParams = builder.joinParams;
     }
 
     public static class Builder{
 
         private String joinFrom = Constants.REQ_ID_FIELD;
         private String joinTo = Constants.REQ_ID_FIELD;
+        private Map<String,String> joinParams =  Collections.EMPTY_MAP;
 
         private  Map<String , String> orConds = Collections.EMPTY_MAP;
         private  Map<String , String> andConds = Collections.EMPTY_MAP;
@@ -62,6 +70,11 @@ public class JoinQuery {
 
         public Builder withAndConds(Map<String,String> and){
             andConds = and;
+            return this;
+        }
+
+        public Builder withJoinParams(Map<String,String> params){
+            joinParams = params;
             return this;
         }
 

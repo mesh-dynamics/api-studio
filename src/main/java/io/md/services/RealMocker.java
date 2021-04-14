@@ -148,6 +148,9 @@ public class RealMocker implements Mocker {
         successfulRespCond.put(Constants.PAYLOAD_FIELDS_FIELD , String.format("%s:%s", Constants.STATUS_PATH, String.valueOf(reqEvent.payload instanceof GRPCPayload ? Constants.GRPC_SUCCESS_STATUS_CODE : HttpStatus.SC_OK)));
 
         builder.withAndConds(successfulRespCond);
+        Map<String,String> params = new HashMap<>(1);
+        params.put(Constants.SCORE_FIELD , Constants.MAX);
+        builder.withJoinParams(params);
 
         return builder.build();
 
@@ -202,7 +205,9 @@ public class RealMocker implements Mocker {
         }
 
         limit.ifPresent(builder::withLimit);
-        joinQuery.ifPresent(builder::withJoinQuery);
+        //We are giving weightage to joinQuery (200 success response). so making that optional.
+        //If the same collection matches with non 200 response , that req/resp will be selected. (coll weight > join query weight)
+        joinQuery.ifPresent(jq->builder.withJoinQuery(jq ,EventQuery.JOIN_QUERY_WEIGHT));
 
         return builder.build();
     }

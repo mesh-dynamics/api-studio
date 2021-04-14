@@ -16,6 +16,7 @@ import io.md.dao.Event.EventType;
 public class EventQuery {
 
     //Mocking Optional Query Weight related Constants
+    public static final float JOIN_QUERY_WEIGHT = 0.8f;  //should be less than collection weight
     public static final float COLLECTION_WEIGHT = 1.0f;
     public static final float TRACEID_WEIGHT = 1.5f;
     public static final float PAYLOAD_KEY_WEIGHT = 3.0f;
@@ -398,6 +399,12 @@ public class EventQuery {
             this.joinQuery = Optional.ofNullable(joinQuery);
             return this;
         }
+        public Builder withJoinQuery(JoinQuery joinQuery , Float weight){
+            this.joinQuery = Optional.ofNullable(joinQuery);
+            orQueryWeightage.put(Constants.JOIN_QUERY , weight);
+            return this;
+        }
+
 
         public EventQuery build() {
             return new EventQuery(this);
@@ -530,4 +537,8 @@ public class EventQuery {
     public Optional<JoinQuery> getJoinQuery() {
         return joinQuery;
     }
+
+    @JsonIgnore
+    public Optional<Float> getJoinQueryWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.JOIN_QUERY)); }
+
 }
