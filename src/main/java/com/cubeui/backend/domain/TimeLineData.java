@@ -23,7 +23,7 @@ public class TimeLineData {
   private int previousAllResponseMismatches;
   private List<Double> previousMismatches;
   private double previousAverage;
-  private int previousAll95CIRespMismatches = 0;
+  private double previousAll95CIRespMismatches = 0;
   private int previousCount = 0;
 
   public TimeLineData() {
@@ -70,8 +70,8 @@ public class TimeLineData {
 
   private void calculate95CIForPrev() {
     this.pathResults.forEach((k,v) -> {
-      int pre95 = v.calculate95CI();
-      this.previousMismatches.add((double)pre95);
+      double pre95 = v.calculate95CI();
+      this.previousMismatches.add(pre95);
     });
   }
 

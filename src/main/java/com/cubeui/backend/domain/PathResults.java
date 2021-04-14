@@ -26,7 +26,7 @@ public class PathResults {
   int previousTotal;
   double previousMismatchFraction;
   List<Double> previousMismatchFractions;
-  int previous95CIRespMismatches;
+  double previous95CIRespMismatches;
 
   public PathResults() {
     this.currentResponseMismatches = 0;
@@ -61,7 +61,7 @@ public class PathResults {
     }
   }
 
-  public int calculate95CI() {
+  public double calculate95CI() {
     this.previous95CIRespMismatches = Utils.calculate95CI(this.previousMismatchFractions);
     return this.previous95CIRespMismatches;
   }
