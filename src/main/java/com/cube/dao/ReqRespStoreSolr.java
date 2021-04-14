@@ -420,7 +420,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         addFilter(query, PAYLOAD_FIELDS_F , eventQuery.getPayloadFields());
 
-        eventQuery.getJoinQuery().ifPresent(jq->addFilter(query , jq));
+        eventQuery.getJoinQuery().ifPresent(jq->addFilter(query , queryBuff, jq , eventQuery.getJoinQueryWeight()));
 
         for(Map.Entry<String , Boolean> entry : eventQuery.getSortingOrder().entrySet()){
             String solrField = fieldNameSolrMap.get(entry.getKey());
@@ -435,7 +435,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             this::docToEvent, eventQuery.getOffset());
     }
 
-    private void addFilter(SolrQuery solrQuery , JoinQuery jq){
+    private void addFilter(SolrQuery solrQuery , StringBuffer queryBuff , JoinQuery jq , Optional<Float> weight){
 
         String orFilterStr = jq.getOrConds().entrySet().stream().map(e->{
             String solrField = fieldNameSolrMap.get(e.getKey());
@@ -456,8 +456,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             fq = String.format("(%s)" , andFilterStr);
         }
 
-        String joinFQ = String.format("{!join from=%s to=%s} %s" , fieldNameSolrMap.get(jq.getJoinFrom()) , fieldNameSolrMap.get(jq.getJoinTo()) , fq);
-        solrQuery.addFilterQuery(joinFQ);
+
+        //Join params other then from and to
+        String joinParams = jq.getJoinParams().entrySet().stream().map(e->String.format("%s=%s" , e.getKey() , e.getValue())).collect(Collectors.joining(" "));
+
+        String joinFQ = String.format("{!join from=%s to=%s %s} %s" , fieldNameSolrMap.get(jq.getJoinFrom()) , fieldNameSolrMap.get(jq.getJoinTo()) , joinParams ,  fq);
+
+        if(weight.isEmpty())  solrQuery.addFilterQuery(joinFQ); //add to filter query
+        else{
+            //add to query buff with weightage
+            addToQryStr(queryBuff , joinFQ , true , weight);
+        }
     }
 
 
@@ -1700,10 +1709,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static void addToQryStr(StringBuffer qstr, String fieldname, String fval, boolean quote , boolean isOr , Optional<Float> weight) {
         // String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval;
         String newfval = quote ? SolrIterator.escapeQueryChars(fval) : fval;
+        addToQryStr(qstr , String.format("%s:%s" , fieldname , newfval) , isOr , weight);
+    }
+
+    private static void addToQryStr(StringBuffer qstr, String query, boolean isOr , Optional<Float> weight) {
         String prefix = qstr.length()==0 ? "" : isOr ? " OR " : " AND ";
         Float wt = weight.orElse(1.0F);
-        qstr.append(String.format("%s%s:%s^=%.2f" , prefix , fieldname, newfval , wt ) );
+        qstr.append(String.format("%s%s^=%.2f" , prefix , query , wt ) );
     }
+
 
 
     private static void addToQryStr(StringBuffer qstr, String fieldname, String fval, boolean isOr) {
