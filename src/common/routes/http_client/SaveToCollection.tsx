@@ -84,7 +84,19 @@ class SaveToCollection extends React.Component<
   }
 
   componentDidMount(){
-    Shortcuts.register("ctrl+s", this.showSaveModal)
+    Shortcuts.register("ctrl+s", this.showSaveModal);
+  }
+  
+  componentDidUpdate(prevProps: ISaveToCollectionProps, prevState: ISaveToCollectionState) {
+    if ((prevState.showModal !== this.state.showModal || prevProps.httpClient.collectionTabState.count != this.props.httpClient.collectionTabState.count)  && this.state.showModal) {
+
+      const {
+        httpClient: { collectionTabState, allUserCollections }
+      } = this.props;
+      if(collectionTabState.numResults < collectionTabState.count && (!allUserCollections || allUserCollections.length != collectionTabState.count)){
+        this.props.dispatch(httpClientActions.loadAllUserCollections(collectionTabState.count));
+      }
+    }
   }
 
   componentWillUnmount(){
@@ -204,7 +216,8 @@ class SaveToCollection extends React.Component<
           tabToProcess.id,
           savedIngressRequestData,
           collection!.collec,
-          collection!.id))
+          collection!.id,
+          collection!.name))
 
         // update outgoing requests
         for(let i = 0; i < tabToProcess.outgoingRequests.length; i++) {
@@ -363,10 +376,10 @@ class SaveToCollection extends React.Component<
 
   render() {
     const {
-      httpClient: { userCollections, tabs, userHistoryCollection },
+      httpClient: { userCollections, tabs, userHistoryCollection, allUserCollections },
       tabId,
     } = this.props;
-    const collections = userCollections;
+    const collections = (allUserCollections && allUserCollections.length > 0 ) ? allUserCollections : userCollections;
 
     const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
     const recordingId = tabs[tabIndex].recordingIdAddedFromClient;

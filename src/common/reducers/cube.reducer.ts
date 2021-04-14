@@ -40,6 +40,7 @@ const initialState : ICubeState = {
     testIdsReqErr: '',
     testIds: [],
     fcId: null,
+    forceCompletingReplay: false,
     selectedTestId: null,
     selectedGolden: null,
     selectedGoldenName:"",
@@ -144,6 +145,11 @@ export function cube (state = initialState, action: ICubeAction) : ICubeState {
                 selectedGoldenName: "",
                 collectionTemplateVersion: null,
                 fcId: null
+            };
+        case cubeConstants.SET_FORCE_COMPLETING_REPLAY: 
+            return {
+                ...state,
+                forceCompletingReplay: action.data,
             };
         case cubeConstants.SET_GETTING_STARTED_SCREEN:
             return {

@@ -1390,7 +1390,7 @@ class ViewSelectedTestConfig extends React.Component {
                         </span>
                     </Modal.Body>
                     <Modal.Footer>
-                        <span onClick={this.handleFC} className={classNames("cube-btn","pull-left", {"disabled" : !fcEnabled})}>Force Complete</span>
+                        <span onClick={this.handleFC} className={classNames("cube-btn","pull-left", {"disabled" : !fcEnabled || cube.forceCompletingReplay})}>{cube.forceCompletingReplay && <i className="fa fa-spin fa-spinner"/>} Force Complete</span>
                         <span onClick={this.handleFCDone} className="cube-btn pull-right">Done</span>
                     </Modal.Footer>
                 </Modal>

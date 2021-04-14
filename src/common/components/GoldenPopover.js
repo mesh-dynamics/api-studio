@@ -589,7 +589,7 @@ class GoldenPopover extends React.Component {
                     <div style={{ width: "300px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
                         <div>Path:&nbsp;<b>{this.props.jsonPath.replace("<BEGIN>", "")}</b></div>
                         <div>Data Type:&nbsp;<b>{this.formatDtValue(this.state.newRule.dt)}</b></div>
-                        <div>Count of similar items:&nbsp;<b>105</b></div> 
+                        {/* <div>Count of similar items:&nbsp;<b>105</b></div>  */}
                         {/* TODO: Above value is hardcoded. Find out more */}
                         <div className="text-center margin-top-20">
                             <span onClick={this.updateGolden}

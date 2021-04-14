@@ -39,6 +39,8 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
   const [selectedServices, setSelectedServices] = useState<string>("");
   const [fileList, setFileList] = useState<FileList | null>(null);
   const [message, setMessage] = useState({ message: "", isError: false });
+  const [isLearning, setIsLearning] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const collectionList = React.useMemo(() => {
     return [...props.goldenList, ...props.collectionList];
@@ -115,16 +117,18 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
       };
       if (commonUtils.isCSVMimeType(type)) {
           //It is Learnt rules upload
-
+          setIsUploading(true)
           configsService
             .saveDynamicInjectionConfigFromCsv(uploadArgs)
             .then((response: any) => {
+              setIsUploading(false)
               setMessage({
                 message: response.Message || "Config file has been uploaded",
                 isError: false,
               });
             })
             .catch((error) => {
+              setIsUploading(false)
               console.error(error);
               const message = error.response?.data?.data?.message;
               setMessage({
@@ -134,9 +138,11 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
             });
       } else if (type == "application/json") {
           //It is Existing rules upload
+          setIsUploading(true)
           configsService
             .saveDynamicInjectionConfigFromJson(uploadArgs)
             .then((response: any) => {
+              setIsUploading(false)
               setMessage({
                 message: response.Message || "Config file has been uploaded",
                 isError: false,
@@ -144,6 +150,7 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
             })
             .catch((error) => {
               console.error(error);
+              setIsUploading(false)
               const message = error.response?.data?.data?.message;
               setMessage({
                 message: message || "Could not save file. Some error occurred",
@@ -201,6 +208,7 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
       return;
     }
     resetMessage();
+    setIsLearning(true);
     configsService
       .getPotentialDynamicInjectionConfigs({
         app: props.app,
@@ -212,6 +220,7 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
         services: [selectedServices],
       })
       .then((response: any) => {
+        setIsLearning(false);
         if (response.isFileDownloaded) {
           setCollectionId("");
           setRecordingId("");
@@ -224,7 +233,7 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
       })
       .catch((error: any) => {
         console.error(error);
-
+        setIsLearning(false);
         const message = error.response?.data?.data?.message;
         setMessage({
           message: message || "File could not be downloaded",
@@ -294,7 +303,7 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
             </FormGroup>
           </Col>
           <Col xs={12} md={3}>
-            <Button onClick={downloadNewRules}>Learn</Button> (In *.csv format)
+            <Button onClick={downloadNewRules} disabled={isLearning}>{isLearning && <i className="fa fa-spin fa-spinner"/>} Learn</Button> (In *.csv format)
           </Col>
         </Row>
         <Row className="download-config-grid">
@@ -311,7 +320,7 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
             </FormGroup>
           </Col>
           <Col xs={12} md={3}>
-            <Button onClick={onUpload}>Upload</Button> (JSON and CSV accepted)
+            <Button onClick={onUpload} disabled={isUploading}>{isUploading && <i className="fa fa-spin fa-spinner"/>} Upload</Button> (JSON and CSV accepted)
           </Col>
         </Row>
       </Grid>

@@ -6,6 +6,7 @@ import { cubeService } from "../../services";
 import './APICatalog.scss';
 import _ from "lodash";
 import { apiCatalogActions } from '../../actions/api-catalog.actions';
+import { findGoldenOrCollectionInSource } from '../../utils/api-catalog/api-catalog-utils';
 import { connect } from "react-redux";
 
 
@@ -39,8 +40,26 @@ class APIRequestsTable extends Component {
   }
 
   generateTableData = (props) => {
-    const { apiCatalog: {selectedInstance, selectedApiPath, selectedService, apiTrace} } = props;
-    if (apiTrace && !_.isEmpty(apiTrace.response)) {
+    const { 
+      apiCatalog: {
+        selectedInstance, selectedApiPath, selectedService, 
+        apiTrace, selectedSource, selectedCollection, selectedGolden 
+      },
+      gcBrowse: {
+        userGoldens,
+        actualGoldens
+      }
+    } = props;
+
+    const selectedItem = findGoldenOrCollectionInSource({
+        selectedSource, 
+        selectedCollection, 
+        selectedGolden, 
+        userGoldens, 
+        actualGoldens                               
+    });
+
+    if (selectedItem.id && apiTrace && !_.isEmpty(apiTrace.response)) {
       return apiTrace.response.map((trace) => {
           const requests = trace.res;
           let filters = {};
@@ -408,7 +427,8 @@ class APIRequestsTable extends Component {
 const mapStateToProps = (state) => ({
   cube: state.cube,
   apiCatalog: state.apiCatalog,
-  user: state.authentication.user
+  user: state.authentication.user,
+  gcBrowse: state.gcBrowse
 });
 
 const connectedAPIRequestsTable = connect(mapStateToProps)(APIRequestsTable);

@@ -15,13 +15,13 @@ const gcbrowseActions : IActionsType= {
 
     loadUserGoldens: (payload) => ({ type: gcbrowseConstants.LOAD_USER_GOLDENS, payload }),
 
-    fetchGoldensCollections: (selectedSource: string) => async (dispatch, getState) => {
+    fetchGoldensCollections: (selectedSource: string, start: number, numResults: number, nameFilter: string, codeVersionFilter: string, branchFilter: string, recordingIdFilter: string) => async (dispatch, getState) => {
         const { cube: { selectedApp }, authentication: { user }} = getState();
 
         dispatch(gcbrowseActions.beginFetch());
 
         try {
-            const results = await cubeService.fetchCollectionList(user, selectedApp!, selectedSource);
+            const results = await cubeService.fetchCollectionList(user, selectedApp!, selectedSource, false, numResults, start, nameFilter, codeVersionFilter, branchFilter, recordingIdFilter);
 
             dispatch(gcbrowseActions.fetchSuccess());
 

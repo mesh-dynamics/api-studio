@@ -2,8 +2,10 @@
  * This file is set up proxy and listeners
  */
 const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
-const { fetch, AbortController, setup } = require("fetch-h2");
+const { fetch, AbortController, setup, context,  } = require("fetch-h2");
 const { autoUpdater } = require('electron-updater');
+const {connect} = require('tls');
+const URLParse = require('url-parse');
 autoUpdater.logger = require('electron-log')
 const isDev = require('electron-is-dev');
 const logger = require('electron-log');
@@ -405,17 +407,46 @@ const setupListeners = (mockContext, user, replayContext) => {
                 responseTrailersPromise.resolve(trailersObject);
             };
         }
-        
-        setup({session: {rejectUnauthorized: data.fetchConfigRendered.isAllowCertiValidation}});
-        
 
-        fetch(url, data.fetchConfigRendered).then(async response => {
+        const ctx = context({
+            session: {
+                rejectUnauthorized: data.fetchConfigRendered.isAllowCertiValidation
+            }
+        });
+
+        var authorizedPromise = new Deferred();
+
+        const {host, port, protocol} = URLParse(url);
+        if(!data.fetchConfigRendered.isAllowCertiValidation && protocol == "https:"){
+            // Reference: https://github.com/grantila/fetch-h2/blob/d0c863c9a9d786ce518bbaae9e53adb4599964d1/lib/context-https.ts#L57
+            const currentPort = port || (protocol == "https:" ? '443': '80');
+            try{
+
+                const socket = connect( parseInt( currentPort, 10 ), host, {},
+                ( ) =>{
+                    const { authorized, authorizationError } = socket;
+                    authorizedPromise.resolve({authorized, authorizationError});
+                });
+                socket.once( "error", ()=>{
+                    authorizedPromise.resolve({authorized: false, authorizationError: socket.authorizationError})
+                });
+            }catch(error){
+                console.error(error);
+                authorizedPromise.resolve({authorized: false, authorizationError: "ERROR"});
+            }
+        }else{
+            authorizedPromise.resolve({authorized: true});
+        }
+
+        ctx.fetch(url, data.fetchConfigRendered).then(async response => {
             logger.info(`RESPONSE STATUS: ${response.statusCode}`);
             
             let responseTrailers = {};
             if(isGrpc) {
                 responseTrailers = await responseTrailersPromise.promise; // wait for trailers to be received
             }
+
+            response.authorized = await authorizedPromise.promise;
 
             global.requestResponse[args.tabId + args.runId] = response;
             delete global.fetchRequest[args.tabId + args.runId];
