@@ -258,6 +258,7 @@ export interface ICubeState {
   testIdsReqStatus: string;
   timelineData: ITimelineData[];
   isGettingStartedHidden?: boolean;
+  forceCompletingReplay: boolean;
 }
 
 //Golden State

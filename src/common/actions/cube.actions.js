@@ -262,14 +262,17 @@ function getInstances () {
 function forceCompleteReplay(fcId) {
     return async dispatch => {
         try {
+            dispatch(setForceCompleting(true))
             await cubeService.forceCompleteReplay(fcId);
             dispatch(success(fcId), Date.now());
+            dispatch(setForceCompleting(false))
         } catch (error) {
             console.error(error);
         }
     }
 
     function success(fcId, date) { return { type: cubeConstants.CLEAR_FORCE_COMPLETE, data: fcId, date: date }; }
+    function setForceCompleting(value) { return {type: cubeConstants.SET_FORCE_COMPLETING_REPLAY, data: value}}
 }
 
 function getTestConfigByAppId(appId) {
