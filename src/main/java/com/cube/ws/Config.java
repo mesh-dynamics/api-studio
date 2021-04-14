@@ -3,6 +3,8 @@
  */
 package com.cube.ws;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Executors;
@@ -11,6 +13,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Singleton;
 
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
@@ -37,8 +40,8 @@ import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.exceptions.JedisException;
 
-import com.cube.cache.ComparatorCache;
 import com.cube.cache.RedisPubSub;
 import com.cube.cache.TemplateCache;
 import com.cube.dao.ReqRespStore;
@@ -68,7 +71,7 @@ public class Config {
 	// Adding a compare template cache
     public final TemplateCache templateCache;
 
-	public final JedisPool jedisPool;
+	public final JedisConnResourceProvider jedisPool;
 
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
@@ -93,6 +96,58 @@ public class Config {
     public final static ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     public final PubSubMgr pubSubMgr;
+
+    public static class JedisConnResourceProvider {
+    	public static final Duration PING_WAIT = Duration.ofMillis(1000);
+	    private final GenericObjectPoolConfig poolConfig;
+	    private final String redisHost;
+	    private final int redisPort;
+	    private final int timeout;
+	    private final String redisPassword;
+    	private JedisPool pool;
+    	private Instant lastPingTime = Instant.now();
+
+	    private JedisPool getPool(){
+			return new JedisPool(poolConfig , redisHost, redisPort , timeout,  redisPassword);
+	    }
+	    JedisConnResourceProvider(GenericObjectPoolConfig poolConfig, String host, int port, int timeout, String password){
+	    	this.poolConfig = poolConfig;
+	    	this.redisHost = host;
+	    	this.redisPort = port;
+	    	this.timeout = timeout;
+	    	this.redisPassword = password;
+	    	this.pool = getPool();
+	    }
+
+	    public Jedis getResource(){
+
+	    	Jedis jedis;
+		    try{
+			    jedis = pool.getResource();
+			    pingIfRequired(jedis);
+		    } catch (Exception e) {
+		    	LOGGER.error("Jedis pool resource fetch error "+e.getMessage() , e);
+			    pool.destroy();
+			    LOGGER.info("destroyed redis Pool. Creating again");
+			    pool = getPool();
+			    LOGGER.info("Created Jedil Pool again");
+			    jedis = pool.getResource();
+		    }
+		    return jedis;
+	    }
+
+	    private void pingIfRequired(Jedis jedis){
+	    	Instant now = Instant.now();
+		    if(Duration.between(lastPingTime , now).compareTo(PING_WAIT)>0){
+				jedis.ping();
+				lastPingTime = now;
+		    }
+	    }
+
+	    public JedisPool getJedisPool() {
+		    return pool;
+	    }
+    }
 
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
@@ -145,7 +200,7 @@ public class Config {
             JedisPoolConfig poolConfig = new JedisPoolConfig();
             poolConfig.setTestOnBorrow(true);
             //poolConfig.setTestOnReturn(true);
-            jedisPool = new JedisPool(poolConfig , redisHost, redisPort , 2000,  redisPassword);
+	        jedisPool = new JedisConnResourceProvider(poolConfig , redisHost, redisPort , 2000,  redisPassword);
             REDIS_DELETE_TTL = Integer.parseInt(fromEnvOrProperties("redis_delete_ttl"
                 , "20"));
             LOGGER.info("REDIS TTL for record/replay after stop : " + REDIS_DELETE_TTL + " sec");
@@ -154,7 +209,7 @@ public class Config {
 			        try {
 				        Jedis jedis = jedisPool.getResource();
 				        jedis.configSet("notify-keyspace-events", "Ex");
-				        jedis.psubscribe(new RedisPubSub(rrstore, jsonMapper, jedisPool),
+				        jedis.psubscribe(new RedisPubSub(rrstore, jsonMapper, jedisPool.getJedisPool()),
 					        "__key*__:*");
 			        } catch (Throwable th) {
 				        LOGGER.error("Redis Key Events PubSub Worker error " + th.getMessage(), th);
@@ -179,7 +234,7 @@ public class Config {
 	        new Thread(channelPubSubThread).start();
 
         } catch (Exception e) {
-            LOGGER.error("Error while initializing redis thread pool :: " + e.getMessage());
+            LOGGER.error("Error while initializing redis thread pool :: " + e.getMessage() , e);
             throw e;
         }
 

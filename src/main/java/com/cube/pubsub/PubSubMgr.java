@@ -4,7 +4,6 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,16 +11,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.cache.Constants.PubSubContext;
 import io.md.utils.CubeObjectMapperProvider;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.exceptions.JedisConnectionException;
+
+import com.cube.ws.Config.JedisConnResourceProvider;
 
 public class PubSubMgr {
 
 	Logger LOGGER = LogManager.getLogger(PubSubMgr.class);
-	private final Jedis jedis;
+	private final JedisConnResourceProvider jedisPool;
+	private Jedis jedis;
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
-	public PubSubMgr(JedisPool pool){
-		jedis = pool.getResource();
+	public PubSubMgr(JedisConnResourceProvider jedisPool){
+
+		this.jedisPool = jedisPool;
+		this.jedis = jedisPool.getResource();
 	}
 
 	public Long publish(PubSubContext context , Map data){
@@ -33,6 +37,10 @@ public class PubSubMgr {
 		} catch (JsonProcessingException e) {
 			LOGGER.error("Publish Msg Json Serialization error "+e.getMessage() , e);
 			return -1L;
+		} catch (JedisConnectionException e){
+			LOGGER.error("redis connection broken" , e);
+			this.jedis = jedisPool.getResource();
+			return publish(context , data);
 		}
 	}
 
