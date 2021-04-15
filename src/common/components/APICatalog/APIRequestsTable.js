@@ -59,7 +59,7 @@ class APIRequestsTable extends Component {
         actualGoldens                               
     });
 
-    if (selectedItem.id && apiTrace && !_.isEmpty(apiTrace.response)) {
+    if (selectedItem && selectedItem.id && apiTrace && !_.isEmpty(apiTrace.response)) {
       return apiTrace.response.map((trace) => {
           const requests = trace.res;
           let filters = {};
