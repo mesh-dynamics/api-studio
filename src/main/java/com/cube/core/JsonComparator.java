@@ -175,9 +175,34 @@ public class JsonComparator implements Comparator {
         	ServerUtils.reconstructArray(lhsConverted , rhsConverted, path.getLeft(),  diffTreeMap, jsonMapper);
         });
 
+        HashMap<String, Comparator.Diff> resultPathToObjectMap = new HashMap<>();
+        result.forEach(res -> {
+                Diff existingRes = resultPathToObjectMap.get(res.path);
+
+                if (existingRes != null) {
+                    Diff newRes;
+                    if (existingRes.op.equals(Diff.ADD) && res.op.equals(Diff.REMOVE)) {
+                        newRes = new Diff(Diff.REPLACE, res.path, existingRes.value, Optional.empty(),
+                            res.value,
+                            existingRes.resolution.isErr() ? existingRes.resolution : res.resolution);
+                    } else if (existingRes.op.equals(Diff.REMOVE) && res.op.equals(Diff.ADD)) {
+                        newRes = new Diff(Diff.REPLACE, res.path, res.value, Optional.empty(),
+                            existingRes.value,
+                            existingRes.resolution.isErr() ? existingRes.resolution : res.resolution);
+
+                    } else {
+                        // Should never happen. In this case, we just retain the older one among them.
+                        newRes = existingRes;
+                    }
+                    resultPathToObjectMap.put(newRes.path, newRes);
+                } else {
+                    resultPathToObjectMap.put(res.path, res);
+                }
+            });
+
         MatchType mt = (numerrs > 0) ? MatchType.NoMatch :
             (diffs.length > 0) ? MatchType.FuzzyMatch : MatchType.ExactMatch;
-        return new Match(mt, matchmeta, result, Optional.of(lhsConverted) ,
+        return new Match(mt, matchmeta, new ArrayList<>(resultPathToObjectMap.values()), Optional.of(lhsConverted) ,
 	        Optional.of(rhsConverted));
     }
 
