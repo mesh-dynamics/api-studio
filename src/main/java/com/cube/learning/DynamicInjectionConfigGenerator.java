@@ -292,14 +292,21 @@ public class DynamicInjectionConfigGenerator {
     public List<InjectionExtractionMeta> generateConfigs(Boolean discardSingleValues)
         throws JsonProcessingException {
 
+        Map<InjectionExtractionMeta, InjectionExtractionMeta> regexedMetasMap = new HashMap<>();
+
         for (InjectionExtractionMeta injectionExtractionMeta : metaToObjectMap.keySet()) {
+            String injApiPath = injectionExtractionMeta.injectionConfig.apiPath;
+            injectionExtractionMeta.injectionConfig.apiPath = Optional
+                .ofNullable(regexPathsMap.get(injApiPath)).orElse(injApiPath);
+            regexedMetasMap
+                .computeIfAbsent(injectionExtractionMeta, k -> injectionExtractionMeta).values
+                .addAll(injectionExtractionMeta.values); // Add new new ref values
+        }
+
+        for (InjectionExtractionMeta injectionExtractionMeta : regexedMetasMap.keySet()) {
             if (!discardSingleValues || injectionExtractionMeta.values.size() > 1) {
                 injectionExtractionMeta.calculateScores();
-                String injApiPath = injectionExtractionMeta.injectionConfig.apiPath;
-                injectionExtractionMeta.injectionConfig.apiPath = Optional
-                    .ofNullable(regexPathsMap.get(injApiPath)).orElse(injApiPath);
                 finalMetaList.add(injectionExtractionMeta);
-
             }
         }
 

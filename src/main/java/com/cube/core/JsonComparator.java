@@ -176,38 +176,46 @@ public class JsonComparator implements Comparator {
         });
 
         HashMap<String, Comparator.Diff> resultPathToObjectMap = new HashMap<>();
+        List<Comparator.Diff> resultList = new ArrayList<>();
+
         result.forEach(res -> {
+
+            if (res.op.equals(Diff.NOOP) || res.op.equals(Diff.REPLACE)) {
+                resultList.add(res);
+            } else {
                 Diff existingRes = resultPathToObjectMap.get(res.path);
 
                 if (existingRes != null) {
                     Diff newRes;
                     if (existingRes.op.equals(Diff.ADD) && res.op.equals(Diff.REMOVE)) {
-                        newRes = new Diff(Diff.REPLACE, res.path, existingRes.value, Optional.empty(),
+                        newRes = new Diff(Diff.REPLACE, res.path, existingRes.value,
+                            Optional.empty(),
                             res.value,
-                            existingRes.resolution.isErr() ? existingRes.resolution : res.resolution);
+                            existingRes.resolution.isErr() ? existingRes.resolution
+                                : res.resolution);
+                        resultPathToObjectMap.remove(res.path);
+                        resultList.add(newRes);
                     } else if (existingRes.op.equals(Diff.REMOVE) && res.op.equals(Diff.ADD)) {
                         newRes = new Diff(Diff.REPLACE, res.path, res.value, Optional.empty(),
                             existingRes.value,
-                            existingRes.resolution.isErr() ? existingRes.resolution : res.resolution);
-
+                            existingRes.resolution.isErr() ? existingRes.resolution
+                                : res.resolution);
+                        resultPathToObjectMap.remove(res.path);
+                        resultList.add(newRes);
                     } else {
                         // Should never happen. In this case, we retain only the earlier one.
-                        newRes = existingRes;
                     }
-                    resultPathToObjectMap.put(newRes.path, newRes);
-                } else {
-                    // Put no-ops with a special key.
-                    if ((res.op.equals(Diff.NOOP))) {
-                        resultPathToObjectMap.put(res.path + "::" + Diff.NOOP, res);
-                    } else {
-                        resultPathToObjectMap.put(res.path, res);
-                    }
+                } else{
+                    resultPathToObjectMap.put(res.path, res);
                 }
-            });
+            }
+        });
+
+        resultList.addAll(resultPathToObjectMap.values());
 
         MatchType mt = (numerrs > 0) ? MatchType.NoMatch :
             (diffs.length > 0) ? MatchType.FuzzyMatch : MatchType.ExactMatch;
-        return new Match(mt, matchmeta, new ArrayList<>(resultPathToObjectMap.values()), Optional.of(lhsConverted) ,
+        return new Match(mt, matchmeta, resultList, Optional.of(lhsConverted) ,
 	        Optional.of(rhsConverted));
     }
 
