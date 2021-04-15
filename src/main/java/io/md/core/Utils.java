@@ -4,6 +4,8 @@
 package io.md.core;
 
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -18,7 +20,9 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
 
+import javax.swing.text.html.Option;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -200,5 +204,24 @@ public class Utils {
         public BadValueException(String message) {
             super(message);
         }
+    }
+
+    public static Optional<byte[]> decodeResponseBody(byte[] originalBody , String encoding){
+
+    	try{
+		    switch (encoding){
+			    case "":
+				    return Optional.of(originalBody);
+			    case "gzip":
+				    byte[] body =  new GZIPInputStream(new ByteArrayInputStream(originalBody)).readAllBytes();
+				    return Optional.of(body);
+			    default:
+				    throw new UnsupportedOperationException("Unexpected Content-Encoding: " + encoding);
+		    }
+	    }catch (Exception e){
+		    LOGGER.error("Stream reading error",e);
+		    return Optional.empty();
+	    }
+
     }
 }

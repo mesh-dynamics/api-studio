@@ -6,15 +6,13 @@
 
 package io.md.drivers;
 
-import java.io.ByteArrayInputStream;
+import static io.md.utils.Utils.ALLOWED_HEADERS;
+
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.net.Authenticator;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -26,7 +24,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import java.util.zip.GZIPInputStream;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -41,21 +38,19 @@ import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.md.dao.GRPCPayload;
-import io.md.dao.RequestPayload;
-import io.md.utils.UtilException;
 import io.md.core.RRTransformerOperations;
 import io.md.core.Utils;
 import io.md.dao.Event;
+import io.md.dao.GRPCPayload;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.RRTransformer;
 import io.md.dao.Replay;
+import io.md.dao.RequestPayload;
 import io.md.dao.ResponsePayload;
 import io.md.services.DataStore;
 import io.md.utils.Constants;
-
-import static io.md.utils.Utils.ALLOWED_HEADERS;
+import io.md.utils.UtilException;
 
 /*
  * Created by IntelliJ IDEA.
@@ -64,7 +59,7 @@ import static io.md.utils.Utils.ALLOWED_HEADERS;
  */
 public class HttpReplayDriver extends AbstractReplayDriver {
 
-	private static Logger LOGGER = LogManager.getLogger(AbstractReplayDriver.class);
+	private static Logger LOGGER = LogManager.getLogger(HttpReplayDriver.class);
 
 	protected final ObjectMapper jsonMapper;
 
@@ -115,74 +110,19 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 		}
 
 		@Override
-		public ResponsePayload send(Event requestEvent, Replay replay)
-			throws IOException, InterruptedException {
+		public ResponsePayload send(Event requestEvent, Replay replay) throws Exception {
 			HttpRequest request = build(replay, requestEvent);
 			HttpResponse<byte[]> response = httpClient
 				.send(request, BodyHandlers.ofByteArray());
-			return formResponsePayload(response);
+			return formResponsePayload(new MDHttpResponse(response));
 		}
 
-		public static InputStream getDecodedInputStream(InputStream body, HttpHeaders headers) {
-			String encoding = determineContentEncoding(headers);
-			try {
-				switch (encoding) {
-					case "":
-						return body;
-					case "gzip":
-						return new GZIPInputStream(body);
-					default:
-						throw new UnsupportedOperationException(
-								"Unexpected Content-Encoding: " + encoding);
-				}
-			} catch (IOException ioe) {
-				throw new UncheckedIOException(ioe);
-			}
+		protected ResponsePayload formResponsePayload(MDResponse response) {
+
+			return new HTTPResponsePayload(response.getHeaders(), response.statusCode(), response.getBody());
 		}
 
-		public static String determineContentEncoding(
-				HttpHeaders headers) {
-			return headers.firstValue("Content-Encoding").orElse("");
-		}
 
-		protected ResponsePayload formResponsePayload(HttpResponse<byte[]> response)
-		{
-
-			byte[] responseBody = getResponseBody(response);
-
-			MultivaluedMap<String, String> responseHeaders = getResponseHeaders(
-				response);
-
-			HTTPResponsePayload responsePayload = new HTTPResponsePayload(responseHeaders,
-					response.statusCode(), responseBody);
-			return responsePayload;
-		}
-
-		@NotNull
-		protected static MultivaluedMap<String, String> getResponseHeaders(
-			HttpResponse<byte[]> response) {
-			MultivaluedMap<String, String> responseHeaders = new MultivaluedHashMap<>();
-			response.headers().map().forEach((k, v) -> {
-				responseHeaders.addAll(k, v);
-			});
-			return responseHeaders;
-		}
-
-		protected static byte[] getResponseBody(HttpResponse<byte[]> response) {
-			byte[] originalBody = response.body();
-			InputStream stream = getDecodedInputStream(new ByteArrayInputStream(originalBody), response
-				.headers());
-			byte[] responseBody = originalBody;
-			try {
-				responseBody = stream.readAllBytes();
-			} catch (IOException e) {
-				responseBody = response.body();
-				e.printStackTrace();
-			}
-			return responseBody;
-		}
-
-		@Override
 		public CompletableFuture<ResponsePayload> sendAsync(Event requestEvent, Replay replay) {
 			HttpRequest request = null;
 			try {
@@ -192,9 +132,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			}
 			CompletableFuture<HttpResponse<byte[]>> httpResponse = httpClient
 				.sendAsync(request, BodyHandlers.ofByteArray());
-			return httpResponse.thenApply(response -> {
-				return formResponsePayload(response);
-			});
+			return httpResponse.thenApply(response -> formResponsePayload(new MDHttpResponse(response)));
 		}
 
 		protected boolean verifyPayload(Event reqEvent) throws IOException {

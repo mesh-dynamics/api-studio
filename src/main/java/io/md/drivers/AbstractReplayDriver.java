@@ -113,7 +113,7 @@ public abstract class AbstractReplayDriver {
 	public interface IReplayClient {
 
 		ResponsePayload send(Event requestEvent, Replay replay)
-			throws IOException, InterruptedException;
+			throws Exception;
 
 		CompletableFuture<ResponsePayload> sendAsync(Event requestEvent, Replay replay);
 
