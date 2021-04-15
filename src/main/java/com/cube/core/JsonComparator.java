@@ -191,12 +191,17 @@ public class JsonComparator implements Comparator {
                             existingRes.resolution.isErr() ? existingRes.resolution : res.resolution);
 
                     } else {
-                        // Should never happen. In this case, we just retain the older one among them.
+                        // Should never happen. In this case, we retain only the earlier one.
                         newRes = existingRes;
                     }
                     resultPathToObjectMap.put(newRes.path, newRes);
                 } else {
-                    resultPathToObjectMap.put(res.path, res);
+                    // Put no-ops with a special key.
+                    if ((res.op.equals(Diff.NOOP))) {
+                        resultPathToObjectMap.put(res.path + "::" + Diff.NOOP, res);
+                    } else {
+                        resultPathToObjectMap.put(res.path, res);
+                    }
                 }
             });
 
