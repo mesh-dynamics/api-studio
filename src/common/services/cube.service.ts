@@ -27,6 +27,24 @@ const getReqRespMatchResult = async (lhsReqId: string, rhsReqId: string) => {
         throw new Error("Error getting request match");
     }
 }
+
+const getReqRespMatchResultFromEvents = async (lhsReqEvent: any, lhsRespEvent: any, rhsReqEvent: any, rhsRespEvent: any) => {
+    const body = {
+        lhsRequestEvent: lhsReqEvent,
+        lhsResponseEvent: lhsRespEvent,
+        
+        rhsRequestEvent: rhsReqEvent,
+        rhsResponseEvent: rhsRespEvent,
+    }
+
+    try {
+        return await api.post(`${config.apiBaseUrl}/as/getReqRespMatchResult`, body) as IReqRespMatchResultResponse
+    } catch (error) {
+        console.log("Error getting request match \n", error);
+        throw new Error("Error getting request match");
+    }
+}
+
 const fetchAppsImages = async () => {
     try {
         return await api.get(`${config.apiBaseUrl}/app/images`);
@@ -825,4 +843,5 @@ export const cubeService = {
     getTemplateSetNameLabels,
     getReqRespMatchResult,
     fetchTestReport,
+    getReqRespMatchResultFromEvents,
 };
