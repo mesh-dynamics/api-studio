@@ -379,7 +379,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         //We don't have strict match query (always with weights).
         //if query param is without weight (strict) , we will have to revise the logic
-        StringBuffer queryBuff = new StringBuffer("*:*");
+        StringBuffer queryBuff = new StringBuffer();
+        // Join Statement should be first in the query , otherwise gives exception
+        eventQuery.getJoinQuery().ifPresent(jq->addFilter(query , queryBuff, jq , eventQuery.getJoinQueryWeight()));
+        addToQryStr(queryBuff , "*:*" , true , Optional.empty());
 
         addFilter(query, TYPEF, Types.Event.toString());
         addFilter(query, CUSTOMERIDF, eventQuery.getCustomerId());
@@ -419,8 +422,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addRangeFilter(query , SEQIDEF , eventQuery.getStartSeqId() , eventQuery.getEndSeqId() , false , false);
 
         addFilter(query, PAYLOAD_FIELDS_F , eventQuery.getPayloadFields());
-
-        eventQuery.getJoinQuery().ifPresent(jq->addFilter(query , queryBuff, jq , eventQuery.getJoinQueryWeight()));
 
         for(Map.Entry<String , Boolean> entry : eventQuery.getSortingOrder().entrySet()){
             String solrField = fieldNameSolrMap.get(entry.getKey());
