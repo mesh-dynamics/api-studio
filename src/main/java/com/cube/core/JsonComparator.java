@@ -140,13 +140,9 @@ public class JsonComparator implements Comparator {
                     diff.resolution = matchVals(rule, diff.fromValue, diff.value);
                     break;
                 case Diff.REMOVE:
-                    if (rule.pt == PresenceType.Optional) {
-                        diff.resolution = Resolution.OK_Optional;
-                    } else if (rule.pt == PresenceType.Default) {
-                        diff.resolution = Resolution.OK_DefaultPT;
-                    } else {
-                        diff.resolution = Resolution.ERR_Required;
-                    }
+                    // In case of remove, the library populates the removed value in diff.value
+                    // whereas the diff.from value is empty. Hence handle remove case as a special one
+                    diff.resolution = rule.rhsmissing();
                     break;
                 default:
                     LOGGER.error("Unexpected op in diff, ignoring: " + diff.op);
@@ -312,8 +308,9 @@ public class JsonComparator implements Comparator {
 										Optional<JsonNode> fromValue,
 										Optional<JsonNode> value) {
 
-		return value.map(toVal -> {
-			if (toVal.isTextual()) {
+        return fromValue.map(fromVal ->
+            value.map(toVal -> {
+                if (toVal.isTextual()) {
 			    /* Don't do type check if ct is Ignore. So pass on to checkMatch
 				if (!fromValue.map(JsonNode::isTextual).orElse(true)) {
 					return ERR_ValTypeMismatch;
@@ -323,7 +320,7 @@ public class JsonComparator implements Comparator {
                     return v.isTextual() ? Optional.of(v.asText()) : Optional.empty();
                 });
 				Optional<String> rhs = value.map(JsonNode::asText);
-				return rule.checkMatchStr(lhs, rhs);
+				return rule.checkMatch(lhs, rhs, DataType.Str);
 			}
 			if (toVal.isInt()) {
 			    /* Don't do type check if ct is Ignore. So pass on to checkMatch
@@ -331,42 +328,39 @@ public class JsonComparator implements Comparator {
 					return ERR_ValTypeMismatch;
 				}
 				*/
-                Optional<Integer> lhs = fromValue.flatMap(v -> {
-                    return v.isInt() ? Optional.of(v.asInt()) : Optional.empty();
-                });
-				Optional<Integer> rhs = value.map(JsonNode::asInt);
-				return rule.checkMatchInt(lhs, rhs);
-			}
-			if (toVal.isDouble() || toVal.isFloat() || toVal.isLong()) {
+                    Optional<Integer> lhs = fromValue.flatMap(v -> {
+                        return v.isInt() ? Optional.of(v.asInt()) : Optional.empty();
+                    });
+                    Optional<Integer> rhs = value.map(JsonNode::asInt);
+                    return rule.checkMatch(lhs, rhs, DataType.Int);
+                }
+                if (toVal.isDouble() || toVal.isFloat() || toVal.isLong()) {
 			    /* Don't do type check if ct is Ignore. So pass on to checkMatch
 				if (!fromValue.map(fv -> fv.isDouble() || fv.isFloat() || fv.isLong()).orElse(true)) {
 					return ERR_ValTypeMismatch;
 				}
 				*/
-                Optional<Double> lhs = fromValue.flatMap(v -> {
-                    return (v.isDouble() || v.isFloat() || v.isLong() || v.isInt()) ?
-                        Optional.of(v.asDouble()) : Optional.empty();
-                });
-				Optional<Double> rhs = value.map(JsonNode::asDouble);
-				return rule.checkMatchDbl(lhs, rhs);
-			}
-			if (toVal.isValueNode()) {
-				// Treat everything else as String
-				// TODO: revisit this later
-				Optional<String> lhs = fromValue.map(JsonNode::asText);
-				Optional<String> rhs = value.map(JsonNode::asText);
-				return rule.checkMatchStr(lhs, rhs);
-			} else {
-				// object or array. This can come in diff only if there is no corresponding object in the from
-				if (fromValue.isPresent()) {
-					LOGGER.error("Internal error - this should never happen");
-					return ERR;
-				} else {
-					return rule.lhsmissing();
-				}
-			}
-			// this is the case when the rhs path is present, but the value is null
-		}).orElseGet(rule::rhsmissing);
+                    Optional<Double> lhs = fromValue.flatMap(v -> {
+                        return (v.isDouble() || v.isFloat() || v.isLong() || v.isInt()) ?
+                            Optional.of(v.asDouble()) : Optional.empty();
+                    });
+                    Optional<Double> rhs = value.map(JsonNode::asDouble);
+                    return rule.checkMatch(lhs, rhs, DataType.Float);
+                }
+                if (toVal.isValueNode()) {
+                    // Treat everything else as String
+                    // TODO: revisit this later
+                    Optional<String> lhs = fromValue.map(JsonNode::asText);
+                    Optional<String> rhs = value.map(JsonNode::asText);
+                    return rule.checkMatch(lhs, rhs, DataType.Str);
+                } else {
+                    // object or array. This can come in diff only if there is no corresponding object in the from
+                    LOGGER.error("Internal error - this should never happen");
+                    return ERR;
+
+                }
+                // this is the case when the rhs path is present, but the value is null
+            }).orElseGet(rule::rhsmissing)).orElseGet(rule::lhsmissing);
 	}
 
 
