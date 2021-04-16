@@ -258,6 +258,7 @@ export interface ICubeState {
   testIdsReqStatus: string;
   timelineData: ITimelineData[];
   isGettingStartedHidden?: boolean;
+  forceCompletingReplay: boolean;
 }
 
 //Golden State
@@ -535,6 +536,7 @@ export interface IHttpClientTabDetails {
   grpcConnectionSchema: IGrpcConnect;
   hideInternalHeaders: boolean;
   requestPathURL: string;
+  authorized?: any;
 }
 
 export interface IHttpTrailers {
@@ -641,6 +643,7 @@ export interface IHttpClientStoreState {
   userApiTraceHistory: IUserApiTraceHistory[];
   userCollectionId: string;
   userCollections: ICollectionDetails[];
+  allUserCollections: ICollectionDetails[];
   userHistoryCollection: ICollectionDetails | null;
   mockContextLookupCollection: string;
   mockContextSaveToCollection: ICollectionDetails;

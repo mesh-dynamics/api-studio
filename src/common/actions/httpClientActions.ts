@@ -100,8 +100,8 @@ export const httpClientActions: IActionsType = {
         return {type: httpClientConstants.PRE_DRIVE_REQUEST, data: {tabId, responseStatus, showCompleteDiff, runId}}; 
     },
 
-    postSuccessDriveRequest: (tabId, responseStatus, responseStatusText, responseHeaders, responseBody, responseTrailers) => {
-        return {type: httpClientConstants.POST_SUCCESS_DRIVE_REQUEST, data: {tabId, responseStatus, responseStatusText, responseHeaders, responseBody, responseTrailers}}; 
+    postSuccessDriveRequest: (tabId, responseStatus, responseStatusText, responseHeaders, responseBody, responseTrailers, authorized) => {
+        return {type: httpClientConstants.POST_SUCCESS_DRIVE_REQUEST, data: {tabId, responseStatus, responseStatusText, responseHeaders, responseBody, responseTrailers, authorized}}; 
     },
 
     afterResponseReceivedData: (tabId, responseBody) => {
@@ -152,6 +152,10 @@ export const httpClientActions: IActionsType = {
 
     addUserCollections: (userCollections) => {
         return {type: httpClientConstants.ADD_USER_COLLECTIONS, data: {userCollections, isCollectionLoading: false}};
+    },
+
+    addAllUserCollections: (userCollections) => {
+        return {type: httpClientConstants.ADD_ALL_USER_COLLECTIONS, data: {userCollections}};
     },
     deleteUserCollection: (userCollectionId) => {
         return {type: httpClientConstants.DELETE_USER_COLLECTION, data: userCollectionId};
@@ -577,6 +581,20 @@ export const httpClientActions: IActionsType = {
             throw new Error("Error");
         }
     },
+    loadAllUserCollections: (numResults: number) => async(dispatch, getState) =>{
+        const { cube: {selectedApp}, httpClient: {collectionTabState}, authentication: { user } } = getState();
+        let app = selectedApp;
+        try {
+            const response = await cubeService.fetchCollectionList(user, app!, "UserGolden", true, numResults);
+            const serverRes = response.recordings;
+            const userCollections = serverRes.filter((eachCollection) => (eachCollection.recordingType !== "History"))
+            dispatch(httpClientActions.addAllUserCollections(userCollections));
+            
+        } catch (error) {
+            console.error("Error ", error);
+            throw new Error("Error");
+        }
+    },
 
     loadUserCollections: (resetToFirstPage = true) => async (dispatch, getState) => {
         const { cube: {selectedApp}, httpClient: {collectionTabState}, authentication: { user } } = getState();
@@ -710,8 +728,8 @@ export const httpClientActions: IActionsType = {
         return { type: httpClientConstants.TOGGLE_HIDE_INTERNAL_HEADERS, data : {tabId} }
     },
 
-    updateTabWithNewData: (tabId, reqData, collectionId, recordingId) => {
-        return {type: httpClientConstants.UPDATE_TAB_WITH_NEW_DATA, data: {tabId, reqData, collectionId, recordingId}}   
+    updateTabWithNewData: (tabId, reqData, collectionId, recordingId, collectionName) => {
+        return {type: httpClientConstants.UPDATE_TAB_WITH_NEW_DATA, data: {tabId, reqData, collectionId, recordingId, collectionName}}   
     },
 
     updateOutgoingTabWithNewData: (tabId, outgoingTabId, reqData, collectionId, recordingId) => {

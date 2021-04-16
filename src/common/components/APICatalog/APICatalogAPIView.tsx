@@ -14,13 +14,11 @@ class APICatalogAPIView extends Component<IAPICatalogAPIViewProps> {
     }
 
     render() {
-        const { apiCatalog: {apiFacets, selectedService, selectedApiPath, selectedInstance}, app } = this.props;
+        const { app } = this.props;
         return (
             <div style={{ display: "flex", flexDirection: "column" }}>
                 <div className="api-catalog-bordered-box">
-                    <APIRequestsTable
-                        app={app}
-                    />
+                    <APIRequestsTable app={app} />
                 </div>
             </div>
         )

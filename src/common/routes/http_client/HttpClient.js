@@ -8,6 +8,7 @@ import HttpRequestMessage from "./HttpRequestMessage.tsx";
 import HttpResponseMessage from "./HttpResponseMessage.tsx";
 
 import GRPCRequestMessage from "./GRPCRequestMessage.tsx";
+import SSLAuthorizationIndicator from "./components/SSLAuthorizationIndicator.tsx";
 
 import ErrorBoundary from '../../components/ErrorHandling/ErrorBoundary';
 import ReactDiffViewer from '../../utils/diff/diff-main';
@@ -494,6 +495,7 @@ class HttpClient extends Component {
                     </div>
                     <div style={{ display: "flex"}}>
                         <div>
+                            <SSLAuthorizationIndicator authorized={currentSelectedTab.authorized} />
                             <div className="btn btn-sm cube-btn text-center" style={{ display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
                                 <Glyphicon glyph="random" /> DIFF
                             </div>
