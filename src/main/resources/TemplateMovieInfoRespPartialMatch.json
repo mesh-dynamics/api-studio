@@ -357,13 +357,13 @@
           "path": "/body/0/store_id",
           "pt": "Optional",
           "dt": "Int",
-          "ct" : "Default"
+          "ct" : "Ignore"
         },
         {
           "path": "/body/1/store_id",
           "pt": "Optional",
           "dt": "Int",
-          "ct": "Default"
+          "ct": "Ignore"
         }
       ]
     }

@@ -105,27 +105,27 @@
                     "fromValue": "Thu, 28 Mar 2019 12:48:54 GMT",
                     "op": "replace",
                     "path": "/hdrs/date/0",
-                    "resolution": "OK_DefaultCT",
+                    "resolution": "OK_Ignore",
                     "value": "Fri, 04 Jan 2019 09:09:00 GMT"
                 },
                 {
                     "fromValue": "41",
                     "op": "replace",
                     "path": "/hdrs/content-length/0",
-                    "resolution": "OK_DefaultCT",
+                    "resolution": "OK_Ignore",
                     "value": "178"
                 },
                 {
                     "fromValue": "60486",
                     "op": "replace",
                     "path": "/hdrs/x-envoy-upstream-service-time/0",
-                    "resolution": "OK_DefaultCT",
+                    "resolution": "OK_Ignore",
                     "value": "1"
                 },
                 {
                     "op": "add",
                     "path": "/hdrs/server",
-                    "resolution": "ERR_NewField",
+                    "resolution": "OK_Optional",
                     "value": {
                         "0": "WEBrick/1.3.1 (Ruby/2.3.7/2018-03-28)"
                     }
@@ -133,7 +133,7 @@
                 {
                     "op": "add",
                     "path": "/hdrs/connection",
-                    "resolution": "ERR_NewField",
+                    "resolution": "OK_Optional",
                     "value": { "0" :  "Keep-Alive" }
                 },
                 {
@@ -151,49 +151,49 @@
                 {
                     "op": "add",
                     "path": "/body/author",
-                    "resolution": "OK_Ignore",
+                    "resolution": "OK_Optional",
                     "value": "William Shakespeare"
                 },
                 {
                     "op": "add",
                     "path": "/body/year",
-                    "resolution": "OK_Ignore",
+                    "resolution": "ERR_RequiredGolden",
                     "value": 1595
                 },
                 {
                     "op": "add",
                     "path": "/body/type",
-                    "resolution": "OK_DefaultCT",
+                    "resolution": "OK_Optional",
                     "value": "paperback"
                 },
                 {
                     "op": "add",
                     "path": "/body/pages",
-                    "resolution": "OK_DefaultCT",
+                    "resolution": "OK_Optional",
                     "value": 200
                 },
                 {
                     "op": "add",
                     "path": "/body/publisher",
-                    "resolution": "OK_DefaultCT",
+                    "resolution": "OK_Optional",
                     "value": "PublisherA"
                 },
                 {
                     "op": "add",
                     "path": "/body/language",
-                    "resolution": "OK_DefaultCT",
+                    "resolution": "OK_Optional",
                     "value": "English"
                 },
                 {
                     "op": "add",
                     "path": "/body/ISBN-10",
-                    "resolution": "OK_DefaultCT",
+                    "resolution": "OK_Optional",
                     "value": "1234567890"
                 },
                 {
                     "op": "add",
                     "path": "/body/ISBN-13",
-                    "resolution": "OK_DefaultCT",
+                    "resolution": "OK_Optional",
                     "value": "123-1234567890"
                 }
             ],
