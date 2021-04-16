@@ -1,4 +1,4 @@
-[![Build Status](http://drone.cubecorp.io/api/badges/cube-io-corp/cubeui-backend/status.svg)](http://drone.cubecorp.io/cube-io-corp/cubeui-backend)
+[![Build Status](http://drone.meshdynamics.io/api/badges/cube-io-corp/cubeio/status.svg)](http://drone.meshdynamics.io/cube-io-corp/cubeio)
 # CubeIO Backend
 
 This application was generated using `Spring-Boot (v4.3.18)`.  
