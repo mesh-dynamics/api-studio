@@ -186,6 +186,7 @@ public class AppController {
                         .build());
 
         this.appFileStorageService.storeFile(file, saved);
+        this.cubeServerService.saveEmptyTemplateSetForApp(request, saved);
         Optional<List<User>> optionalUsers = this.userRepository.findByCustomerId(customer.get().getId());
         optionalUsers.ifPresent(users -> {
             users.forEach(u -> {

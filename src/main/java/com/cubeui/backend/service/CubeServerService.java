@@ -9,21 +9,30 @@ import static org.springframework.http.ResponseEntity.status;
 import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.DTO.Response.AppResponse;
 import com.cubeui.backend.web.ErrorResponse;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.md.core.AttributeRuleMap;
 import io.md.dao.ApiTraceResponse;
+import io.md.dao.CompareTemplateVersioned;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
+import io.md.dao.TemplateSet;
 import io.md.utils.Constants;
+import java.io.File;
+import java.io.FileInputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.PostConstruct;
@@ -31,6 +40,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,8 +50,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -177,6 +189,27 @@ public class CubeServerService {
         ResponseEntity response = fetchGetResponse(path, query);
         Optional<List<Recording>> recordings = getListData(response, path+query, Optional.of("recordings"), new TypeReference<List<Recording>>(){});
         return recordings.map(r -> r.stream().findFirst()).orElse(Optional.empty());
+    }
+
+    @Async("threadPoolTaskExecutor")
+    public void saveEmptyTemplateSetForApp(HttpServletRequest request, App app) {
+        URI uri = UriBuilder
+            .fromPath("/as/saveTemplateSet/{customer}/{app}")
+            .build(app.getCustomer().getName(), app.getName());
+        TemplateSet templateSet = new TemplateSet(app.getCustomer().getName(),
+            app.getName(), null, Collections.emptyList(), Optional.empty(), "Default"+app.getName(), "");
+        LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+        map.add("file",  templateSet);
+        fetchPostResponse(request, Optional.of(map), uri.getPath());
+    }
+
+    public ResponseEntity getTemplateSetLabels(App app) {
+        URI uri = UriBuilder
+            .fromPath("/as/getTemplateSetLabels/{customerId}/{appId}")
+            .queryParam(Constants.TEMPLATE_SET_NAME, "Default"+app.getName())
+            .queryParam(Constants.TEMPLATE_SET_LABEL, "")
+            .build(app.getCustomer().getName(), app.getName());
+        return fetchGetResponse(cubeServerBaseUrlReplay + uri.getPath(), uri.getQuery());
     }
 
     public ResponseEntity getTimeLinersResult(Replay replay) {
