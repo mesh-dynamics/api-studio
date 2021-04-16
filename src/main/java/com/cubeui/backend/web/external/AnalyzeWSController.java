@@ -365,7 +365,7 @@ public class AnalyzeWSController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @GetMapping("/getReqRespMatchResult")
+    @RequestMapping(value = "/getReqRespMatchResult")
     public ResponseEntity getReqRespMatchResult(HttpServletRequest request, @RequestBody Optional<String> getBody) {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
