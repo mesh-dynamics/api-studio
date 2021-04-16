@@ -130,6 +130,7 @@ public class Constants {
 	public static final String ARGS_PATH = "/args";
 	public static final String FN_RESPONSE_PATH = "/retOrExceptionVal";
 	public static final String HDR_PATH = "/hdr";
+	public static final String TRLS_PATH = "/trls";
 	public static final String META_PATH = "/meta";
 	public static final String BODY_PATH = "/body";
 
