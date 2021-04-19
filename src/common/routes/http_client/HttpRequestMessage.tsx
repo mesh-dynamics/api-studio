@@ -72,6 +72,10 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
         }
     }
 
+    componentDidMount() {
+        this.handleServiceChange(this.props.service);
+    }
+
     handleChange(evt) {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.updateParam(isOutgoingRequest, tabId, evt.target.name, evt.target.name, evt.target.value);

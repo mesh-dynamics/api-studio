@@ -267,15 +267,23 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             const selectedTabIndex = tabs.findIndex(tab => tab.id === selectedTabKey);
             const selectedOutgoingTabIndex = tabs[selectedTabIndex]["outgoingRequests"].findIndex(tab => tab.id === data.tabId);
             let params = tabs[selectedTabIndex]["outgoingRequests"][selectedOutgoingTabIndex][data.type];
+            let changed = false;
             if (_.isArray(params)) {
-                let specificParamArr = params.filter((e) => e.id === data.id);
-                if (specificParamArr.length > 0) {
-                    specificParamArr[0][data.key] = data.value;
-                }
+                params = (params as Array<any>).map( param => {
+                    if((param.id === data.id) && (param[data.key] !== data.value)){
+                        changed = true;
+                        return {...param, [data.key] : data.value}
+                    }else{
+                        return param;
+                    }
+                })
             } else {
-                params = data.value;
+                if(params !== data.value) {
+                    params = data.value;
+                    changed = true;
+                }
             }
-            return {
+            return changed ? {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === selectedTabKey) {
@@ -289,7 +297,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                     }
                     return eachTab;
                 })
-            }
+            } : state;
         }
 
         case httpClientConstants.UPDATE_PARAM_IN_TAB: {
@@ -297,19 +305,25 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
             if (tabIndex < 0) return state;
             tabs[tabIndex] = {...tabs[tabIndex]};
+            let changed = false;
             let params = tabs[tabIndex][data.type as IHttpClientTabDetailsFieldNames];
             if (_.isArray(params)) {
                 params = (params as Array<any>).map( param => {
-                    if(param.id === data.id){
+                    if((param.id === data.id) && (param[data.key] !== data.value)){
+                        changed = true;
                         return {...param, [data.key] : data.value}
                     }else{
                         return param;
                     }
                 })
             } else {
-                params = data.value;
+                if(params !== data.value) {
+                    params = data.value;
+                    changed = true;
+                }
             }
-            return {
+
+            return changed ? {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
@@ -325,7 +339,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                     }
                     return eachTab;
                 })
-            }
+            } : state;
         }
 
         case httpClientConstants.UPDATE_ALL_PARAMS_IN_OUTGOING_TAB: {
