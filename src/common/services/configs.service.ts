@@ -21,6 +21,7 @@ export interface IUpoadRuleArgs {
   version: string;
   formData: FormData;
   apiConfig: AxiosRequestConfig;
+  name: string;
 }
 export interface IProtoDescriptorFileUploadArgs{
   customerId: string;
@@ -157,7 +158,7 @@ const getTemplateSet = async(customerId: string, app: string, version: string) =
 const saveComparisonRulesConfigFromJson = async (
   uploadArgs: IUpoadRuleArgs
 ) => {
-  let apiEventURL = `${config.analyzeBaseUrl}/saveTemplateSet/${uploadArgs.customerId}/${uploadArgs.app}`;
+  let apiEventURL = `${config.analyzeBaseUrl}/saveTemplateSet/${uploadArgs.customerId}/${uploadArgs.app}/${uploadArgs.name}`;
 
   try {
     return api.post(apiEventURL, uploadArgs.formData, uploadArgs.apiConfig);
@@ -169,7 +170,7 @@ const saveComparisonRulesConfigFromJson = async (
 const saveComparisonRulesConfigFromCsv = async (
   uploadArgs: IUpoadRuleArgs
 ) => {
-  let apiEventURL = `${config.analyzeBaseUrl}/learnComparisonRules/${uploadArgs.customerId}/${uploadArgs.app}/${uploadArgs.version}`;
+  let apiEventURL = `${config.analyzeBaseUrl}/learnComparisonRules/${uploadArgs.customerId}/${uploadArgs.app}/${uploadArgs.name}`;
 
   try {
     return api.post(apiEventURL, uploadArgs.formData, uploadArgs.apiConfig);
