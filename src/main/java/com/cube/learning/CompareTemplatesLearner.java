@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,16 +42,16 @@ public class CompareTemplatesLearner {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompareTemplatesLearner.class);
     private static final List<String> jsonPathsToIgnoreForRemoval = Arrays.asList("", "/payloadFields");
 
-    String customer;
-    String app;
-    String templateVersion;
-    ReqRespStore rrstore;
+    private static String customer;
+    private static String app;
+    private static String templateSetVersion;
+    private static ReqRespStore rrstore;
 
-    public CompareTemplatesLearner(String customer, String app, String templateVersion,
+    public CompareTemplatesLearner(String customer, String app, String templateSetVersion,
         ReqRespStore rrstore) {
         this.customer = customer;
         this.app = app;
-        this.templateVersion = templateVersion;
+        this.templateSetVersion = templateSetVersion;
         this.rrstore = rrstore;
     }
 
@@ -85,9 +86,8 @@ public class CompareTemplatesLearner {
     void addAllTemplateEntriesAsRules(LearningContext context, String service, String requestPath,
         Type type, Optional<String> method, CompareTemplate template) {
 
-        TemplateKey templateKey = new TemplateKey(templateVersion, customer, app,
+        TemplateKey templateKey = new TemplateKey(templateSetVersion, customer, app,
             service, requestPath, type, method, TemplateKey.DEFAULT_RECORDING);
-//                existingCompareTemplatesMap.putIfAbsent(templateKey, template);
         context.addCoveredKey(templateKey);
 
         Action action;
@@ -143,11 +143,12 @@ public class CompareTemplatesLearner {
     }
 
 
-    void addLearnedTemplateMetas(LearningContext context, Type reqOrResp, String service, Resolution resolution,
+    void addLearnedTemplateMetas(LearningContext context, Type reqOrResp, String service,
+        Resolution resolution,
         String apiPath,
         Optional<String> method, String jsonPath) {
 
-        TemplateKey templateKey = new TemplateKey(templateVersion, customer, app, service, apiPath,
+        TemplateKey templateKey = new TemplateKey(templateSetVersion, customer, app, service, apiPath,
             reqOrResp, method, TemplateKey.DEFAULT_RECORDING);
 
         if (!context.isKeyCovered(templateKey)) {
@@ -210,12 +211,12 @@ public class CompareTemplatesLearner {
                 }
             } else {
                 // This branch indicates no applicable exact or inherited rule exists for this diff
-                // -- which can only happen unless template rule not found and eventType cannot be determined
+                // -- which cannot happen unless template rule not found and eventType cannot be determined
                 // to fetch template rule!
                 LOGGER.error(String.format(
                     "No default rule found as eventType couldn't be determined. "
-                        + "No recorded event in database for template=%s "
-                        + "customer=%s app=%s api=%s service=%s", templateVersion, customer,
+                        + "No recorded event in database for templateVersion=%s "
+                        + "customer=%s app=%s api=%s service=%s", templateSetVersion, customer,
                     app, apiPath, service));
                 currentCt = ComparisonType.Ignore;
                 currentPt = PresenceType.Optional;
@@ -320,7 +321,7 @@ public class CompareTemplatesLearner {
         HashMap<TemplateKey, CompareTemplateVersioned> templatesMap = new HashMap<>();
 
         templateEntryMetaList.forEach(tm -> {
-            TemplateKey templateKey = new TemplateKey(templateVersion, customer, app, tm.service,
+            TemplateKey templateKey = new TemplateKey(templateSetVersion, customer, app, tm.service,
                 CompareTemplate.normaliseAPIPath(tm.apiPath), tm.reqOrResp, tm.getMethod(), TemplateKey.DEFAULT_RECORDING);
 
             PresenceType effectivePt = tm.getNewPt().orElse(tm.getCurrentPt());
@@ -337,9 +338,12 @@ public class CompareTemplatesLearner {
 
         });
 
+        Pair<String, String> templateSetNameAndLabel = Utils.extractTemplateSetNameAndLabel(
+            templateSetVersion);
+
         return new TemplateSet(customer, app, Instant.now(),
-            new ArrayList<>(templatesMap.values()), Optional.empty(), templateVersion, LocalDateTime
-            .now().format(Utils.templateLabelFormatter));
+            new ArrayList<>(templatesMap.values()), Optional.empty(),
+            templateSetNameAndLabel.getLeft(), templateSetNameAndLabel.getRight());
     }
 
 

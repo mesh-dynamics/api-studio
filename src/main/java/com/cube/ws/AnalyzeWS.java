@@ -551,13 +551,18 @@ public class AnalyzeWS {
     }
 
     @POST
-    @Path("learnComparisonRules/{customerId}/{app}/{version}")
+    @Path("learnComparisonRules/{customerId}/{app}/{templateSetName}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response saveComparisonRules(@PathParam("customerId") String customerId,
+    public Response saveComparisonRules(@Context UriInfo uriInfo,
+        @PathParam("customerId") String customerId,
         @PathParam("app") String app,
-        @PathParam("version") String version,
+        @PathParam("templateSetName") String templateSetName,
         @FormDataParam("file") InputStream uploadedInputStream) {
+
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+        Optional<String> templateSetLabel = Optional
+            .ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_LABEL));
 
         CsvSchema csvSchema = csvMapper.schemaFor(TemplateEntryMeta.class)
             .withSkipFirstDataRow(true);
@@ -570,7 +575,9 @@ public class AnalyzeWS {
             templateEntryMetaList = mi.readAll();
 
             CompareTemplatesLearner ctLearner = new CompareTemplatesLearner(customerId,
-                app, version, rrstore);
+                app, io.md.utils.Utils
+                .createTemplateSetVersion(templateSetName, templateSetLabel.orElse(LocalDateTime
+                    .now().format(io.md.utils.Utils.templateLabelFormatter))), rrstore);
 
             TemplateSet templateSet = ctLearner
                 .createTemplateSetFromTemplateEntryMetas(templateEntryMetaList);
@@ -589,13 +596,13 @@ public class AnalyzeWS {
                 "templateSetVersion", templateSet.version))).toString()).build();
 
         } catch (IOException e) {
-            LOGGER.error(
-                String.format("Error in reading CSV file for customer=%s, app=%s, version=%s",
-                    customerId, app, version), e);
-            return Response.serverError().entity(
-                Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
-                    String.format("Error in reading CSV file for customer=%s, app=%s, version=%s",
-                        customerId, app, version))).build();
+            String errorMsg = String.format(
+                "Error in reading CSV file for customer=%s, app=%s, templateSetName=%s, templateSetLabel=%s",
+                customerId, app, templateSetName);
+            LOGGER.error(errorMsg, e);
+            return Response.serverError().entity(Utils
+                .buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION, errorMsg))
+                .build();
         } catch (CompareTemplate.CompareTemplateStoreException e) {
             return Response.serverError().entity((
                 Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED,
@@ -1190,25 +1197,35 @@ public class AnalyzeWS {
     }
 
     @POST
-    @Path("saveTemplateSet/{customer}/{app}")
+    @Path("saveTemplateSet/{customer}/{app}/{templateSetName}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response saveTemplateSet(@Context UriInfo uriInfo, @PathParam("customer") String customer,
-	    @PathParam("app") String app, @FormDataParam("file") InputStream uploadedInputStream) {
-		        TemplateSet templateSet;
+    public Response saveTemplateSet(@Context UriInfo uriInfo,
+        @PathParam("customer") String customer,
+        @PathParam("app") String app,
+        @PathParam("templateSetName") String templateSetName,
+        @FormDataParam("file") InputStream uploadedInputStream) {
+
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+        Optional<String> templateSetLabel = Optional
+            .ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_LABEL));
+        TemplateSet templateSet;
         try {
-	        templateSet = this.jsonMapper.readValue(uploadedInputStream, TemplateSet.class);
-	        if (!templateSet.customer.equals(customer) || !templateSet.app.equals(app)){
-		        return Response.status(Status.UNAUTHORIZED).entity(Utils
+            templateSet = this.jsonMapper.readValue(uploadedInputStream, TemplateSet.class);
+            if (!templateSet.customer.equals(customer) || !templateSet.app.equals(app)) {
+                return Response.status(Status.UNAUTHORIZED).entity(Utils
 			        .buildErrorResponse(Constants.ERROR, "UNAUTHORIZED", String.format(
 				        "customer/app name mismatch in path and json file. "
 					        + "path customer=%s app=%s json customer=%s app=%s",
 				        customer, app, templateSet.customer, templateSet.app))).build();
 	        }
-	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-	        templateSet.version = io.md.utils.Utils
-		        .createTemplateSetVersion(templateSet.name, templateSet.label);
-	        templateSet.templates.forEach(compareTemplateVersioned -> {
+
+            // Ignore tempateSetName, templateSetLabel and version provided in the json.
+            templateSet.version = io.md.utils.Utils
+		        .createTemplateSetVersion(templateSetName, templateSetLabel.orElse(LocalDateTime
+                    .now().format(io.md.utils.Utils.templateLabelFormatter)));
+
+            templateSet.templates.forEach(compareTemplateVersioned -> {
 		        String normalisedAPIPath= CompareTemplate.normaliseAPIPath(compareTemplateVersioned.requestPath);
 		        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Normalizing APIPath before storing template ",
 			        "Original APIPath", compareTemplateVersioned.requestPath,
