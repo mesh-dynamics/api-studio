@@ -930,12 +930,16 @@ public class AnalyzeWS {
         Optional<Boolean> includeDiff = Optional
             .ofNullable(queryParams.getFirst(Constants.INCLUDE_DIFF)).flatMap(Utils::strToBool);
 
-        /* using array as container for value to be updated since lambda function cannot update outer variables */
+        /* using array as container for value to be updated since lambda function cannot update outer variables
+            1st element is app name
+            2nd is templateVersion
+            3rd is templateName
+            4th templateLabel
+         */
         Long[] numFound = {0L};
-        String[] app = {"", ""};
+        String[] app = {"", "", "", ""};
 	    Map facetMap = new HashMap();
 	    List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
-
 		    ReqRespResultsWithFacets resultWithFacets = rrstore
 			    .getAnalysisMatchResults(analysisMatchResultQuery);
 
@@ -953,6 +957,9 @@ public class AnalyzeWS {
 		    Optional<Analysis> analysisOpt = rrstore.getAnalysis(replayId);
             app[0] = replay.app;
             app[1] = analysisOpt.map(analysis -> analysis.templateVersion).orElse(replay.templateVersion);
+        Pair<String, String> templateSetNameAndLabel = io.md.utils.Utils.extractTemplateSetNameAndLabel(app[1]);
+          app[2] = templateSetNameAndLabel.getLeft();
+          app[3] = templateSetNameAndLabel.getRight();
             List<ReqRespMatchResult> res = result.getObjects()
                 .collect(Collectors.toList());
 		    Map<String, Event> reqMap = new HashMap<>();
@@ -1109,10 +1116,10 @@ public class AnalyzeWS {
 		    return list;
         }).orElse(Collections.emptyList());
 
-        String json;
+      String json;
         try {
             json = jsonMapper
-                .writeValueAsString(new MatchResults(matchResList, numFound[0], app[0], app[1]));
+                .writeValueAsString(new MatchResults(matchResList, numFound[0], app[0], app[1], app[2], app[3]));
 	        JSONObject jsonObject = new JSONObject(json);
 	        jsonObject.put(Constants.FACETS, facetMap);
 
@@ -2402,17 +2409,21 @@ public class AnalyzeWS {
 	}
 
     static class MatchResults {
-        public MatchResults(List<MatchRes> res, long numFound, String app, String templateVersion) {
+        public MatchResults(List<MatchRes> res, long numFound, String app, String templateVersion, String templateName, String templateLabel) {
             this.res = res;
             this.numFound = numFound;
             this.app = app;
             this.templateVersion = templateVersion;
+            this.templateName = templateName;
+            this.templateLabel = templateLabel;
         }
 
         public final List<MatchRes> res;
 	    public final long numFound;
 	    public String app;
 	    public String templateVersion;
+	    public String templateName;
+	    public String templateLabel;
     }
 
     static class RespAndMatchResults {
