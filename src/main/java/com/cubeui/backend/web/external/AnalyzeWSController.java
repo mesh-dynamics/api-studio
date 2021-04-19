@@ -164,9 +164,10 @@ public class AnalyzeWSController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/saveTemplateSet/{customer}/{app}")
-    public ResponseEntity saveTemplateSet(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String customer,
-                                           @PathVariable String app, Authentication authentication, @RequestParam("file") MultipartFile[] files)
+    @PostMapping("/saveTemplateSet/{customer}/{app}/{templateSetName}")
+    public ResponseEntity saveTemplateSet(HttpServletRequest request, @RequestBody Optional<String> postBody,
+        @PathVariable String customer, @PathVariable String app, @PathVariable String templateSetName,
+        Authentication authentication, @RequestParam("file") MultipartFile[] files)
         throws IOException {
         validation.validateCustomerName(authentication,customer);
         LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
