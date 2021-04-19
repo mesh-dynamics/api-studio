@@ -22,7 +22,6 @@ import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.utils.Utils;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,10 +41,10 @@ public class CompareTemplatesLearner {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompareTemplatesLearner.class);
     private static final List<String> jsonPathsToIgnoreForRemoval = Arrays.asList("", "/payloadFields");
 
-    private static String customer;
-    private static String app;
-    private static String templateSetVersion;
-    private static ReqRespStore rrstore;
+    private final String customer;
+    private final String app;
+    private final String templateSetVersion;
+    private final ReqRespStore rrstore;
 
     public CompareTemplatesLearner(String customer, String app, String templateSetVersion,
         ReqRespStore rrstore) {
