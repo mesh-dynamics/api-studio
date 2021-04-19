@@ -957,11 +957,9 @@ public class AnalyzeWS {
 		    Optional<Analysis> analysisOpt = rrstore.getAnalysis(replayId);
             app[0] = replay.app;
             app[1] = analysisOpt.map(analysis -> analysis.templateVersion).orElse(replay.templateVersion);
-        Optional<TemplateSet> templateSetForVersion = rrstore.getTemplateSet(replay.customerId, replay.app, app[1]);
-        templateSetForVersion.ifPresent(ts -> {
-          app[2] = ts.name;
-          app[3] = ts.label;
-        });
+        Pair<String, String> templateSetNameAndLabel = io.md.utils.Utils.extractTemplateSetNameAndLabel(app[1]);
+          app[2] = templateSetNameAndLabel.getLeft();
+          app[3] = templateSetNameAndLabel.getRight();
             List<ReqRespMatchResult> res = result.getObjects()
                 .collect(Collectors.toList());
 		    Map<String, Event> reqMap = new HashMap<>();
