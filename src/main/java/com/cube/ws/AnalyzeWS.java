@@ -551,18 +551,35 @@ public class AnalyzeWS {
     }
 
     @POST
-    @Path("learnComparisonRules/{customerId}/{app}/{version}")
+    @Path("learnComparisonRules/{customerId}/{app}/{templateSetName}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response saveComparisonRules(@PathParam("customerId") String customerId,
+    public Response saveComparisonRules(@Context UriInfo uriInfo,
+        @PathParam("customerId") String customerId,
         @PathParam("app") String app,
-        @PathParam("version") String version,
+        @PathParam("templateSetName") String templateSetName,
         @FormDataParam("file") InputStream uploadedInputStream) {
+
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+        Optional<String> templateSetLabel = Optional
+            .ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_LABEL));
 
         CsvSchema csvSchema = csvMapper.schemaFor(TemplateEntryMeta.class)
             .withSkipFirstDataRow(true);
 
         try {
+
+            String templateSetVersion = io.md.utils.Utils
+                .createTemplateSetVersion(templateSetName, templateSetLabel.orElse(LocalDateTime
+                    .now().format(io.md.utils.Utils.templateLabelFormatter)));
+
+            rrstore.getTemplateSet(customerId, app, templateSetVersion).ifPresent(
+                io.md.utils.UtilException.rethrowConsumer(set ->
+                {
+                    throw new Exception(
+                        "Template Set with given version (name::label) already exists");
+                }));
+
             List<TemplateEntryMeta> templateEntryMetaList;
             MappingIterator<TemplateEntryMeta> mi = csvMapper
                 .readerFor(TemplateEntryMeta.class).
@@ -570,7 +587,7 @@ public class AnalyzeWS {
             templateEntryMetaList = mi.readAll();
 
             CompareTemplatesLearner ctLearner = new CompareTemplatesLearner(customerId,
-                app, version, rrstore);
+                app, templateSetVersion, rrstore);
 
             TemplateSet templateSet = ctLearner
                 .createTemplateSetFromTemplateEntryMetas(templateEntryMetaList);
@@ -589,13 +606,13 @@ public class AnalyzeWS {
                 "templateSetVersion", templateSet.version))).toString()).build();
 
         } catch (IOException e) {
-            LOGGER.error(
-                String.format("Error in reading CSV file for customer=%s, app=%s, version=%s",
-                    customerId, app, version), e);
-            return Response.serverError().entity(
-                Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
-                    String.format("Error in reading CSV file for customer=%s, app=%s, version=%s",
-                        customerId, app, version))).build();
+            String errorMsg = String.format(
+                "Error in reading CSV file for customer=%s, app=%s, templateSetName=%s, templateSetLabel=%s",
+                customerId, app, templateSetName, templateSetLabel);
+            LOGGER.error(errorMsg, e);
+            return Response.serverError().entity(Utils
+                .buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION, errorMsg))
+                .build();
         } catch (CompareTemplate.CompareTemplateStoreException e) {
             return Response.serverError().entity((
                 Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED,
@@ -1197,69 +1214,85 @@ public class AnalyzeWS {
     }
 
     @POST
-    @Path("saveTemplateSet/{customer}/{app}")
+    @Path("saveTemplateSet/{customer}/{app}/{templateSetName}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response saveTemplateSet(@Context UriInfo uriInfo, @PathParam("customer") String customer,
-	    @PathParam("app") String app, @FormDataParam("file") InputStream uploadedInputStream) {
-		        TemplateSet templateSet;
+    public Response saveTemplateSet(@Context UriInfo uriInfo,
+        @PathParam("customer") String customer,
+        @PathParam("app") String app,
+        @PathParam("templateSetName") String templateSetName,
+        @FormDataParam("file") InputStream uploadedInputStream) {
+
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+        Optional<String> templateSetLabel = Optional
+            .ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_LABEL));
+        TemplateSet templateSet;
         try {
-	        templateSet = this.jsonMapper.readValue(uploadedInputStream, TemplateSet.class);
-	        if (!templateSet.customer.equals(customer) || !templateSet.app.equals(app)){
-		        return Response.status(Status.UNAUTHORIZED).entity(Utils
+
+            // We ignore templateSetName, templateSetLabel and version provided in the json.
+
+            String templateSetVersion = io.md.utils.Utils
+                .createTemplateSetVersion(templateSetName, templateSetLabel.orElse(LocalDateTime
+                    .now().format(io.md.utils.Utils.templateLabelFormatter)));
+
+            rrstore.getTemplateSet(customer, app, templateSetVersion).ifPresent(
+                io.md.utils.UtilException.rethrowConsumer(set ->
+                {
+                    throw new Exception(
+                        "Template Set with given version (name::label) already exists");
+                }));
+
+            templateSet = this.jsonMapper.readValue(uploadedInputStream, TemplateSet.class);
+
+            if (!templateSet.customer.equals(customer) || !templateSet.app.equals(app)) {
+                return Response.status(Status.UNAUTHORIZED).entity(Utils
 			        .buildErrorResponse(Constants.ERROR, "UNAUTHORIZED", String.format(
 				        "customer/app name mismatch in path and json file. "
 					        + "path customer=%s app=%s json customer=%s app=%s",
 				        customer, app, templateSet.customer, templateSet.app))).build();
 	        }
-	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-	        templateSet.version = io.md.utils.Utils
-		        .createTemplateSetVersion(templateSet.name, templateSet.label);
-	        templateSet.templates.forEach(compareTemplateVersioned -> {
+
+            templateSet.version = templateSetVersion;
+
+            templateSet.templates.forEach(compareTemplateVersioned -> {
 		        String normalisedAPIPath= CompareTemplate.normaliseAPIPath(compareTemplateVersioned.requestPath);
 		        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Normalizing APIPath before storing template ",
 			        "Original APIPath", compareTemplateVersioned.requestPath,
 			        "Normalised APIPath", normalisedAPIPath)));
 		        compareTemplateVersioned.requestPath = normalisedAPIPath;
 	        });
+
             ValidateCompareTemplate validTemplate = ServerUtils.validateTemplateSet(templateSet);
-            if(!validTemplate.isValid()) {
-                return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
+
+            if (!validTemplate.isValid()) {
+                return Response.status(Response.Status.BAD_REQUEST).entity(
+                    (new JSONObject(Map.of("Message", validTemplate.getMessage()))).toString())
+                    .build();
             }
 
-	        rrstore.getTemplateSet(customer, app, templateSet.version).ifPresent(
-		        io.md.utils.UtilException.rethrowConsumer(set ->
-		        {
-			        throw new Exception(
-				        "Template Set with given version (name + label) already exists");
-		        }));
-
-            String templateSetId = rrstore.saveTemplateSet(templateSet);
+	        String templateSetId = rrstore.saveTemplateSet(templateSet);
             return Response.ok().entity((new JSONObject(Map.of(
                 "Message", "Successfully saved template set",
                 "ID", templateSetId,
                 "templateSetVersion", templateSet.version))).toString()).build();
         } catch (CompareTemplate.CompareTemplateStoreException e) {
             return Response.serverError().entity((
-                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED, "Unable to save template set: " +
-                    e.getMessage()))).build();
-        }
-        catch (IOException e) {
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED,
+                    "Unable to save template set: " +
+                        e.getMessage()))).build();
+        } catch (IOException e) {
             LOGGER.error(
                 "Error in parsing JSON file for template set", e);
             return Response.serverError().entity(
                 Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                     "Error in parsing JSON file for template set"))
                 .build();
-        }
-
-        catch (TemplateSet.TemplateSetMetaStoreException e) {
+        } catch (TemplateSet.TemplateSetMetaStoreException e) {
             return Response.serverError().entity((
-                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_META_STORE_FAILED, "Unable to save template meta: " +
-                    e.getMessage()))).build();
-        }
-
-        catch (Exception e) {
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_META_STORE_FAILED,
+                    "Unable to save template meta: " +
+                        e.getMessage()))).build();
+        } catch (Exception e) {
             return Response.serverError().entity((new JSONObject(Map.of(
                 "Message", "Unable to save template set",
                 "Error", e.getMessage()))).toString()).build();
