@@ -44,7 +44,7 @@ function APICatalogTopFilters(props) {
     let servicesToDisplay = [], apiPathsToDisplay= [];
 
     //Sometimes, even if nothing is selected, it fetches old values, which should not be displayed.
-    if(selectedSource && selectedItem.id && (selectedCollection || selectedGolden || selectedSource == "Capture")){
+    if(selectedSource && selectedItem && selectedItem.id && (selectedCollection || selectedGolden || selectedSource == "Capture")){
         servicesToDisplay = services;
         apiPathsToDisplay = apiPaths;
     }

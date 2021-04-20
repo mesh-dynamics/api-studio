@@ -29,6 +29,7 @@ import { HttpRequestFields } from "./HttpRequestFields";
 import { httpClientConstants } from "../../constants/httpClientConstants";
 import RunButton from "./components/RunButton";
 import TabInfo from "./components/TabInfo";
+import { cubeService } from "../../services";
 
 const newStyles = {
     variables: {
@@ -90,7 +91,6 @@ class HttpClient extends Component {
             prevSelectedTraceTableTestReqTabId: this.props.currentSelectedTab.selectedTraceTableTestReqTabId,
             httpRequestRef: null,
             matchRequestShowPopup: false,
-            showDiffErrorModal: false,
         };
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
@@ -213,11 +213,6 @@ class HttpClient extends Component {
         const selectedTraceTableTestReqTabId = currentSelectedTab.selectedTraceTableTestReqTabId;
         let selectedTraceTableReqTab, selectedTraceTableTestReqTab;
 
-        if(hasTabDataChanged(currentSelectedTab)) {
-            this.setState({showDiffErrorModal: true});
-            return
-        }
-
         if(currentSelectedTab.selectedTraceTableReqTabId === currentSelectedTab.id) {
             selectedTraceTableReqTab = currentSelectedTab;
         } else {
@@ -234,7 +229,13 @@ class HttpClient extends Component {
         let diffLayoutData = [];
         if(tabToProcess && tabToProcess.eventData && tabToProcess.eventData[0].apiPath) {
             try {
-                api.get(`${config.apiBaseUrl}/as/getReqRespMatchResult?lhsReqId=${tabToProcess.requestId}&rhsReqId=${selectedTraceTableTestReqTab.requestId}`)
+                const lhsReqEvent = tabToProcess.eventData[0]
+                const lhsRespEvent = tabToProcess.eventData[1]
+                
+                const rhsReqEvent = selectedTraceTableTestReqTab.eventData[0]
+                const rhsRespEvent = selectedTraceTableTestReqTab.eventData[1]
+
+                cubeService.getReqRespMatchResultFromEvents(lhsReqEvent, lhsRespEvent, rhsReqEvent, rhsRespEvent)
                     .then((serverRes) => {
                         const results = serverRes.res && [serverRes.res];
                         diffLayoutData = this.preProcessResults(results);
@@ -252,9 +253,6 @@ class HttpClient extends Component {
         }
     }
 
-    handleCloseDiffErrorModal = () => {
-        this.setState({showDiffErrorModal: false});
-    }
 
     handleShowCompleteDiffClick() {
         const { showCompleteDiff } = this.state;
@@ -1090,17 +1088,6 @@ class HttpClient extends Component {
                     </div>
                 )}
             </div>
-            <Modal show={this.state.showDiffErrorModal} onHide={this.handleCloseDiffErrorModal}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Error</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <p>{"Please save the modified request before proceeding with the diff."}</p>
-                </Modal.Body>
-                <Modal.Footer>
-                    <div onClick={this.handleCloseDiffErrorModal} className="btn btn-sm cube-btn text-center">Close</div>
-                </Modal.Footer>
-            </Modal>
         </>);
     }
 }

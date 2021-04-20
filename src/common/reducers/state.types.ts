@@ -259,6 +259,7 @@ export interface ICubeState {
   timelineData: ITimelineData[];
   isGettingStartedHidden?: boolean;
   forceCompletingReplay: boolean;
+  otherInstanceEndPoint: string;
 }
 
 //Golden State
