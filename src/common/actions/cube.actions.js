@@ -53,6 +53,7 @@ export const cubeActions = {
     hideHttpClient,
     resetCubeToInitialState,
     setDoNotShowGettingStartedAgain,
+    setOtherInstanceEndPoint,
 };
 
 function clearPreviousData() {
@@ -467,6 +468,9 @@ function resetCubeToInitialState () {
     return {type: cubeConstants.RESET_CUBE_TO_INITIAL_STATE}
 }
 
+function setOtherInstanceEndPoint(value) {
+    return {type: cubeConstants.SET_OTHER_INSTANCE_END_POINT, data: value}
+}
 /**
  * Doesn't look like these are being used
  */

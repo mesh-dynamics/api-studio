@@ -13,6 +13,7 @@ import { ipcRenderer } from '../../helpers/ipc-renderer';
 import AppManager from './AppManager';
 import { ICubeState, IStoreState, IUserAuthDetails } from '../../reducers/state.types';
 import {setStrictMock} from '../../helpers/httpClientHelpers'
+import { apiCatalogActions } from '../../actions/api-catalog.actions';
 
 export interface INavigationProps{
     dispatch: any;
@@ -108,6 +109,7 @@ class Navigation extends Component<INavigationProps,INavigationState> {
             const {cube} = this.props;
             if (cube.analysisStatusObj && (cube.analysisStatus == 'Completed' || cube.analysisStatus == 'Error')) {
                 clearInterval(this.analysisStatusInterval);
+                dispatch(apiCatalogActions.refreshApiCatalogCollections())
             } else if(!cube.fetchingAnalysisStatus) {
                 checkStatus();
             }

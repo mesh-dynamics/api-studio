@@ -219,17 +219,41 @@ class SaveToCollection extends React.Component<
           collection!.id,
           collection!.name))
 
+        // update ingress request headers
+        const ingressRequestData = JSON.parse(savedIngressRequestData.requestEvent)
+        const ingressRequestHeaders = ingressRequestData.payload[1].hdrs
+        Object.entries(ingressRequestHeaders).forEach(([key, value]) => {
+          const foundHeader = tabToProcess.headers.find(header => header.name==key)
+          const headerValue = value[0]
+          if(foundHeader?.value !== headerValue) {
+            dispatch(httpClientActions.updateParamInSelectedTab(tabToProcess.id, "headers", "value", headerValue, foundHeader.id))
+          }
+        })
+
         // update outgoing requests
         for(let i = 0; i < tabToProcess.outgoingRequests.length; i++) {
           const tabOutgoingReqIndex = i
           const parsedDataIndex = tabOutgoingReqIndex + 1 // since 0 is ingress data
+          const outgoingTabToProcess = tabToProcess.outgoingRequests[tabOutgoingReqIndex]
+
           dispatch(httpClientActions.updateOutgoingTabWithNewData(
             tabToProcess.id,
-            tabToProcess.outgoingRequests[tabOutgoingReqIndex].id,
+            outgoingTabToProcess.id,
             parsedData[parsedDataIndex],
             collection!.collec,
             collection!.id
           ))
+
+          // update headers
+          const egressRequestData = JSON.parse(parsedData[parsedDataIndex].requestEvent)
+          const egressRequestHeaders = egressRequestData.payload[1].hdrs
+          Object.entries(egressRequestHeaders).forEach(([key, value]) => {
+            const foundHeader = outgoingTabToProcess.headers.find(header => header.name==key)
+            const headerValue = value[0]
+            if(foundHeader?.value !== headerValue) {
+              dispatch(httpClientActions.updateParamInSelectedOutgoingTab(outgoingTabToProcess.id, "headers", "value", headerValue, foundHeader.id))
+            }
+          })
         }
       } catch (err) {
         console.error("Error ", err);

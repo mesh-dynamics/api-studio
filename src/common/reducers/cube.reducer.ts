@@ -35,6 +35,7 @@ const initialState : ICubeState = {
 
     instances: [],
     selectedInstance: null,
+    otherInstanceEndPoint: "",
 
     testIdsReqStatus: cubeConstants.REQ_NOT_DONE,
     testIdsReqErr: '',
@@ -216,6 +217,12 @@ export function cube (state = initialState, action: ICubeAction) : ICubeState {
                 ...state,
                 selectedInstance: action.data
             };
+        case cubeConstants.SET_OTHER_INSTANCE_END_POINT:
+            return {
+                ...state,
+                otherInstanceEndPoint: action.data
+            }
+            
         case cubeConstants.SET_SELECTED_APP:
             let appObj = null;
             if (state.appsList) {
