@@ -18,6 +18,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.ws.rs.core.Response;
+
 import io.md.core.CollectionKey;
 import io.md.dao.*;
 import io.md.dao.Event.EventBuilder;
@@ -46,7 +48,7 @@ import io.md.utils.UtilException;
 
 public abstract class AbstractReplayDriver {
 
-	private static Logger LOGGER = LogManager.getLogger(AbstractReplayDriver.class);
+	private final static Logger LOGGER = LogManager.getLogger(AbstractReplayDriver.class);
 	protected final Replay replay;
 	public final DataStore dataStore;
 	protected ObjectMapper jsonMapper;
@@ -122,6 +124,73 @@ public abstract class AbstractReplayDriver {
 		String getErrorStatusCode();
 
 		boolean tearDown();
+	}
+
+	public static abstract  class AbstractIReplayClient implements IReplayClient {
+
+		abstract RequestPayload modifyRequest(Event reqEvent);
+
+		abstract ResponsePayload formResponsePayload(MDResponse response);
+
+		abstract boolean verifyPayload(Event reqEvent) throws IOException;
+
+		abstract MDHttpClient getClient(RequestDetails details);
+
+		@Override
+		public ResponsePayload send(Event requestEvent, Replay replay) throws Exception {
+			MDHttpClient client = buildClient(replay, requestEvent);
+			//We are reading only the response here.
+			// when we read the trailers also for this http2 call , pass the same
+			MDResponse response = client.makeRequest();
+			return formResponsePayload(response);
+		}
+
+		@Override
+		public CompletableFuture<ResponsePayload> sendAsync(Event requestEvent, Replay replay){
+
+			try{
+				MDHttpClient client = buildClient(replay, requestEvent);
+				CompletableFuture<MDResponse>  response = client.makeRequestAsync();
+				return response.thenApply((mdResponse -> formResponsePayload(mdResponse)));
+			}catch (Exception e){
+				LOGGER.error("send async error " , e);
+				throw new CompletionException(e);
+			}
+		}
+
+		protected MDHttpClient buildClient(Replay replay, Event reqEvent)
+			throws IOException {
+			if (!verifyPayload(reqEvent)) {
+				throw new IOException("Invalid Payload type");
+			}
+			RequestPayload httpRequest = modifyRequest(reqEvent);
+			RequestDetails details = io.md.core.Utils.buildRequestDetails(replay, reqEvent, httpRequest);
+
+			return getClient(details);
+		}
+
+		@Override
+		public boolean isSuccessStatusCode(String responseCode) {
+			Optional<Integer> intResponse = Utils.strToInt(responseCode);
+			return intResponse.map(intCode -> {
+				if (Response.Status.Family.familyOf(intCode)
+					.equals(Response.Status.Family.SUCCESSFUL)) {
+					return true;
+				}
+				return false;
+			}).orElse(false);
+		}
+
+		@Override
+		public String getErrorStatusCode() {
+			return String.valueOf(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+		}
+
+		@Override
+		public boolean tearDown() {
+			//do nothing
+			return true;
+		}
 
 	}
 

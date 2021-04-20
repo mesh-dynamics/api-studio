@@ -1,13 +1,11 @@
 package io.md.drivers;
 
-import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.core5.http.Header;
-import org.apache.hc.core5.http.message.BasicHeader;
 
 import io.md.core.Utils;
 

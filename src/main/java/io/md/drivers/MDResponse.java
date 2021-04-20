@@ -4,14 +4,14 @@ import javax.ws.rs.core.MultivaluedMap;
 
 public interface MDResponse {
 
-	public byte[] getBody();
+	byte[] getBody();
 
-	public MultivaluedMap<String, String> getHeaders();
+	MultivaluedMap<String, String> getHeaders();
 
-	public String getPath();
+	String getPath();
 
-	public Integer statusCode();
+	Integer statusCode();
 
-	public MultivaluedMap<String , String> getTrailers();
+	MultivaluedMap<String , String> getTrailers();
 
 }
