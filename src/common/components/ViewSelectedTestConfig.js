@@ -516,14 +516,14 @@ class ViewSelectedTestConfig extends React.Component {
         let gatewayEndpoint = "";
         if(instancesForSelectedApp.length !== 0) {
             gatewayEndpoint = instancesForSelectedApp[0].gatewayEndpoint;            
-        }else if(cube.selectedInstance == "other" && this.state.otherInstanceEndPoint){
+        }else if(cube.selectedInstance == "other" && cube.otherInstanceEndPoint){
             if(
-                this.state.otherInstanceEndPoint.includes("localhost") 
-                || this.state.otherInstanceEndPoint.includes("127.0.0.1")
+                cube.otherInstanceEndPoint.includes("localhost") 
+                || cube.otherInstanceEndPoint.includes("127.0.0.1")
             ){
-                gatewayEndpoint = this.state.otherInstanceEndPoint;
-            } else if(isURL(this.state.otherInstanceEndPoint)){
-                gatewayEndpoint = this.state.otherInstanceEndPoint;
+                gatewayEndpoint = cube.otherInstanceEndPoint;
+            } else if(isURL(cube.otherInstanceEndPoint)){
+                gatewayEndpoint = cube.otherInstanceEndPoint;
             }else{
                 this.showGatewayEndPointInvalid();
                 return;
@@ -797,12 +797,13 @@ class ViewSelectedTestConfig extends React.Component {
         // commenting out the part where the gateway endpoint is forcefully encoded
         // const gatewayEndpointNoProtocol = encodeURIComponent(gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, '')); // drop the protocol
         const gatewayEndpointNoProtocol = gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, ''); // drop the protocol
+        const otherInstanceId = `${username}_${gatewayEndpointNoProtocol}`
 
         const {selectedTemplateSetName, selectedTemplateSetLabel} = this.state;
         
         const searchParams = new URLSearchParams();
         searchParams.set('endPoint', gatewayEndpoint);
-        searchParams.set('instanceId', otherInstanceSelected ? gatewayEndpointNoProtocol : selectedInstance);
+        searchParams.set('instanceId', otherInstanceSelected ? otherInstanceId : selectedInstance);
         searchParams.set('templateSetVer', collectionTemplateVersion);
         searchParams.set('userId', username);
         searchParams.set('transforms', transforms);
@@ -846,7 +847,7 @@ class ViewSelectedTestConfig extends React.Component {
             const {replayId} = replay
             // set strict mocking for replay on IDE
             if (otherInstanceSelected) {
-                setStrictMock(true, gatewayEndpointNoProtocol, replayId)
+                setStrictMock(true, otherInstanceId, replayId)
             }
             this.setState({ replay });
             // check replay status periodically and call analyze at the end; and update timeline
@@ -914,12 +915,13 @@ class ViewSelectedTestConfig extends React.Component {
     }
 
     onOtherInstanceValueChange = (event)=>{
-        this.setState({otherInstanceEndPoint: event.target.value});
+        const { dispatch } = this.props
+        dispatch(cubeActions.setOtherInstanceEndPoint(event.target.value))
     }
 
     renderEndPoint(cube) {
         if(cube.selectedInstance == "other"){
-            return <input type="text" onChange={this.onOtherInstanceValueChange} value={this.state.otherInstanceEndPoint}  style={{width: "100%"}} />
+            return <input type="text" onChange={this.onOtherInstanceValueChange} value={cube.otherInstanceEndPoint}  style={{width: "100%"}} />
         }else{
             const selectedInstance = cube.instances.find(item => {
                 return item.app.name == cube.selectedApp && item.name == cube.selectedInstance;
