@@ -93,7 +93,30 @@ public class RealMocker implements Mocker {
             };
 
             Optional<Event> matchingRequest = res.getObjects().findFirst();
+
+            if(mockWColl.isDevtool && (!matchingRequest.isPresent() || matchingRequest.isPresent() && !matchingRequest.get().getCollection().equals(mockWColl.recordCollection))){
+                //try without join query
+                EventQuery eventQuery2 = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
+                    !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection,
+                    payloadFieldFilterList , Optional.empty() , mockWColl.isDevtool , replayCtx , tracePropagation);
+                DSResult<Event> res2 = cube.getEvents(eventQuery2);
+                Optional<Event> matchingRequest2 = res2.getObjects().findFirst();
+                if(!matchingRequest.isPresent()){
+                  matchingRequest = matchingRequest2;
+                  LOGGER.debug("Join query match missing. setting the result "+matchingRequest2);
+                }else if(matchingRequest2.isPresent()){
+                    Event req1 = matchingRequest.get();
+                    Event req2 = matchingRequest2.get();
+                    Double score1 = Utils.strToDouble(req1.metaData.get(Constants.SCORE_FIELD)).orElse(0.0);
+                    Double score2 = Utils.strToDouble(req2.metaData.get(Constants.SCORE_FIELD)).orElse(0.0);
+                    LOGGER.debug("trying match without join . req1 , req2 , score1 , score2" + req1.reqId + " "+req2.reqId + " "+score1 + " "+score2);
+                    if(score2>score1){
+                        matchingRequest = matchingRequest2;
+                    }
+                }
+            }
             Optional<Event> matchingResponse = matchingRequest.flatMap(getRespEventForReqEvent);
+
             if(!mockWColl.isDevtool && matchingRequest.isPresent() && res.getNumFound()>1){
                 ReplayContext replyCtx = replayCtx.orElse(new ReplayContext());
                 replyCtx.setMockResultToReplayContext(matchingRequest.get());
@@ -125,10 +148,11 @@ public class RealMocker implements Mocker {
         successfulRespCond.put(Constants.PAYLOAD_FIELDS_FIELD , String.format("%s:%s", Constants.STATUS_PATH, String.valueOf(reqEvent.payload instanceof GRPCPayload ? Constants.GRPC_SUCCESS_STATUS_CODE : HttpStatus.SC_OK)));
 
         builder.withAndConds(successfulRespCond);
+        /*
         Map<String,String> params = new HashMap<>(1);
         params.put(Constants.SCORE_FIELD , Constants.MAX);
         builder.withJoinParams(params);
-
+        */
         return builder.build();
 
     }
@@ -182,9 +206,7 @@ public class RealMocker implements Mocker {
         }
 
         limit.ifPresent(builder::withLimit);
-        //We are giving weightage to joinQuery (200 success response). so making that optional.
-        //If the same collection matches with non 200 response , that req/resp will be selected. (coll weight > join query weight)
-        joinQuery.ifPresent(jq->builder.withJoinQuery(jq ,EventQuery.JOIN_QUERY_WEIGHT));
+        joinQuery.ifPresent(jq->builder.withJoinQuery(jq));
 
         return builder.build();
     }
@@ -258,17 +280,6 @@ public class RealMocker implements Mocker {
         return eventType == EventType.HTTPRequest || eventType == EventType.HTTPResponse;
     }
 
-
-    static private EventQuery buildDefaultRespEventQuery(Event mockRequest) {
-        EventQuery.Builder eventQuery = new EventQuery.Builder(
-            mockRequest.customerId,
-            mockRequest.app, EventType.getResponseType(mockRequest.eventType));
-        return eventQuery
-            .withService(mockRequest.service)
-            .withPaths(Arrays.asList(mockRequest.apiPath))
-            .withRunType(Manual)
-            .build();
-    }
 
     private Optional<Event> createResponseFromEvent(
         Event mockRequestEvent, Optional<Event> matchedReq ,  Optional<Event> respEvent, String runId , boolean isDevtoolRequest) {
