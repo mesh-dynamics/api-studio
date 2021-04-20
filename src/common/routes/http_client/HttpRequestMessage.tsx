@@ -73,7 +73,9 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
     }
 
     componentDidMount() {
-        this.handleServiceChange(this.props.service);
+        if(!this.props.readOnly) {
+            this.handleServiceChange(this.props.service);
+        }
     }
 
     handleChange(evt) {
