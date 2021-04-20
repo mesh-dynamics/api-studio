@@ -521,9 +521,10 @@ class HttpClientTabs extends Component {
         });
     }
 
-    handleImportCollection() {
+    handleImportCollection(isSaveVariable) {
         const {importedToCollectionId, serializedCollection } = this.state;
-        const { user, dispatch } = this.props;
+        const { user, dispatch, cube: { selectedAppObj } } = this.props;
+        let clonedSerializedCollection = serializedCollection.slice();
         if(!serializedCollection || !importedToCollectionId) return;
         this.setState({
             showImportModal: true,
@@ -532,7 +533,31 @@ class HttpClientTabs extends Component {
         const httpEventPairs = [];
         try {
             const collectionToImport = new Collection(JSON.parse(serializedCollection));
-            const flattenedCollection = httpClientTabUtils.flattenCollection(collectionToImport);
+            const collectionVariables = collectionToImport.variables.all();
+            if(isSaveVariable === true) {
+                let toBeSavedEnv = {
+                    name: collectionToImport.name + "-vars-" + Date.now(),
+                    appId: selectedAppObj.id,
+                    vars: [],
+                }
+                collectionVariables.forEach((item) => {
+                    toBeSavedEnv.vars.push({
+                        key: item.key,
+                        value: item.value
+                    })
+                });
+                cubeService.insertNewEnvironment(toBeSavedEnv)
+                .then((serverRes) => {
+                }, (error) => {
+                    console.error("error: ", error);
+                });
+            }
+            collectionVariables.forEach((item) => {
+                console.log(item.key + " = " + item.value);
+                clonedSerializedCollection = clonedSerializedCollection.replaceAll(`{{${item.key}}}`, `{{{${item.key}}}}`)
+            });
+            const updatedCollectionToImport = new Collection(JSON.parse(clonedSerializedCollection));
+            const flattenedCollection = httpClientTabUtils.flattenCollection(updatedCollectionToImport);
             flattenedCollection.map((eachMember) => {
                 const { cube: {selectedApp} } = this.props;
                 const url = eachMember.request.url.getRaw(),
@@ -1734,7 +1759,8 @@ class HttpClientTabs extends Component {
                                             </FormGroup>
                                         </div>
                                         <p style={{ marginTop: "10px", fontWeight: 500 }}>{modalErrorImportCollectionMessage}</p>
-                                        <Button onClick={this.handleImportCollection}>Import</Button>
+                                        <Button onClick={(e) => this.handleImportCollection(false, e)}>Import</Button>
+                                        <Button onClick={(e) => this.handleImportCollection(true, e)}>Import with variables</Button>
                                     </Tab>
                                 </Tabs>
                             </Modal.Body>
