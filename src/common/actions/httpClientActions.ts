@@ -634,12 +634,20 @@ export const httpClientActions: IActionsType = {
         dispatch(httpClientActions.setMockConfigStatusText("Loading..."))
         const { 
             cube: { selectedApp }, 
-            authentication: { user: { customer_name: customerId } } 
+            authentication: { user: { customer_name: customerId } }, 
+            httpClient: {selectedMockConfig}
         } = getState();
         try {
             const mockConfigList = await cubeService.getAllMockConfigs(customerId, selectedApp!);
             dispatch(httpClientActions.setMockConfigList(mockConfigList))
             dispatch(httpClientActions.resetMockConfigStatusText())
+            let selectedMockConfigUpdated = mockConfigList.find((config) => config.key === selectedMockConfig)
+            if (!selectedMockConfigUpdated && mockConfigList?.length) {
+                selectedMockConfigUpdated = mockConfigList[0]
+            } 
+            if(selectedMockConfigUpdated) {
+                dispatch(httpClientActions.setSelectedMockConfig(selectedMockConfigUpdated.key))
+            }
             setDefaultMockContext({mockConfigList})
         } catch (e) {
             dispatch(httpClientActions.setMockConfigStatusText(e.response?.data.message, true))
