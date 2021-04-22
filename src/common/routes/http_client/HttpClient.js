@@ -290,6 +290,11 @@ class HttpClient extends Component {
         this.props.handleDuplicateTab(currentSelectedTab.id);
     }
 
+    handleExportToCurl = () => {
+        const { currentSelectedTab } = this.props;
+        this.props.handleExportToCurl(currentSelectedTab.id);
+    }
+
     handleSetAsReference(evt) {
         const { currentSelectedTab } = this.props;
         this.props.setAsReference(currentSelectedTab.id);
@@ -504,6 +509,9 @@ class HttpClient extends Component {
                                 <Glyphicon glyph="export" /> SET AS REFERENCE
                             </div>
                         </div>
+                        <Button className="cube-btn text-center"  onClick={this.handleExportToCurl} title="Export To Curl">
+                            <i className="fa fa-file-export"></i>
+                        </Button>
                         <Button className="cube-btn text-center"  onClick={this.handleDuplicateTabClick} title="Duplicate Tab">
                             <i className="fa fa-clone"></i>
                         </Button>

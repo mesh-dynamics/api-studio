@@ -55,6 +55,7 @@ import {
     getConnectionSchemaFromMetadataOrApiPath
 } from "../../utils/http_client/grpc-utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
+import { exportToCurl } from '../../utils/http_client/exportToCurl';
 import { getParameterCaseInsensitive, Base64Binary } from '../../../shared/utils';
 
 import SplitSlider  from '../../components/SplitSlider.tsx';
@@ -77,6 +78,8 @@ class HttpClientTabs extends Component {
             showImportModal: false,
             curlCommand: "",
             modalErrorImportFromCurlMessage: "",
+            showCurlGenModal: false,
+            generatedCurlCommand: "",
         };
         this.addTab = this.addTab.bind(this);
         this.addGRPCTab = this.addGRPCTab.bind(this);
@@ -115,6 +118,10 @@ class HttpClientTabs extends Component {
         this.updateAbortRequest = this.updateAbortRequest.bind(this);
         this.initiateAbortRequest = this.initiateAbortRequest.bind(this);
         this.handleDeleteOutgoingReq = this.handleDeleteOutgoingReq.bind(this);
+
+        this.handleExportToCurl = this.handleExportToCurl.bind(this);
+        this.showCurlGenModal = this.showCurlGenModal.bind(this);
+        this.onCloseCurlGenModal = this.onCloseCurlGenModal.bind(this);
         
     }
 
@@ -1047,6 +1054,68 @@ class HttpClientTabs extends Component {
         }
     }
 
+    handleExportToCurl(tabId) {
+        const {httpClient: {tabs, generalSettings}} = this.props;
+        let tabsToProcess = tabs;
+        const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
+        const tabToProcess = tabsToProcess[tabIndex];
+        if(tabIndex < 0) return;
+        const isGrpc = httpClientTabUtils.isgRPCRequest(tabToProcess);
+        if(isGrpc) return;
+        const { headers, queryStringParams, bodyType, rawDataType } = tabToProcess;
+        const httpReqestHeaders = httpClientTabUtils.extractHeaders(headers);
+        const httpRequestQueryStringParams = httpClientTabUtils.extractQueryStringParams(queryStringParams);
+        let httpRequestBody;
+        if (bodyType === "formData") {
+            const { formData } = tabToProcess;
+            httpRequestBody = httpClientTabUtils.extractBody(formData);
+        }
+        if (bodyType === "rawData") {
+            const { rawData } = tabToProcess;
+            httpRequestBody = httpClientTabUtils.extractBody(rawData);
+        }
+        const httpMethod = httpClientTabUtils.getHttpMethod(tabToProcess);
+        const httpRequestURL = tabToProcess.httpURL;
+
+        let fetchConfig = {
+            method: httpMethod,
+            headers: Object.entries(httpReqestHeaders)
+        }
+                
+        if (httpMethod !== "GET".toLowerCase() && httpMethod !== "HEAD".toLowerCase()) {
+            fetchConfig["body"] = httpRequestBody;
+        }
+
+        //Check if some more code can be moved to Utils
+
+        // render environment variables
+        let httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered;
+        let queryStringValue = "";
+        try{
+            [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] 
+            = applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
+            queryStringValue = stringify(httpRequestQueryStringParamsRendered);
+        }
+        catch(error){
+            this.showErrorAlert(`${error}`); // prompt user for error in env vars
+            return
+        }
+
+        const value = generalSettings && generalSettings[commonConstants.ALLOW_CERTIFICATE_VALIDATION];
+        fetchConfigRendered.isAllowCertiValidation = isTrueOrUndefined(value);
+
+        const generatedCurlCommand = exportToCurl(fetchConfigRendered.method, httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered.headers, fetchConfigRendered.body, fetchConfigRendered.isAllowCertiValidation);
+        this.showCurlGenModal(generatedCurlCommand);
+    }
+
+    showCurlGenModal(generatedCurlCommand) {
+        this.setState({ showCurlGenModal: true, generatedCurlCommand});
+    };
+
+    onCloseCurlGenModal() {
+        this.setState({ showCurlGenModal: false, generatedCurlCommand: ""});
+    };
+
     handleTabChange(tabKey) {
         const { dispatch } = this.props;
         dispatch(httpClientActions.setSelectedTabKey(tabKey));
@@ -1604,6 +1673,7 @@ class HttpClientTabs extends Component {
                             cubeRunHistory={cubeRunHistory}
                             showAddMockReqModal={this.showAddMockReqModal}
                             handleDuplicateTab={this.handleDuplicateTab}
+                            handleExportToCurl={this.handleExportToCurl}
                             toggleShowTrace={this.toggleShowTrace}
                             updateAbortRequest={this.updateAbortRequest}
                             initiateAbortRequest={this.initiateAbortRequest}
@@ -1635,7 +1705,7 @@ class HttpClientTabs extends Component {
     };
 
     render() {
-        const { showErrorModal, errorMsg, importedToCollectionId, serializedCollection, modalErrorImportCollectionMessage, showImportModal, curlCommand, modalErrorImportFromCurlMessage } = this.state;
+        const { showErrorModal, errorMsg, importedToCollectionId, serializedCollection, modalErrorImportCollectionMessage, showImportModal, curlCommand, modalErrorImportFromCurlMessage, showCurlGenModal, generatedCurlCommand } = this.state;
         const { cube: { selectedApp: app } } = this.props;
         const {httpClient: { userCollections, tabs, selectedTabKey, showAddMockReqModal, mockRequestServiceName, mockRequestApiPath, modalErrorAddMockReqMessage}} = this.props;
 
@@ -1721,7 +1791,7 @@ class HttpClientTabs extends Component {
                         </Modal>
                     </div>
                     <div>
-                    <Modal show={showImportModal} onHide={this.handleImportModalClose} bsSize="large">
+                        <Modal show={showImportModal} onHide={this.handleImportModalClose} bsSize="large">
                             <Modal.Header closeButton>
                                 <Modal.Title>Import</Modal.Title>
                             </Modal.Header>
@@ -1778,6 +1848,18 @@ class HttpClientTabs extends Component {
                             </Modal.Body>
                             <Modal.Footer>
                                 <div onClick={this.onCloseErrorModal} className="btn btn-sm cube-btn text-center">Close</div>
+                            </Modal.Footer>
+                        </Modal>
+
+                        <Modal show={showCurlGenModal} onHide={this.onCloseCurlGenModal}>
+                            <Modal.Header closeButton>
+                                <Modal.Title>Curl Command</Modal.Title>
+                            </Modal.Header>
+                            <Modal.Body>
+                                <FormControl componentClass="textarea" rows="15" name="generatedCurlCommand" value={generatedCurlCommand} />
+                            </Modal.Body>
+                            <Modal.Footer>
+                                <div onClick={this.onCloseCurlGenModal} className="btn btn-sm cube-btn text-center">Close</div>
                             </Modal.Footer>
                         </Modal>
                     </div>
