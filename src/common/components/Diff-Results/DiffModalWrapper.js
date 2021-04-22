@@ -11,6 +11,8 @@ const DiffModalWrapper = (props) => {
         branch,
         version,
         commitId,
+        templateName,
+        templateLabel,
         showNewGolden,
         handleCloseSG,
         saveGoldenError,
@@ -103,6 +105,28 @@ const DiffModalWrapper = (props) => {
                                     onChange={(event) => changeGoldenMetaData('labelG', event.target.value)}
                                 />
                             </div>
+                        </div>
+                        
+                        <div className="row margin-bottom-10">
+                            <div className="col-md-3 bold">
+                                Comparison Rules:
+                            </div>
+
+                            <div className="col-md-1 bold">
+                                Name:
+                            </div>
+
+                            <div className="col-md-3">
+                                {templateName}
+                            </div>
+                            <div className="col-md-1 bold">
+                                Label:
+                            </div>
+
+                            <div className="col-md-3">
+                                {templateLabel}
+                            </div>
+
                         </div>
 
                         <div className="row margin-bottom-10">

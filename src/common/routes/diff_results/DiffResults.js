@@ -73,6 +73,8 @@ class DiffResults extends Component {
             tag: "",
             commitId: "",
             saveGoldenError: "",
+            goldenTemplateName: "",
+            goldenTemplateLabel: "",
 
             isFetching: true,
             numResults: 0,
@@ -339,7 +341,11 @@ class DiffResults extends Component {
                 break;
         }
         try {
-            return await cubeService.fetchAnalysisResults(replayId, searchParams);
+            const dataList = await cubeService.fetchAnalysisResults(replayId, searchParams);
+            this.setState({goldenTemplateName: dataList.data.templateName});
+            this.setState({goldenTemplateLabel: dataList.data.templateLabel});
+
+            return dataList
         } catch(error) {
             console.log("Error fetching analysis results list", error);
             // Returning empty list will show No Results Found instead of being 
@@ -609,6 +615,8 @@ class DiffResults extends Component {
             showNewGolden,
             saveGoldenError,
             showSaveGoldenModal,
+            goldenTemplateName,
+            goldenTemplateLabel,
         } = this.state;
 
         
@@ -627,6 +635,8 @@ class DiffResults extends Component {
                     branch={branch}
                     version={version}
                     commitId={commitId}
+                    templateName={goldenTemplateName}
+                    templateLabel={goldenTemplateLabel}
                     cube={this.props.cube} 
                     showNewGolden={showNewGolden}
                     saveGoldenError={saveGoldenError}
