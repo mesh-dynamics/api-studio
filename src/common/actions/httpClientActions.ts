@@ -743,4 +743,8 @@ export const httpClientActions: IActionsType = {
     updateOutgoingTabWithNewData: (tabId, outgoingTabId, reqData, collectionId, recordingId) => {
         return {type: httpClientConstants.UPDATE_OUTGOING_TAB_WITH_NEW_DATA, data: {tabId, outgoingTabId, reqData, collectionId, recordingId}}   
     },
+
+    setSidebarTabActiveKey: (activeKey) => {
+        return {type: httpClientConstants.SET_SIDEBAR_TAB_ACTIVE_KEY, data: activeKey}
+    },
 }
