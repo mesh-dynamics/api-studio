@@ -223,13 +223,14 @@ public class DynamicInjectionConfigGenerator {
                     lookupVal);
 
                 extractionConfigsForPresentValue = getExtractionSetForValue(lookupVal);
+
                 if (extractionConfigsForPresentValue.isEmpty()){
                     // Retry with modified value. injectAllPaths is retained as it is path-based.
-                    Pair<String, String> lookupValAndXfm =
-                        getLookupValAndXfm(jsonPath, stringValue);
+                    Pair<String, String> lookupValAndXfm = getLookupValAndXfm(jsonPath, stringValue);
                     lookupVal = lookupValAndXfm.getLeft();
                     xfm = lookupValAndXfm.getRight();
                     valuesAlreadySeenInRequestSet.add(lookupVal);
+                    extractionConfigsForPresentValue = getExtractionSetForValue(lookupVal);
                 }
 
                 final String finalLookupVal = lookupVal;
