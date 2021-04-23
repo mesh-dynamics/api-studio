@@ -5,12 +5,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.md.dao.Event;
 import io.md.dao.Event.EventType;
 import io.md.dao.JsonDataObj;
+import io.md.injection.DynamicInjectionConfig.InjectionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta.HTTPMethodType;
 import io.md.injection.DynamicInjector;
 import io.md.injection.InjectionExtractionMeta;
 import io.md.injection.InjectionExtractionMeta.ExtractionConfig;
 import io.md.injection.InjectionExtractionMeta.InjectionConfig;
 import io.md.utils.Utils;
+import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +53,8 @@ public class DynamicInjectionConfigGenerator {
     private static final Set<String> restrictedHeadersAdditional = new HashSet<>();
     private static final Set<String> restictedFields = new HashSet<>();
 
+    private static final String AUTH_HDR = "/hdrs/authorization";
+
     static{
         excludedStrings.addAll((Arrays
             .asList("true", "false", "0", "1", "", "\"\"", "null", "none", "en_us", "application/json")));
@@ -70,9 +74,9 @@ public class DynamicInjectionConfigGenerator {
     }
 
     private InjectionConfig getInjectionConfigInstance(String apiPath, String jsonPath,
-        HTTPMethodType method) {
+        HTTPMethodType method, String xfm, Boolean injectAllPaths) {
 
-        InjectionConfig newDIConfig = new InjectionConfig(apiPath, jsonPath, method);
+        InjectionConfig newDIConfig = new InjectionConfig(apiPath, jsonPath, method, xfm, injectAllPaths);
         return injectionConfigToObjectMap.computeIfAbsent(newDIConfig, k -> newDIConfig);
 
     }
@@ -147,6 +151,24 @@ public class DynamicInjectionConfigGenerator {
         return false;
     }
 
+    /**
+     * Returns ref value to lookup, xfm required before insertion, and if value should be
+     * injected at all paths, based on special handling of certain paths.
+     * @param jsonPath
+     * @param value
+     * @return Triple (lookupValue, Xfrm, InjectAllPaths)
+     */
+    private Triple<String, String, Boolean> getLookupValAndXfmAndInjectAllPaths(String jsonPath,
+        String value) {
+        if (jsonPath.toLowerCase().startsWith(AUTH_HDR) && value.toLowerCase()
+            .startsWith("bearer")) {
+            return Triple.of(value.replaceFirst("^[Bb]earer", "").trim(),
+                "Bearer " + InjectionMeta.valueMarker, true);
+        } else {
+            return Triple.of(value, InjectionMeta.valueMarker, false);
+        }
+    }
+
     private void handleJsonNode(String apiPath, JsonNode jsonNode, String jsonPath,
         HTTPMethodType method, EventType eventType) {
         if (restictedFields.contains(jsonPath) || isRestrictedJsonPath(jsonPath)){
@@ -175,6 +197,11 @@ public class DynamicInjectionConfigGenerator {
                         .add(extConfig);
                 }
             } else if (eventType == Event.EventType.HTTPRequest) {
+                Triple<String, String, Boolean> getLookupValAndXfmAndInjectAllPaths =
+                    getLookupValAndXfmAndInjectAllPaths(jsonPath, stringValue);
+                final String lookupVal = getLookupValAndXfmAndInjectAllPaths.getLeft();
+                final String xfm = getLookupValAndXfmAndInjectAllPaths.getMiddle();
+                final Boolean injectAllPaths = getLookupValAndXfmAndInjectAllPaths.getRight();;
                 // Add to map to keep track of values already spotted in requests
                 valuesAlreadySeenInRequestSet.add(stringValue);
 
@@ -182,13 +209,13 @@ public class DynamicInjectionConfigGenerator {
 
                 if (jsonPath.contains("pathSegments")) {
                     // Replace exact subPath matches in the beg, middle, or end of string
-                    modifiedApiPath = modifiedApiPath.replaceFirst("(^|/)" + stringValue + "(/|$)", "$1.+$2");
+                    modifiedApiPath = modifiedApiPath.replaceFirst("(^|/)" + lookupVal + "(/|$)", "$1.+$2");
                 }
 
                 final String finalApiPath = modifiedApiPath;
 
                 Optional<LinkedHashSet<ExtractionConfig>> extractionConfigsForPresentValue = getExtractionSetForValue(
-                    stringValue);
+                    lookupVal);
 
                 // If no extraction set exists for the present injection, create a new set with
                 // the first extraction in the set for the present value (which is also the place of value's first appearance).
@@ -204,16 +231,15 @@ public class DynamicInjectionConfigGenerator {
 
                 extractionConfigsForPresentValue.ifPresent(esForValue -> {
 
-                    InjectionConfig injectionConfig = getInjectionConfigInstance(
-                        apiPath, jsonPath,
-                        method);
+                    InjectionConfig injectionConfig = getInjectionConfigInstance(apiPath, jsonPath,
+                        method, xfm, injectAllPaths);
 
-                    if (injectionConfig.values.contains(stringValue)) {
+                    if (injectionConfig.values.contains(lookupVal)) {
                         // The extraction set for a previously seen value is already processed
                         return;
                     }
 
-                    injectionConfig.values.add(stringValue);
+                    injectionConfig.values.add(lookupVal);
                     injectionConfig.instanceCount++;
 
                     Optional<LinkedHashSet<ExtractionConfig>> existingSet = getExtractionSetForInjection(
@@ -247,7 +273,7 @@ public class DynamicInjectionConfigGenerator {
                             injectionExtractionMeta.instanceCount++;
 
                             // Add reference values for this specific pair
-                            injectionExtractionMeta.values.add(stringValue);
+                            injectionExtractionMeta.values.add(lookupVal);
 
                             if (!finalApiPath.equals(apiPath)){
                                 // This is a regex-ed path. Overwrite existing instance
@@ -261,7 +287,7 @@ public class DynamicInjectionConfigGenerator {
 
                 });
 
-                valuesAlreadySeenInRequestSet.add(stringValue);
+                valuesAlreadySeenInRequestSet.add(lookupVal);
 
             } else {
                 LOGGER.error("Found unhandled requestType: " + eventType.toString());
