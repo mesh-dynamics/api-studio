@@ -197,13 +197,6 @@ public class DynamicInjectionConfigGenerator {
                         .add(extConfig);
                 }
             } else if (eventType == Event.EventType.HTTPRequest) {
-                Triple<String, String, Boolean> getLookupValAndXfmAndInjectAllPaths =
-                    getLookupValAndXfmAndInjectAllPaths(jsonPath, stringValue);
-                final String lookupVal = getLookupValAndXfmAndInjectAllPaths.getLeft();
-                final String xfm = getLookupValAndXfmAndInjectAllPaths.getMiddle();
-                final Boolean injectAllPaths = getLookupValAndXfmAndInjectAllPaths.getRight();;
-                // Add to map to keep track of values already spotted in requests
-                valuesAlreadySeenInRequestSet.add(stringValue);
 
                 String modifiedApiPath = Optional.ofNullable(regexPathsMap.get(apiPath)).orElse(apiPath);
 
@@ -214,8 +207,24 @@ public class DynamicInjectionConfigGenerator {
 
                 final String finalApiPath = modifiedApiPath;
 
+                Triple<String, String, Boolean> getLookupValAndXfmAndInjectAllPaths =
+                    getLookupValAndXfmAndInjectAllPaths(jsonPath, stringValue);
+                String lookupVal = getLookupValAndXfmAndInjectAllPaths.getLeft();
+                String xfm = getLookupValAndXfmAndInjectAllPaths.getMiddle();
+                Boolean injectAllPaths = getLookupValAndXfmAndInjectAllPaths.getRight();;
+                // Add to map to keep track of values already spotted in requests
+                valuesAlreadySeenInRequestSet.add(lookupVal);
+
                 Optional<LinkedHashSet<ExtractionConfig>> extractionConfigsForPresentValue = getExtractionSetForValue(
                     lookupVal);
+
+                if (!lookupVal.equals(stringValue) && extractionConfigsForPresentValue.isEmpty()){
+                    // Retry with original value. injectAllPaths is retained as it is path-based.
+                    lookupVal = stringValue;
+                    extractionConfigsForPresentValue = getExtractionSetForValue(lookupVal);
+                    xfm = InjectionMeta.valueMarker;
+                    valuesAlreadySeenInRequestSet.add(lookupVal);
+                }
 
                 // If no extraction set exists for the present injection, create a new set with
                 // the first extraction in the set for the present value (which is also the place of value's first appearance).
