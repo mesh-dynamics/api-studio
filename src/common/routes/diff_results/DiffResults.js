@@ -297,8 +297,12 @@ class DiffResults extends Component {
         .then(
             (resultsData) => {
                 const facets = resultsData.data && resultsData.data.facets || {};
+                const goldenTemplateName = resultsData.data?.templateName
+                const goldenTemplateLabel = resultsData.data?.templateLabel
                 this.setState({
                     serviceFacets: facets.serviceFacets,
+                    goldenTemplateName,
+                    goldenTemplateLabel,
                 })
             }
         );
@@ -341,11 +345,7 @@ class DiffResults extends Component {
                 break;
         }
         try {
-            const dataList = await cubeService.fetchAnalysisResults(replayId, searchParams);
-            this.setState({goldenTemplateName: dataList.data.templateName});
-            this.setState({goldenTemplateLabel: dataList.data.templateLabel});
-
-            return dataList
+            return await cubeService.fetchAnalysisResults(replayId, searchParams);
         } catch(error) {
             console.log("Error fetching analysis results list", error);
             // Returning empty list will show No Results Found instead of being 
