@@ -1394,7 +1394,7 @@ class HttpClientTabs extends Component {
                 responsePayloadState: "WrappedEncoded",
                 recordedResponseHeaders: "",
                 recordedResponseBody: "",
-                recordedResponseStatus: "",
+                recordedResponseStatus: 200,
                 responseBodyType: "",
                 requestId: "NA",
                 outgoingRequestIds: [],
