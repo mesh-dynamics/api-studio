@@ -19,6 +19,7 @@ import io.md.dao.RequestDetails;
 import io.md.dao.RequestPayload;
 import io.md.dao.ResponsePayload;
 import io.md.services.DataStore;
+import io.md.utils.Utils;
 
 public class GrpcReplayDriver extends AbstractReplayDriver {
 
@@ -41,7 +42,9 @@ public class GrpcReplayDriver extends AbstractReplayDriver {
 
 	@Override
 	protected void modifyResponse(Event respEvent) {
-		return;
+		if(respEvent.payload instanceof  GRPCResponsePayload){
+			Utils.setProtoDescriptorGrpcEvent(respEvent, protoDescriptorCacheOptional.orElseThrow());
+		}
 	}
 
 	public static  class GrpcReplayClient extends AbstractIReplayClient{
