@@ -4,6 +4,12 @@
 package io.md.core;
 
 
+import static io.md.utils.Utils.ALLOWED_HEADERS;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -13,27 +19,38 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
 
+import javax.swing.text.html.Option;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.glassfish.jersey.uri.UriComponent;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import io.md.dao.Event;
 import io.md.dao.RecordOrReplay;
+import io.md.dao.Replay;
+import io.md.dao.RequestDetails;
+import io.md.dao.RequestPayload;
 import io.md.services.DataStore;
 import io.md.utils.Constants;
+import io.md.utils.UtilException;
 
 
 /**
@@ -201,4 +218,102 @@ public class Utils {
             super(message);
         }
     }
+
+    public static Optional<byte[]> decodeResponseBody(byte[] originalBody , String encoding){
+
+    	try{
+		    switch (encoding){
+			    case "":
+				    return Optional.of(originalBody);
+			    case "gzip":
+				    byte[] body =  new GZIPInputStream(new ByteArrayInputStream(originalBody)).readAllBytes();
+				    return Optional.of(body);
+			    default:
+				    throw new UnsupportedOperationException("Unexpected Content-Encoding: " + encoding);
+		    }
+	    }catch (Exception e){
+		    LOGGER.error("Stream reading error",e);
+		    return Optional.empty();
+	    }
+    }
+
+	public static RequestDetails buildRequestDetails(Replay replay, Event reqEvent, RequestPayload httpRequest){
+
+		List<String> pathSegments = httpRequest
+			.getValAsObject(Constants.PATH_SEGMENTS_PATH, List.class)
+			.orElse(Collections.EMPTY_LIST);
+
+		if (!pathSegments.isEmpty()) {
+			try {
+				reqEvent.apiPath = pathSegments.stream().collect(Collectors.joining("/"));
+			} catch (Exception e) {
+				LOGGER
+					.error("Cannot form apiPath from pathSegments. Resolving to event apiPath",
+						e);
+			}
+		} else {
+			LOGGER.error("pathSegments not found. Resolving to event apiPath");
+		}
+		String apiPath = reqEvent.apiPath;
+		UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
+			.path(apiPath);
+
+		MultivaluedHashMap<String, String> queryParams = httpRequest
+			.getValAsObject(Constants.QUERY_PARAMS_PATH, MultivaluedHashMap.class)
+			.orElse(new MultivaluedHashMap<String, String>());
+
+		queryParams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
+			String[] params = vlist.stream().map(UtilException.rethrowFunction(v -> {
+				return UriComponent
+					.encode(v, UriComponent.Type.QUERY_PARAM_SPACE_ENCODED);
+				// return URLEncoder.encode(v, "UTF-8"); // this had a problem of
+				// encoding space as +, which further gets encoded as %2B
+			})).toArray(String[]::new);
+			uribuilder.queryParam(k, (Object[]) params);
+		}));
+
+
+		byte[] requestBody = httpRequest.getBody();
+		URI uri = uribuilder.build();
+
+		LOGGER.debug("PATH :: " + uri.toString() + " OUTGOING REQUEST BODY :: " + new String(requestBody,
+			StandardCharsets.UTF_8));
+
+		// Fetch headers/queryParams and path etc from payload since injected value
+		// would be present in dataObj instead of payload fields
+
+		//TODO - HTTPHeaders and queryParams don't support types
+		// they have to be string so add validation for that,
+		// also add validation to be an array even if a singleton
+		// because of jackson serialisation to Multivalued map
+
+		// NOTE - HEADERS SHOULD BE READ AND SET AFTER SETTING THE BODY BECAUSE WHILE DOING GETBODY()
+		// THE HEADERS MIGHT GET UPDATED ESPECIALLY IN CASE OF MULTIPART DATA WHERE WE SET NEW CONTENT-TYPE
+		// HEADER WHILE WRAPPING THE BODY
+
+		MultivaluedHashMap<String, String> headers = httpRequest
+			.getValAsObject(Constants.HDR_PATH, MultivaluedHashMap.class)
+			.orElse(new MultivaluedHashMap<String, String>());
+
+		for(String k : headers.keySet()){
+			// some headers are restricted and cannot be set on the request
+			// lua adds ':' to some headers which we filter as they are invalid
+			// and not needed for our requests.
+			if (!(ALLOWED_HEADERS.test(k) && !k.startsWith(":"))) {
+				headers.remove(k);
+			}
+		}
+
+		//Adding additional headers during Replay, This will help identify the case where the request is retried
+		// by the platform for some reason, which leads to multiple identical events during the replay run.
+		headers.putSingle(Constants.CUBE_HEADER_PREFIX + Constants.SRC_REQUEST_ID, reqEvent.reqId);
+
+
+		//This will help to catch if the same request is replayed multiple times by Replay Driver
+		headers.putSingle(Constants.CUBE_HEADER_PREFIX + Constants.REQUEST_ID, UUID.randomUUID().toString());
+
+
+		return new RequestDetails(uri , requestBody , httpRequest.getMethod() , headers);
+	}
+
 }
