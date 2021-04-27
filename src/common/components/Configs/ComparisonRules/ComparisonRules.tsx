@@ -34,6 +34,8 @@ export interface IComparisonRulesProps {
   user: IUserAuthDetails;
 }
 
+const MESSAGE_CLEAR_TIMEOUT = 2000;
+
 function ComparisonRules(props: IComparisonRulesProps) {
   const [collectionId, setCollectionId] = useState("");
   const [timelineData, setTimelineData] = useState<ITimelineData[]>([]);
@@ -180,6 +182,7 @@ function ComparisonRules(props: IComparisonRulesProps) {
                 message: response.Message || "Config file has been uploaded",
                 isError: false,
               });
+              setTimeout(() => resetMessage(), MESSAGE_CLEAR_TIMEOUT);
             })
             .catch((error) => {
               console.error(error);
@@ -198,6 +201,7 @@ function ComparisonRules(props: IComparisonRulesProps) {
                 message: response.Message || "Config file has been uploaded",
                 isError: false,
               });
+              setTimeout(() => resetMessage(), MESSAGE_CLEAR_TIMEOUT);
             })
             .catch((error) => {
               console.error(error);
