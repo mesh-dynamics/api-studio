@@ -14,6 +14,7 @@ public class SeqMgr {
     // assuming the incoming events are in right order sorted order
     public static Stream<Event> createSeqId(Stream<Event> goldenEvents , long size){
 
+        if(size<=0) return goldenEvents;
         SequenceGenerator gen = new SequenceGenerator(size);
 
         return populateSeqId(goldenEvents , gen);
