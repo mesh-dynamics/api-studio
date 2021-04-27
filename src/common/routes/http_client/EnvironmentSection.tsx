@@ -157,7 +157,7 @@ class EnvironmentSection extends React.Component<
 
     const currentMockConfigFileName = `${currentMockConfig.name}.json`;
 
-    commonUtils.downloadAFileToClient(currentMockConfigFileName, JSON.stringify(currentMockConfig));
+    commonUtils.exportServiceConfigToClient(currentMockConfigFileName, JSON.stringify(currentMockConfig));
   };
 
   renderSelectedEnvModal = () => {
