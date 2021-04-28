@@ -3,8 +3,8 @@ package io.md.injection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta.HTTPMethodType;
 import java.util.HashSet;
 import java.util.Objects;
@@ -143,7 +143,7 @@ public class InjectionExtractionMeta implements Comparable{
 
     }
 
-    @JsonPropertyOrder({"inj_apiPath", "inj_jsonPath", "inj_method"})
+    @JsonPropertyOrder({"inj_apiPath", "inj_jsonPath", "inj_method", "Transform", "InjectAllPaths"})
     public static class InjectionConfig implements Comparable{
 
         @JsonProperty("inj_apiPath")
@@ -154,6 +154,12 @@ public class InjectionExtractionMeta implements Comparable{
 
         @JsonProperty("inj_method")
         public HTTPMethodType method;
+
+        @JsonProperty("Transform")
+        public String xfm;
+
+        @JsonProperty("InjectAllPaths")
+        public Boolean injectAllPaths = false;
 
         @JsonIgnore
         public Set<String> values = new HashSet<>();
@@ -166,10 +172,13 @@ public class InjectionExtractionMeta implements Comparable{
             super();
         }
 
-        public InjectionConfig(String apiPath, String jsonPath, HTTPMethodType method) {
+        public InjectionConfig(String apiPath, String jsonPath, HTTPMethodType method, String xfm,
+            Boolean injectAllPaths) {
             this.apiPath = apiPath;
             this.jsonPath = jsonPath;
             this.method = method;
+            this.xfm = xfm;
+            this.injectAllPaths = injectAllPaths;
         }
 
         @Override
@@ -199,6 +208,12 @@ public class InjectionExtractionMeta implements Comparable{
         @Override
         public int hashCode() {
             return Objects.hash(apiPath, jsonPath, method);
+        }
+
+        @JsonSetter("InjectAllPaths")
+        public void setInjectAllPaths(String injectAllPaths) {
+            // Required because Jackson doesn't support deserialization from caps (TRUE/FALSE)
+            this.injectAllPaths = Boolean.valueOf(injectAllPaths);
         }
     }
 

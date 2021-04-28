@@ -15,6 +15,7 @@ import io.md.logger.LogMgr;
 import io.md.services.DataStore;
 import io.md.utils.Utils;
 import org.apache.commons.text.StringSubstitutor;
+import org.apache.commons.text.lookup.StringLookup;
 import org.slf4j.Logger;
 
 import java.util.*;
@@ -22,7 +23,10 @@ import java.util.regex.Pattern;
 
 public class DynamicInjector {
 
-	private static Logger LOGGER = LogMgr.getLogger(DynamicInjector.class);
+	private static final Logger LOGGER = LogMgr.getLogger(DynamicInjector.class);
+	private static final StringSubstitutor emptySubstitutor = new StringSubstitutor(
+		new EmptyResolver());
+
 
 	protected final Optional<DynamicInjectionConfig> dynamicInjectionConfig;
 	protected final DataStore dataStore;
@@ -85,9 +89,6 @@ public class DynamicInjector {
 
 				// Detect if key not found in substitution map
 				sub.setEnableUndefinedVariableException(true);
-
-				String name;
-				DataObj value;
 
 				String requestHttpMethod = Utils.getHttpMethod(goldenRequestEvent);
 				boolean apiPathMatch = apiPathMatch(
@@ -214,8 +215,32 @@ public class DynamicInjector {
 		StringSubstitutor sub, Event request) {
 		String key = sub.replace(name);
 		DataObj value = extractionMap.get(key);
+
+		// Try non-inj-path-val-specific key search. Would only find this key if corresponding
+		// extr doesn't have a golden resp.
+		if (value == null) {
+			key = emptySubstitutor.replace(name);
+			value = extractionMap.get(key);
+		}
+
 		try {
 			if (value != null) {
+
+				DataObj xfmdValue;
+
+				if (injectionMeta.xfm.isPresent() && value.isLeaf()) {
+					// Transform is applicable only for leaf nodes
+					StringSubstitutor valueSubstitutorinXfm = new StringSubstitutor(
+						Map.of(InjectionMeta.valueName, value.serializeDataObj()));
+
+					String xfmdString = valueSubstitutorinXfm.replace(injectionMeta.xfm.get());
+
+					xfmdValue = new JsonDataObj(new TextNode(xfmdString), jsonMapper);
+
+				} else {
+					xfmdValue = value;
+				}
+
 				String orig;
 				try {
 					 orig = request.payload
@@ -225,15 +250,15 @@ public class DynamicInjector {
 					orig = null;
 				}
 				if (orig == null) {
-					request.payload.put(path,value);
+					request.payload.put(path,xfmdValue);
 				} else {
 					request.payload.put(path,
-						injectionMeta.map(orig, value, jsonMapper));
+						injectionMeta.map(orig, xfmdValue, jsonMapper));
 				}
 
 				LOGGER.info(String.format(
 					"Injecting value in request before replaying Key %s Value %s %s %s %s %s",
-					key, value, Constants.JSON_PATH_FIELD, path,
+					key, xfmdValue, Constants.JSON_PATH_FIELD, path,
 					Constants.REQ_ID_FIELD, request.reqId));
 			} else {
 				LOGGER.info(String.format(
@@ -266,4 +291,15 @@ public class DynamicInjector {
 	public Map<String, DataObj> getExtractionMap() {
 		return extractionMap;
 	}
+
+	private static class EmptyResolver implements StringLookup {
+
+		@Override
+		public String lookup(String lookupString) {
+			return "";
+		}
+	}
+
 }
+
+

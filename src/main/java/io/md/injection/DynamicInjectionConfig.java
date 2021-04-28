@@ -157,6 +157,9 @@ public class DynamicInjectionConfig {
 		@JsonProperty("name")
 		public final String name;
 
+		@JsonProperty("transform")
+		public final Optional<String> xfm;
+
 		@JsonProperty("regex")
 		public final Optional<String> regex;
 
@@ -169,18 +172,26 @@ public class DynamicInjectionConfig {
 		@JsonProperty("metadata")
 		public final Optional<Metadata> metadata;
 
+		@JsonIgnore
+		public static final String valueName = "value";
+
+		@JsonIgnore
+		public static final String valueMarker = "${" + valueName + "}";
+
+
 
 		public InjectionMeta() {
-			this(Collections.EMPTY_LIST, "", false, "", Optional.empty(),
+			this(Collections.EMPTY_LIST, "", false, "", Optional.empty(), Optional.empty(),
 				HTTPMethodType.POST, Optional.empty(), Optional.empty());
 		}
 		public InjectionMeta(List<String> apiPaths, String jsonPath, boolean injectAllPaths
-			, String name, Optional<String> regex, HTTPMethodType method,
+			, String name, Optional<String> xfm, Optional<String> regex, HTTPMethodType method,
 			Optional<ForEachStruct> forEach, Optional<Metadata> metadata) {
 			this.apiPaths = apiPaths;
 			this.jsonPath = jsonPath;
 			this.injectAllPaths = injectAllPaths;
 			this.name = name;
+			this.xfm = xfm;
 			this.regex = regex;
 			this.method = method;
 			this.forEach = forEach;
@@ -188,10 +199,10 @@ public class DynamicInjectionConfig {
 		}
 
 		public InjectionMeta(List<String> apiPaths, String jsonPath, boolean injectAllPaths
-			, String name, Optional<String> regex, HTTPMethodType method,
+			, String name, Optional<String> xfm, Optional<String> regex, HTTPMethodType method,
 			Optional<ForEachStruct> forEach, String extractionApiPath, String extractionJsonPath,
 			HTTPMethodType extractionMethod) {
-			this(apiPaths, jsonPath, injectAllPaths, name, regex, method, forEach,
+			this(apiPaths, jsonPath, injectAllPaths, name, xfm, regex, method, forEach,
 				Optional.of(new Metadata(ExtractionMeta
 					.getExtractionId(extractionApiPath, extractionJsonPath, extractionMethod),
 				extractionJsonPath)));

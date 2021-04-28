@@ -153,7 +153,13 @@ public class InjectionVarResolver implements StringLookup {
 
 		String regex = extractionInfo.regex;
 		try {
-			value = extractionInfo.source.getValAsString(extractionInfo.jsonPath);
+			if (extractionInfo.source != null) {
+				// For cases such as devtool reqs, source = golden.response is missing leading to
+				// NULL ptr exception and default value being skipped.
+				value = extractionInfo.source.getValAsString(extractionInfo.jsonPath);
+			} else {
+				return null;
+			}
 			if (regex != null && !regex.isEmpty()) {
 				Matcher match = Pattern.compile(regex).matcher(value);
 				if (match.find()) {
