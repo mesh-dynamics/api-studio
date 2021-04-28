@@ -81,8 +81,12 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
           - name: JAVA_TOOL_OPTIONS
-            value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -XX:+HeapDumpOnOutOfMemoryError"
+            value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -XX:+HeapDumpOnOutOfMemoryError -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote=true  -Djava.rmi.server.hostname=$(POD_NAME) -Dcom.sun.management.jmxremote.rmi.port=8082"
           - name: solr_base_url
             valueFrom:
               configMapKeyRef:
@@ -214,8 +218,12 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
           - name: JAVA_TOOL_OPTIONS
-            value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -XX:+HeapDumpOnOutOfMemoryError"
+            value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -XX:+HeapDumpOnOutOfMemoryError -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote=true  -Djava.rmi.server.hostname=$(POD_NAME) -Dcom.sun.management.jmxremote.rmi.port=8082"
           - name: solr_base_url
             valueFrom:
               configMapKeyRef:
@@ -347,8 +355,12 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
           - name: JAVA_TOOL_OPTIONS
-            value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -XX:+HeapDumpOnOutOfMemoryError"
+            value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -XX:+HeapDumpOnOutOfMemoryError -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote=true  -Djava.rmi.server.hostname=$(POD_NAME) -Dcom.sun.management.jmxremote.rmi.port=8082"
           - name: solr_base_url
             valueFrom:
               configMapKeyRef:
@@ -510,8 +522,12 @@ spec:
         image: cubeiocorp/cubeuibackend:{{cubeui_backend_tag}}
         imagePullPolicy: Always
         env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         - name: JAVA_TOOL_OPTIONS
-          value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -XX:+HeapDumpOnOutOfMemoryError"
+          value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -XX:+HeapDumpOnOutOfMemoryError -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote=true  -Djava.rmi.server.hostname=$(POD_NAME) -Dcom.sun.management.jmxremote.rmi.port=8082"
         - name: SPRING_PROFILES_ACTIVE
           value: "{{springboot_profile}}"
         - name: spring.datasource.url
