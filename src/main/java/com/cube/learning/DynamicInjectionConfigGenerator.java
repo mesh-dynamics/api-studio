@@ -13,7 +13,6 @@ import io.md.injection.InjectionExtractionMeta.ExtractionConfig;
 import io.md.injection.InjectionExtractionMeta.InjectionConfig;
 import io.md.utils.Utils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -221,8 +220,6 @@ public class DynamicInjectionConfigGenerator {
 
                 Optional<LinkedHashSet<ExtractionConfig>> extractionConfigsForPresentValue = getExtractionSetForValue(
                     lookupVal);
-
-                extractionConfigsForPresentValue = getExtractionSetForValue(lookupVal);
 
                 if (extractionConfigsForPresentValue.isEmpty()){
                     // Retry with modified value. injectAllPaths is retained as it is path-based.

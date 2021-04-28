@@ -54,7 +54,9 @@ public class DynamicInjectionGeneratedToActualConvertor {
                     Collections.singletonList(injConfig.apiPath),
                     injConfig.jsonPath,
                     injConfig.injectAllPaths,
-                    // ":-" symbol is a delimiter for specifying a default value - <empty> in this case.
+                    // ":-" symbol is a delimiter for specifying a default value specified by the library
+                    // - <empty> in this case.
+                    // Ref: https://commons.apache.org/proper/commons-text/apidocs/org/apache/commons/text/StringSubstitutor.html
                     String.format("${Golden.Request: %s:-}" +
                             extractionConfig.nameSuffix,
                         injectionExtractionMeta.injectionConfig.jsonPath),
@@ -78,7 +80,9 @@ public class DynamicInjectionGeneratedToActualConvertor {
                     extractionConfig.apiPath,
                     extractionConfig.jsonPath,
                     extractionConfig.method,
-                    // ":-" symbol is a delimiter for specifying a default value - <empty> in this case.
+                    // ":-" symbol is a delimiter for specifying a default value specified by the library
+                    // - <empty> in this case.
+                    // Ref: https://commons.apache.org/proper/commons-text/apidocs/org/apache/commons/text/StringSubstitutor.html
                     // This is to handle case for devtool where no Golden Response exists for the first
                     // time a request is sent, yet we want ext/inj to happen. E.g. login.
                     String.format("${Golden.Response: %s:-}" +
