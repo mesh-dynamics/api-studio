@@ -16,6 +16,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -295,14 +296,13 @@ public class Utils {
 			.getValAsObject(Constants.HDR_PATH, MultivaluedHashMap.class)
 			.orElse(new MultivaluedHashMap<String, String>());
 
-		for(String k : headers.keySet()){
-			// some headers are restricted and cannot be set on the request
-			// lua adds ':' to some headers which we filter as they are invalid
-			// and not needed for our requests.
-			if (!(ALLOWED_HEADERS.test(k) && !k.startsWith(":"))) {
-				headers.remove(k);
-			}
-		}
+		headers.entrySet().removeIf(e->{
+			//some headers are restricted and cannot be set on the request
+			//lua adds ':' to some headers which we filter as they are invalid
+			//and not needed for our requests.
+			String key = e.getKey();
+			return !(ALLOWED_HEADERS.test(key) && !key.startsWith(":"));
+		});
 
 		//Adding additional headers during Replay, This will help identify the case where the request is retried
 		// by the platform for some reason, which leads to multiple identical events during the replay run.
