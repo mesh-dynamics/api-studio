@@ -110,11 +110,11 @@ public class DynamicInjectionRulesLearner {
         processReplayMatchResults(reqRespMatchResultStream, DiffPathMap);
 
         dynamicInjectionConfig.injectionExtractionMetas.forEach(meta ->
-                // Add all metas to a trie with json path as key
-                // Multiple APIPaths may have same json path, so add all apiPath Metas to the jsonPath key
-                injectionExtractionMetaTrie
-                    .computeIfAbsent(meta.extractionConfig.jsonPath, k -> new HashSet<>())
-                    .add(meta));
+            // Add all metas to a trie with json path as key
+            // Multiple APIPaths may have same json path, so add all apiPath Metas to the jsonPath key
+            injectionExtractionMetaTrie
+                .computeIfAbsent(meta.extractionConfig.jsonPath, k -> new HashSet<>())
+                .add(meta));
 
         DiffPathMap.values().forEach(diffPath ->
             // Cannot use a hash-table as a) extConfig api path may be regex; and
