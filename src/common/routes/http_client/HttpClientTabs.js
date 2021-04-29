@@ -235,12 +235,27 @@ class HttpClientTabs extends Component {
                 bodyType = "multipartData";
                 defaultParamsType = "showBody";
             } else {
-                rawData = parsedCurl.data;
-                rawDataType = "text";
-                bodyType = "rawData";
-                if(rawData){
-                    defaultParamsType = "showBody";
+                // if no contentType provided, assign x-www-form-urlencoded as default
+                const formParams = parse(parsedCurl.data);
+                for (let eachFormParam in formParams) {
+                    formData.push({
+                        id: uuidv4(),
+                        name: eachFormParam,
+                        value: formParams[eachFormParam],
+                        description: "",
+                        selected: true,
+                    });
+                    rawDataType = "";
                 }
+                defaultParamsType = "showBody";
+                bodyType = "formData";
+                headers.push({
+                    id: uuidv4(),
+                    name: "content-type",
+                    value: "application/x-www-form-urlencoded",
+                    description: "",
+                    selected: true,
+                });
             }
             let reqObj = {
                 requestId: "NA",
