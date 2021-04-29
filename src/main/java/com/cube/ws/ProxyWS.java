@@ -10,7 +10,9 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -37,6 +39,9 @@ import org.slf4j.Logger;
 
 import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
+import io.md.drivers.MDHttp2Client;
+import io.md.drivers.MDHttpResponse;
+import io.md.drivers.MDResponse;
 import io.md.logger.LogMgr;
 import io.md.utils.Utils;
 
@@ -121,7 +126,41 @@ public class ProxyWS {
 			.build();
 	}
 
-	private Response getResponse(URI uri, byte[] requestBody) {
+	private Response getResponse(URI uri, byte[] requestBody){
+		boolean useHttp2Client = true;
+		return useHttp2Client ? getHttp2Response(uri , requestBody) : getHttp1Response(uri , requestBody);
+	}
+
+	private Response getHttp2Response(URI uri, byte[] requestBody) {
+		MultivaluedMap<String,String> headers = new MultivaluedHashMap<>();
+		httpServletRequest.getHeaderNames().asIterator()
+			.forEachRemaining(key -> {
+				// some headers are restricted and cannot be set on the request
+				// lua adds ':' to some headers which we filter as they are invalid
+				// and not needed for our requests.
+				if (Utils.ALLOWED_HEADERS.test(key) && !key.startsWith(":")) {
+					headers.putSingle(key, httpServletRequest.getHeader(key));
+				}
+			});
+
+		CommonConfig.getInstance().authToken.ifPresent(
+			token -> headers.putSingle(io.cube.agent.Constants.AUTHORIZATION_HEADER, token));
+		MDHttp2Client client = new MDHttp2Client(uri , httpServletRequest.getMethod() , requestBody , headers);
+
+
+		MDResponse response = null;
+		try {
+			response = client.makeRequest();
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOGGER.error("getHttp2Response failure" , e);
+		}
+
+		return response != null ? createResponse(response) : notFound();
+	}
+
+
+	private Response getHttp1Response(URI uri, byte[] requestBody) {
 		HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
 			.uri(uri)
 			.method(httpServletRequest.getMethod(),
@@ -145,39 +184,52 @@ public class ProxyWS {
 		try {
 			response = httpClient
 				.send(reqbuilder.build(), BodyHandlers.ofByteArray());
-		} catch (IOException e) {
+		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+			LOGGER.error("getResponse failure ", e);
 		}
 
-		return response != null ? createResponse(response) : notFound();
+		return response != null ? createResponse(new MDHttpResponse(response)) : notFound();
 	}
 
-	private Response createResponse(HttpResponse<byte[]> resp) {
-		ResponseBuilder builder = Response.status(resp.statusCode());
+	private Response createResponse(MDResponse resp) {
+		return createResponse(resp.statusCode() , resp.getHeaders() , resp.getTrailers() , resp.getBody());
+	}
+
+	private Response createResponse(int statusCode , MultivaluedMap<String, String> headers , MultivaluedMap<String, String> trailers , byte[] body) {
+		ResponseBuilder builder = Response.status(statusCode);
 		MultivaluedMap<String, String> trailersMultiValuedMap = new MultivaluedHashMap<>();
-		resp.headers().map().forEach((headerName, headerValList) -> headerValList.forEach((val) -> {
-			if (Utils.ALLOWED_HEADERS.test(headerName) && !headerName.startsWith(":") && !headerName
-				.startsWith(Constants.MD_TRAILER_HEADER_PREFIX)) {
-				builder.header(headerName, val);
-			} else if (headerName
-				.startsWith(Constants.MD_TRAILER_HEADER_PREFIX)) {
-				String realTrailerKey = headerName
-					.substring(Constants.MD_TRAILER_HEADER_PREFIX.length());
-				trailersMultiValuedMap.add(realTrailerKey, val);
+		trailersMultiValuedMap.putAll(trailers);
+		for(Entry<String , List<String>> e : headers.entrySet()){
+			String headerName = e.getKey();
+			for(String val : e.getValue()){
+				if (Utils.ALLOWED_HEADERS.test(headerName) && !headerName.startsWith(":") && !headerName
+					.startsWith(Constants.MD_TRAILER_HEADER_PREFIX)) {
+					builder.header(headerName, val);
+				} else if (headerName
+					.startsWith(Constants.MD_TRAILER_HEADER_PREFIX)) {
+					String realTrailerKey = headerName
+						.substring(Constants.MD_TRAILER_HEADER_PREFIX.length());
+					trailersMultiValuedMap.add(realTrailerKey, val);
+				}
 			}
-		}));
-		addTrailersForGRPC(trailersMultiValuedMap);
+		}
+		if(!trailersMultiValuedMap.isEmpty()){
+			addTrailersForGRPC(trailersMultiValuedMap);
+		}
 
-		return builder.entity(resp.body()).build();
+		return builder.entity(body).build();
 	}
+
 
 	private Response notFound() {
 		return Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
 	}
 
 	private void addTrailersForGRPC(MultivaluedMap<String, String> trailersMultiValuedMap) {
+
+		if(trailersMultiValuedMap.isEmpty()) return;
+
 		//Add trailers for GRPC handling
 		if (httpServletResponse != null) {
 			// It's necessary to set "Trailer" header when setting trailers
