@@ -123,8 +123,8 @@ public class Config {
 
 	    	Jedis jedis;
 		    try{
-			    jedis = pool.getResource();
-			    pingIfRequired(jedis);
+		    	jedis = pool.getResource();
+		    	pingIfRequired(jedis);
 		    } catch (Exception e) {
 		    	LOGGER.error("Jedis pool resource fetch error "+e.getMessage() , e);
 			    pool.destroy();
@@ -199,6 +199,7 @@ public class Config {
             String redisPassword = fromEnvOrProperties("redis_password" , null);
             JedisPoolConfig poolConfig = new JedisPoolConfig();
             poolConfig.setTestOnBorrow(true);
+            poolConfig.setMaxWaitMillis(2000);
             //poolConfig.setTestOnReturn(true);
 	        jedisPool = new JedisConnResourceProvider(poolConfig , redisHost, redisPort , 2000,  redisPassword);
             REDIS_DELETE_TTL = Integer.parseInt(fromEnvOrProperties("redis_delete_ttl"
@@ -206,9 +207,8 @@ public class Config {
             LOGGER.info("REDIS TTL for record/replay after stop : " + REDIS_DELETE_TTL + " sec");
 	        Runnable subscribeThread = () -> {
 		        while (true) {
-			        try {
-				        Jedis jedis = jedisPool.getResource();
-				        jedis.configSet("notify-keyspace-events", "Ex");
+			        try(Jedis jedis = jedisPool.getResource()) {
+				       jedis.configSet("notify-keyspace-events", "Ex");
 				        jedis.psubscribe(new RedisPubSub(rrstore, jsonMapper, jedisPool.getJedisPool()),
 					        "__key*__:*");
 			        } catch (Throwable th) {
@@ -219,8 +219,7 @@ public class Config {
 
 	        Runnable channelPubSubThread = () -> {
 		        while(true){
-			        try{
-				        Jedis jedis = jedisPool.getResource();
+			        try(Jedis jedis = jedisPool.getResource()) {
 				        LOGGER.debug("starting the channel pubsub thread");
 				        jedis.subscribe(PubSubChannel.getSingleton(this), PubSubChannel.MD_PUBSUB_CHANNEL_NAME);
 				        LOGGER.error("channel pubsub thread stopped");
