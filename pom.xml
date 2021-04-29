@@ -260,7 +260,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.2.36.0</version>
+			<version>1.2.53.0</version>
 
 			<exclusions>
 				<exclusion>

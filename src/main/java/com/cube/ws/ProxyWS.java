@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
 import io.md.drivers.MDHttp2Client;
+import io.md.drivers.MDHttpResponse;
 import io.md.drivers.MDResponse;
 import io.md.logger.LogMgr;
 import io.md.utils.Utils;
@@ -59,7 +60,7 @@ public class ProxyWS {
 	@GET
 	public Response handleMockGet(@Context UriInfo uriInfo) {
 		URI uri = formMockURL(uriInfo);
-		return getHttp2Response(uri, new byte[0]);
+		return getResponse(uri, new byte[0]);
 	}
 
 	@Path("{any: .*}")
@@ -67,7 +68,7 @@ public class ProxyWS {
 	@Consumes(MediaType.WILDCARD)
 	public Response handleMockPost(@Context UriInfo uriInfo, byte[] requestBody) {
 		URI uri = formMockURL(uriInfo);
-		return getHttp2Response(uri, requestBody);
+		return getResponse(uri, requestBody);
 	}
 
 	@Path("{any: .*}")
@@ -75,7 +76,7 @@ public class ProxyWS {
 	@Consumes(MediaType.WILDCARD)
 	public Response handleMockPut(@Context UriInfo uriInfo, byte[] requestBody) {
 		URI uri = formMockURL(uriInfo);
-		return getHttp2Response(uri, requestBody);
+		return getResponse(uri, requestBody);
 	}
 
 	@Path("{any: .*}")
@@ -83,7 +84,7 @@ public class ProxyWS {
 	@Consumes(MediaType.WILDCARD)
 	public Response handleMockPatch(@Context UriInfo uriInfo, byte[] requestBody) {
 		URI uri = formMockURL(uriInfo);
-		return getHttp2Response(uri, requestBody);
+		return getResponse(uri, requestBody);
 	}
 
 	@Path("{any: .*}")
@@ -91,7 +92,7 @@ public class ProxyWS {
 	@Consumes(MediaType.WILDCARD)
 	public Response handleMockDelete(@Context UriInfo uriInfo, byte[] requestBody) {
 		URI uri = formMockURL(uriInfo);
-		return getHttp2Response(uri, requestBody);
+		return getResponse(uri, requestBody);
 	}
 
 	@Path("{any: .*}")
@@ -99,7 +100,7 @@ public class ProxyWS {
 	@Consumes(MediaType.WILDCARD)
 	public Response handleMockOptions(@Context UriInfo uriInfo, byte[] requestBody) {
 		URI uri = formMockURL(uriInfo);
-		return getHttp2Response(uri, requestBody);
+		return getResponse(uri, requestBody);
 	}
 
 	@Path("{any: .*}")
@@ -107,7 +108,7 @@ public class ProxyWS {
 	@Consumes(MediaType.WILDCARD)
 	public Response handleMockHead(@Context UriInfo uriInfo, byte[] requestBody) {
 		URI uri = formMockURL(uriInfo);
-		return getHttp2Response(uri, requestBody);
+		return getResponse(uri, requestBody);
 	}
 
 	private URI formMockURL(@Context UriInfo uriInfo) {
@@ -123,6 +124,11 @@ public class ProxyWS {
 			.segment("ms", customerId, app, instanceId, "*") //sending *, as service is unknown.
 			.path(reqString)
 			.build();
+	}
+
+	private Response getResponse(URI uri, byte[] requestBody){
+		boolean useHttp2Client = true;
+		return useHttp2Client ? getHttp2Response(uri , requestBody) : getHttp1Response(uri , requestBody);
 	}
 
 	private Response getHttp2Response(URI uri, byte[] requestBody) {
@@ -154,7 +160,7 @@ public class ProxyWS {
 	}
 
 
-	private Response getResponse(URI uri, byte[] requestBody) {
+	private Response getHttp1Response(URI uri, byte[] requestBody) {
 		HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
 			.uri(uri)
 			.method(httpServletRequest.getMethod(),
@@ -183,15 +189,18 @@ public class ProxyWS {
 			LOGGER.error("getResponse failure ", e);
 		}
 
-		return response != null ? createResponse(response) : notFound();
+		return response != null ? createResponse(new MDHttpResponse(response)) : notFound();
 	}
 
-	// Create Response from Http2 Response
 	private Response createResponse(MDResponse resp) {
-		ResponseBuilder builder = Response.status(resp.statusCode());
+		return createResponse(resp.statusCode() , resp.getHeaders() , resp.getTrailers() , resp.getBody());
+	}
+
+	private Response createResponse(int statusCode , MultivaluedMap<String, String> headers , MultivaluedMap<String, String> trailers , byte[] body) {
+		ResponseBuilder builder = Response.status(statusCode);
 		MultivaluedMap<String, String> trailersMultiValuedMap = new MultivaluedHashMap<>();
-		trailersMultiValuedMap.putAll(resp.getTrailers());
-		for(Entry<String , List<String>> e : resp.getHeaders().entrySet()){
+		trailersMultiValuedMap.putAll(trailers);
+		for(Entry<String , List<String>> e : headers.entrySet()){
 			String headerName = e.getKey();
 			for(String val : e.getValue()){
 				if (Utils.ALLOWED_HEADERS.test(headerName) && !headerName.startsWith(":") && !headerName
@@ -205,35 +214,22 @@ public class ProxyWS {
 				}
 			}
 		}
-		addTrailersForGRPC(trailersMultiValuedMap);
+		if(!trailersMultiValuedMap.isEmpty()){
+			addTrailersForGRPC(trailersMultiValuedMap);
+		}
 
-		return builder.entity(resp.getBody()).build();
+		return builder.entity(body).build();
 	}
 
-	private Response createResponse(HttpResponse<byte[]> resp) {
-		ResponseBuilder builder = Response.status(resp.statusCode());
-		MultivaluedMap<String, String> trailersMultiValuedMap = new MultivaluedHashMap<>();
-		resp.headers().map().forEach((headerName, headerValList) -> headerValList.forEach((val) -> {
-			if (Utils.ALLOWED_HEADERS.test(headerName) && !headerName.startsWith(":") && !headerName
-				.startsWith(Constants.MD_TRAILER_HEADER_PREFIX)) {
-				builder.header(headerName, val);
-			} else if (headerName
-				.startsWith(Constants.MD_TRAILER_HEADER_PREFIX)) {
-				String realTrailerKey = headerName
-					.substring(Constants.MD_TRAILER_HEADER_PREFIX.length());
-				trailersMultiValuedMap.add(realTrailerKey, val);
-			}
-		}));
-		addTrailersForGRPC(trailersMultiValuedMap);
-
-		return builder.entity(resp.body()).build();
-	}
 
 	private Response notFound() {
 		return Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
 	}
 
 	private void addTrailersForGRPC(MultivaluedMap<String, String> trailersMultiValuedMap) {
+
+		if(trailersMultiValuedMap.isEmpty()) return;
+
 		//Add trailers for GRPC handling
 		if (httpServletResponse != null) {
 			// It's necessary to set "Trailer" header when setting trailers
