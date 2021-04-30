@@ -252,8 +252,7 @@ public class ReplayBasicWS {
                 if (!recordingPrior.templateVersion.equals(templateSetVersion)) {
                     updatedRecording = dataStore
                         .copyRecording(recordingPrior.id, Optional.of(recordingPrior.name),
-                            Optional.of(LocalDateTime.now()
-                                .format(io.md.utils.Utils.templateLabelFormatter)),
+                            Optional.of(String.valueOf(Instant.now().getEpochSecond())),
                             Optional.of(templateSetName), Optional.of(templateSetLabel),
                             userId, recordingPrior.recordingType, Optional.empty());
                 } else {
