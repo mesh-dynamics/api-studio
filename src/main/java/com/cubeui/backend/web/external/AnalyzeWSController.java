@@ -366,9 +366,17 @@ public class AnalyzeWSController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @GetMapping("/getReqRespMatchResult")
+    @RequestMapping(value = "/getReqRespMatchResult" , method = {RequestMethod.GET , RequestMethod.POST})
     public ResponseEntity getReqRespMatchResult(HttpServletRequest request, @RequestBody Optional<String> getBody) {
-        return cubeServerService.fetchGetResponse(request, getBody);
+        String method = request.getMethod();
+        switch (method){
+            case "GET":
+                return cubeServerService.fetchGetResponse(request, getBody);
+            case "POST":
+                return cubeServerService.fetchPostResponse(request, getBody);
+            default:
+                throw new IllegalArgumentException("Invalid method "+method + " for this request");
+        }
     }
 
     @GetMapping("/learnComparisonRules")
