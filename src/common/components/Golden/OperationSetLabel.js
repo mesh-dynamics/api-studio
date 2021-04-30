@@ -20,7 +20,7 @@ class OperationSetLabel extends React.Component {
         if (indexMOS == -1)
             return false;
         for (const op of cube.multiOperationsSet[indexMOS].operationSet) {
-            if (jsonPath.replace("<BEGIN>", "") == (op.path)) {
+            if (jsonPath.replace("<BEGIN>", "").replace("<END>", "") == (op.path)) {
                 return true;
             }
         }
@@ -34,7 +34,7 @@ class OperationSetLabel extends React.Component {
                 const keyObj = JSON.parse(key);
                 if (keyObj['path'] == cube.pathResultsParams.path) {
                     for (const op of cube.templateOperationSetObject[key].operations) {
-                        if (jsonPath.replace("<BEGIN>", "") == (op.path)) {
+                        if (jsonPath.replace("<BEGIN>", "").replace("<END>", "") == (op.path)) {
                             return true;
                         }
                     }
@@ -47,7 +47,7 @@ class OperationSetLabel extends React.Component {
     findInJiraBugs(){
         const {cube, jsonPath} = this.props;
         for (const op of cube.jiraBugs) {
-            if (jsonPath.replace("<BEGIN>", "") == op.jsonPath) {
+            if (jsonPath.replace("<BEGIN>", "").replace("<END>", "") == op.jsonPath) {
                 return true;
             }
         }
@@ -60,13 +60,13 @@ class OperationSetLabel extends React.Component {
         if (indexMOS == -1)
             return false;
         /*for (const op of cube.multiOperationsSet[indexMOS].operationSet) {
-            if (jsonPath.replace("<BEGIN>", "") == (op.path)) {
+            if (jsonPath.replace("<BEGIN>", "").replace("<END>", "") == (op.path)) {
                 return true;
             }
         }*/
         let opList = cube.multiOperationsSet[indexMOS].operationSet;
         for (let ind = 0; ind < opList.length; ind++) {
-            if (jsonPath.replace("<BEGIN>", "") == (opList[ind].path)) {
+            if (jsonPath.replace("<BEGIN>", "").replace("<END>", "") == (opList[ind].path)) {
                 dispatch(cubeActions.removeFromNOS(ind, opList.length, indexMOS));
                 break;
             }
@@ -82,8 +82,8 @@ class OperationSetLabel extends React.Component {
                 if (keyObj['path'] == cube.pathResultsParams.path) {
                     let opList = cube.templateOperationSetObject[key].operations;
                     for (let ind = 0; ind < opList.length; ind++) {
-                        if (jsonPath.replace("<BEGIN>", "") == (opList[ind].path)) {
-                            dispatch(cubeActions.removeFromRuleBook(jsonPath.replace("<BEGIN>", "")));
+                        if (jsonPath.replace("<BEGIN>", "").replace("<END>", "") == (opList[ind].path)) {
+                            dispatch(cubeActions.removeFromRuleBook(jsonPath.replace("<BEGIN>", "").replace("<END>", "")));
                             dispatch(cubeActions.removeFromOperations(ind, opList.length, key));
                             break;
                         }
@@ -102,7 +102,7 @@ class OperationSetLabel extends React.Component {
         const { cube: { jiraBugs }, jsonPath } = this.props;
         
         if(jsonPath) {
-            const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", ""));
+            const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", "").replace("<END>", ""));
 
             return  jiraBugs.length > 0 && bugItem ? bugItem.issueUrl : "";
         }
@@ -113,7 +113,7 @@ class OperationSetLabel extends React.Component {
     getIssueId = () => {
         const { cube: { jiraBugs }, jsonPath } = this.props;
         if(jsonPath) {
-            const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", ""));
+            const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", "").replace("<END>", ""));
 
             return  jiraBugs.length > 0 && bugItem ? bugItem.issueKey : "";
         }
@@ -134,7 +134,7 @@ class OperationSetLabel extends React.Component {
     render() {
         const tippyContent = (
             <div>
-                <strong>{this.props.jsonPath ? this.props.jsonPath.replace("<BEGIN>", "") : ""}</strong>.
+                <strong>{this.props.jsonPath ? this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", "") : ""}</strong>.
             </div>
         );
 
@@ -160,7 +160,7 @@ class OperationSetLabel extends React.Component {
                         <div style={{ fontSize: "14px", display: "flex", flexDirection: "column", alignItems: "flex-start", padding: "10px" }}>
                             <div>
                                 <span>JSON Path: </span>
-                                <span>{this.props.jsonPath ? this.props.jsonPath.replace("<BEGIN>", "") : ""}</span>
+                                <span>{this.props.jsonPath ? this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", "") : ""}</span>
                             </div>
                             <div>
                                 <span>Jira Issue: </span>

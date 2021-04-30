@@ -25,7 +25,7 @@ class OperationSet extends Component {
 
     filterPath = () => {
         let inputElement = document.getElementById("filterPathInputId");
-        inputElement.value = this.props.jsonPath.replace("<BEGIN>", "");
+        inputElement.value = this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", "");
         let event = new Event("change");
         inputElement.dispatchEvent(event);
         this.inputElementRef.current.props.onChange(event);
@@ -59,7 +59,7 @@ class OperationSet extends Component {
 
     render() {
         return (
-            (this.props.jsonPath && this.props.jsonPath.indexOf("<END>") < 0)
+            ((this.props.jsonPath && this.props.jsonPath.indexOf("<END>") < 0) || (this.props.jsonPath?.includes("<BEGIN>") && this.props.jsonPath?.includes("<END>")))
             ? 
                 (
                     <div 
