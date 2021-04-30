@@ -171,7 +171,8 @@ const initialState: IHttpClientStoreState = {
     appGrpcSchema: {},
     contextMap: {},
     collectionsCache: [],
-    generalSettings:{}
+    generalSettings:{},
+    sidebarTabActiveKey: 1,
 }
 
 const getTabIndexGivenTabId = (tabId: string, tabs: IHttpClientTabDetails[]) => {
@@ -1318,6 +1319,13 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             return {
                 ...state,
                 tabs
+            }
+        }
+
+        case httpClientConstants.SET_SIDEBAR_TAB_ACTIVE_KEY: {
+            return { 
+                ...state,
+                sidebarTabActiveKey: data,
             }
         }
 

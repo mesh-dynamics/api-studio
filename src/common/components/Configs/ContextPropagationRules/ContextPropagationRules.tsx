@@ -32,6 +32,8 @@ export interface IContextPropagationRulesProps {
   customerId: string;
 }
 
+const MESSAGE_CLEAR_TIMEOUT = 2000;
+
 function ContextPropagationRules(props: IContextPropagationRulesProps) {
   const [collectionId, setCollectionId] = useState("");
   const [recordingId, setRecordingId] = useState("");
@@ -126,6 +128,7 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
                 message: response.Message || "Config file has been uploaded",
                 isError: false,
               });
+              setTimeout(() => resetMessage(), MESSAGE_CLEAR_TIMEOUT);
             })
             .catch((error) => {
               setIsUploading(false)
@@ -147,6 +150,7 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
                 message: response.Message || "Config file has been uploaded",
                 isError: false,
               });
+              setTimeout(() => resetMessage(), MESSAGE_CLEAR_TIMEOUT);
             })
             .catch((error) => {
               console.error(error);

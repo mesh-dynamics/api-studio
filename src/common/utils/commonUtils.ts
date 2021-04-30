@@ -1,4 +1,7 @@
 /** Move other common utility functions to here from httpClient/apiCatalog */
+/** global PLATFORM_ELECTRON */
+
+import { remote, fs } from '../../common/helpers/ipc-renderer';
 
 function downloadAFileToClient(fileName: string, data: any) {
   const url = window.URL.createObjectURL(new Blob([data]));
@@ -7,6 +10,44 @@ function downloadAFileToClient(fileName: string, data: any) {
   link.setAttribute("download", fileName);
   document.body.appendChild(link);
   link.click();
+}
+
+function writeToClient(fileName: string, data: any) {
+  fs.writeFile(fileName, data, (err: any) => {
+    if (err) {
+      console.log('Cancelled downloading file', err.message);
+      return;
+    }
+
+    console.log('File created successfully');
+  });
+}
+
+function exportServiceConfigToClient(fileName: string, data: any) {
+  if(PLATFORM_ELECTRON) {
+    const dialog = remote.dialog;
+    const windowReference = remote.getCurrentWindow();
+
+    const options = {
+      title: "Export Service Config",
+      defaultPath: fileName,
+      buttonLabel: "Save",
+      filters: [{ name: "JSON", extensions: ["json"] }]
+    };
+
+    dialog
+      .showSaveDialog(windowReference, options)
+      .then(result => {
+        const fileNameFromDialog = result.filePath;
+        if(fileNameFromDialog === undefined) {
+          writeToClient(fileName, data);
+        } else {
+          writeToClient(fileNameFromDialog, data);
+        }
+      });
+  } else {
+    downloadAFileToClient(fileName, data);
+  }
 }
 
 function getFormattedDate(date: any) {
@@ -27,6 +68,7 @@ function isCSVMimeType(type:string){
 }
 
 const commonUtils = {
+  exportServiceConfigToClient,
   downloadAFileToClient,
   getFormattedDate,
   isCSVMimeType

@@ -99,10 +99,9 @@ class EnvironmentSection extends React.Component<
           onChange={this.handleMockConfigChange}
           className="btn-sm md-env-select"
         >
-          <option value="NONE" disabled>
+          <option value="" disabled>
             Select Service Config
           </option>
-          <option value="">All services mocked</option>
           {mockConfigList.length &&
             mockConfigList.map((mockConfig) => (
               <option key={mockConfig.key} value={mockConfig.key}>
@@ -158,7 +157,7 @@ class EnvironmentSection extends React.Component<
 
     const currentMockConfigFileName = `${currentMockConfig.name}.json`;
 
-    commonUtils.downloadAFileToClient(currentMockConfigFileName, JSON.stringify(currentMockConfig));
+    commonUtils.exportServiceConfigToClient(currentMockConfigFileName, JSON.stringify(currentMockConfig));
   };
 
   renderSelectedEnvModal = () => {
@@ -242,7 +241,7 @@ class EnvironmentSection extends React.Component<
             <div className="md-env-modal-section">
               <div className="md-env-modal-section-header">
                 <div>
-                  Service Config: <b>{selectedMockConfig || "All services mocked"}</b>
+                  Service Config: <b>{selectedMockConfig || "No service config selected"}</b>
                 </div>
                 {
                   selectedMockConfig &&

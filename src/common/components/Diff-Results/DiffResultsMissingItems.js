@@ -25,7 +25,7 @@ class DiffResultsMissingItems extends Component{
     getIssueId = (jsonPath) => {
         const { cube: { jiraBugs } } = this.props;
         if(jsonPath) {
-            const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", ""));
+            const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", "").replace("<END>", ""));
 
             return  jiraBugs.length > 0 && bugItem ? bugItem.issueKey : "";
         }
@@ -37,7 +37,7 @@ class DiffResultsMissingItems extends Component{
         const { cube: { jiraBugs } } = this.props;
         
         if(jsonPath) {
-            const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", ""));
+            const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", "").replace("<END>", ""));
 
             return  jiraBugs.length > 0 && bugItem ? bugItem.issueUrl : "";
         }
@@ -53,7 +53,7 @@ class DiffResultsMissingItems extends Component{
     findInJiraBugs = (jsonPath) => {
         const { cube } = this.props;
         for (const op of cube.jiraBugs) {
-            if (jsonPath.replace("<BEGIN>", "") == op.jsonPath) {
+            if (jsonPath.replace("<BEGIN>", "").replace("<END>", "") == op.jsonPath) {
                 return true;
             }
         }
@@ -67,7 +67,7 @@ class DiffResultsMissingItems extends Component{
                 const keyObj = JSON.parse(key);
                 if (keyObj['path'] == cube.pathResultsParams.path) {
                     for (const op of cube.templateOperationSetObject[key].operations) {
-                        if (jsonPath.replace("<BEGIN>", "") == (op.path)) {
+                        if (jsonPath.replace("<BEGIN>", "").replace("<END>", "") == (op.path)) {
                             return true;
                         }
                     }
@@ -85,8 +85,8 @@ class DiffResultsMissingItems extends Component{
                 if (keyObj['path'] == cube.pathResultsParams.path) {
                     let opList = cube.templateOperationSetObject[key].operations;
                     for (let ind = 0; ind < opList.length; ind++) {
-                        if (jsonPath.replace("<BEGIN>", "") == (opList[ind].path)) {
-                            dispatch(cubeActions.removeFromRuleBook(jsonPath.replace("<BEGIN>", "")));
+                        if (jsonPath.replace("<BEGIN>", "").replace("<END>", "") == (opList[ind].path)) {
+                            dispatch(cubeActions.removeFromRuleBook(jsonPath.replace("<BEGIN>", "").replace("<END>", "")));
                             dispatch(cubeActions.removeFromOperations(ind, opList.length, key));
                             break;
                         }

@@ -53,6 +53,7 @@ export const cubeActions = {
     hideHttpClient,
     resetCubeToInitialState,
     setDoNotShowGettingStartedAgain,
+    setSelectedAppObject,
     setOtherInstanceEndPoint,
 };
 
@@ -92,9 +93,12 @@ function getAppImages() {
 }
 function refreshAppList(){
     return async (dispatch, getState) => {
+        const {cube: {selectedApp}} = getState()
         const appsList = await getAppList();
         dispatch({ type: cubeConstants.APPS_SUCCESS, data: appsList, date: Date.now() }); 
         dispatch(cubeActions.getAppImages());
+        const selectedAppObj = appsList.find((app) => app.app.name==selectedApp)
+        dispatch(cubeActions.setSelectedAppObject(selectedAppObj))
     }
 }
 
@@ -319,6 +323,12 @@ function setSelectedApp (app) {
             dispatch(httpClientActions.loadProtoDescriptor());
             dispatch(httpClientActions.addAllUserCollections([]));
         });
+    }
+}
+
+function setSelectedAppObject (appObject) {
+    return (dispatch) => {
+        dispatch({type: cubeConstants.SET_SELECTED_APP_OBJECT, data: appObject})
     }
 }
 

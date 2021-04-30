@@ -633,20 +633,26 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
   }
 
   handleSelectedTabChange = (changedKey: any) => {
-      this.currentSelectedTab = changedKey;
+    const {dispatch} = this.props;
+    this.currentSelectedTab = changedKey;
+    dispatch(httpClientActions.setSidebarTabActiveKey(changedKey));  
   }
 
   render() {
     //Remove unused vars
     const {
-      httpClient: { cubeRunHistory, userCollections },
+      httpClient: { cubeRunHistory, userCollections, sidebarTabActiveKey },
     } = this.props;
 
     const { showDeleteGoldenConfirmation, itemToDelete } = this.state;
 
     return (
       <>
-        <Tabs defaultActiveKey={1} id="uncontrolled-tab-example"  onSelect={this.handleSelectedTabChange}>
+        <Tabs defaultActiveKey={1} 
+          id="uncontrolled-tab-example"  
+          onSelect={this.handleSelectedTabChange}
+          activeKey={sidebarTabActiveKey}
+        >
           <Tab eventKey={1} title="History">
             <div className="margin-top-10">
               <div className="value-n"></div>

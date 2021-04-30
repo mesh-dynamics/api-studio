@@ -655,6 +655,7 @@ export interface IHttpClientStoreState {
   contextMap: IContextMap;
   collectionsCache: ICollectionDetails[]; // When fetching a golden detail, which doesn't exists in any of our lists, we can cache it to reuse
   serviceToAddAction?: string;
+  sidebarTabActiveKey: any;
 }
 
 // Navigation State

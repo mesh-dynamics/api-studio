@@ -7,6 +7,7 @@ import {
   Button,
   FormGroup,
   FormControl,
+  Modal,
 } from "react-bootstrap";
 import commonUtils from "../../../utils/commonUtils";
 import classNames from "classnames";
@@ -24,6 +25,7 @@ import {
 } from "../../../services/configs.service";
 import { cubeService } from "../../../services/cube.service";
 import { ITimelineResponse } from "src/src/common/apiResponse.types";
+import { CubeButton } from "../../common/CubeButton";
 
 export interface IComparisonRulesProps {
   goldenList: ICollectionDetails[];
@@ -32,12 +34,17 @@ export interface IComparisonRulesProps {
   user: IUserAuthDetails;
 }
 
+const MESSAGE_CLEAR_TIMEOUT = 2000;
+
 function ComparisonRules(props: IComparisonRulesProps) {
   const [collectionId, setCollectionId] = useState("");
   const [timelineData, setTimelineData] = useState<ITimelineData[]>([]);
   const [selectedTestId, setSelectedTestId] = useState<string>("");
   const [fileList, setFileList] = useState<FileList | null>(null);
   const [message, setMessage] = useState({ message: "", isError: false });
+  const [uploadName, setUploadName] = useState("")
+  const [showUploadNameModal, setShowUploadNameModal] = useState(false)
+  const [modalMessage, setModalMessage] = useState({ message: "", isError: false });
 
   useEffect(() => {
     if (collectionId) {
@@ -70,7 +77,11 @@ function ComparisonRules(props: IComparisonRulesProps) {
     }
   }, [collectionId]);
 
-  const resetMessage = () => setMessage({ message: "", isError: false });
+  const resetMessage = () => {
+    setMessage({ message: "", isError: false });
+    setModalMessage({message: "", isError: false})
+    setUploadName("")
+  }
 
   const onSelectedCollectionChange = React.useCallback(
     (event: React.ChangeEvent<FormControl & HTMLSelectElement>) => {
@@ -100,8 +111,50 @@ function ComparisonRules(props: IComparisonRulesProps) {
     },
     []
   );
-  const onUpload = React.useCallback(() => {
+
+  const onUploadNameChange = React.useCallback(
+    (event: React.ChangeEvent<FormControl & HTMLInputElement>) => {
+      const name = event.target.value;
+      setUploadName(name)
+      setModalMessage({message: "", isError: false})
+    }, []
+  );
+
+  const hideUploadNameModal = React.useCallback(() => {
+    setShowUploadNameModal(false)
+  }, [])
+
+  // upload button on config page, which opens a modal
+  const onUploadClick = React.useCallback(() => {
     resetMessage();
+    if (!fileList) {
+      setMessage({ message: "File is not selected", isError: true });
+      return
+    }
+
+    const file = fileList[0];
+    const type = file.type;
+
+    if(!(commonUtils.isCSVMimeType(type) || type == "application/json")) {
+      setMessage({
+        message:
+          "Only CSV and JSON files are supported. Please select required file type.",
+        isError: true,
+      });
+      return
+    }
+
+    setShowUploadNameModal(true)
+  }, [fileList])
+
+  // upload button in the name input modal
+  const onUpload = React.useCallback(() => {
+    setModalMessage({message: "", isError: false})
+    if (!uploadName) {
+      setModalMessage({message: "Comparison Rule name is required", isError: true})
+      return
+    }
+
     if (fileList && fileList.length > 0) {
       const file = fileList[0];
       const type = file.type;
@@ -118,21 +171,23 @@ function ComparisonRules(props: IComparisonRulesProps) {
         version: `Default${props.app}`,
         apiConfig,
         formData,
+        name: uploadName,
       };
       if (commonUtils.isCSVMimeType(type)) {
         //It is Learnt rules upload
           configsService
             .saveComparisonRulesConfigFromCsv(uploadArgs)
             .then((response: any) => {
-              setMessage({
+              setModalMessage({
                 message: response.Message || "Config file has been uploaded",
                 isError: false,
               });
+              setTimeout(() => resetMessage(), MESSAGE_CLEAR_TIMEOUT);
             })
             .catch((error) => {
               console.error(error);
               const message = error.response?.data?.data?.message;
-              setMessage({
+              setModalMessage({
                 message: message || "Could not save file. Some error occurred",
                 isError: true,
               });
@@ -142,15 +197,16 @@ function ComparisonRules(props: IComparisonRulesProps) {
           configsService
             .saveComparisonRulesConfigFromJson(uploadArgs)
             .then((response: any) => {
-              setMessage({
+              setModalMessage({
                 message: response.Message || "Config file has been uploaded",
                 isError: false,
               });
+              setTimeout(() => resetMessage(), MESSAGE_CLEAR_TIMEOUT);
             })
             .catch((error) => {
               console.error(error);
               const message = error.response?.data?.data?.message;
-              setMessage({
+              setModalMessage({
                 message: message || "Could not save file. Some error occurred",
                 isError: true,
               });
@@ -165,7 +221,8 @@ function ComparisonRules(props: IComparisonRulesProps) {
     } else {
       setMessage({ message: "File is not selected", isError: true });
     }
-  }, [fileList]);
+  }, [fileList, uploadName]);
+
   const downloadExistingRules = React.useCallback(() => {
     resetMessage();
     configsService
@@ -219,13 +276,13 @@ function ComparisonRules(props: IComparisonRulesProps) {
         });
       });
   }, [selectedTestId]);
-  const messageClass = classNames({
-    errorMessage: message.isError,
-    successMessage: !message.isError,
-  });
-  return (
+  const messageClass = (msg: {message: string, isError: boolean}) => classNames({
+    errorMessage: msg.isError,
+    successMessage: !msg.isError,
+  }); 
+  return (<>
     <div className="prop-rules">
-      {message.message && <div className={messageClass}>{message.message}</div>}
+      {message.message && <div className={messageClass(message)}>{message.message}</div>}
       <Grid>
         <Row className="download-config-grid">
           <Col xs={12} md={3}>
@@ -300,11 +357,33 @@ function ComparisonRules(props: IComparisonRulesProps) {
             </FormGroup>
           </Col>
           <Col xs={12} md={3}>
-            <Button onClick={onUpload}>Upload</Button> (JSON and CSV accepted)
+            <Button onClick={onUploadClick}>Upload</Button> (JSON and CSV accepted)
           </Col>
         </Row>
       </Grid>
     </div>
+    <Modal show={showUploadNameModal} onHide={hideUploadNameModal}>
+      <Modal.Header closeButton>
+        Upload Comparison Rules
+      </Modal.Header>
+      <Modal.Body>
+          <FormGroup>
+            <label>Name</label>
+            <FormControl
+              type="text"
+              value={uploadName}
+              onChange={onUploadNameChange}
+            />
+          </FormGroup>
+      </Modal.Body>
+      <Modal.Footer>
+        <div>
+        {modalMessage.message && <div className={messageClass(modalMessage)}>{modalMessage.message}</div>}
+        </div>
+        <CubeButton onClick={onUpload} label="Upload"></CubeButton>
+      </Modal.Footer>
+    </Modal>
+    </>
   );
 }
 
