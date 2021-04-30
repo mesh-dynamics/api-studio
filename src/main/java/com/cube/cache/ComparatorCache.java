@@ -92,6 +92,8 @@ public class ComparatorCache implements MDCache {
             PresenceType.Required, ComparisonType.Equal));
         defaultHTTPResponseTemplate.addRule(new TemplateEntry(Constants.HDR_PATH, DataType.Default,
             PresenceType.Optional, ComparisonType.Ignore));
+        defaultHTTPResponseTemplate.addRule(new TemplateEntry(Constants.TRLS_PATH, DataType.Default,
+            PresenceType.Optional, ComparisonType.Ignore));
         defaultHTTPResponseTemplate.addRule(new TemplateEntry("/"+io.md.constants.Constants.PAYLOAD_FIELDS_FIELD, DataType.Default,
             PresenceType.Optional, ComparisonType.Ignore));
 
