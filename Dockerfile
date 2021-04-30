@@ -42,6 +42,7 @@ RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.13
 # see https://github.com/theotherp/nzbhydra2/issues/42
 # reduced time from 360 s to 6s!
 RUN perl -0777 -i -pe 's/securerandom.source=file:\/dev\/random/securerandom.source=file:\/dev\/urandom/' /etc/java-11-openjdk/security/java.security
+EXPOSE 8082
 #############
 ####Dev####
 #############

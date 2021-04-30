@@ -3,6 +3,7 @@ package com.cube.golden;
 
 import static io.md.core.TemplateKey.*;
 
+import io.md.services.DataStore.TemplateNotFoundException;
 import java.util.ArrayList;
 import io.md.dao.TemplateSet;
 import java.util.Collections;
@@ -186,10 +187,14 @@ public class RecordingUpdate {
 
         TemplateKey templateKey = Utils.getTemplateKey(recordRequest , templateSet.version ,  Optional.of(filterType));
 
-        Optional<CompareTemplate> compareTemplateOpt = config.rrstore.getCompareTemplate(templateKey);
-        if(compareTemplateOpt.isEmpty()) return Optional.empty();
+        CompareTemplate compareTemplate;
 
-        CompareTemplate compareTemplate = compareTemplateOpt.get();
+        try {
+            compareTemplate = config.rrstore.getComparator(templateKey).getCompareTemplate();
+        } catch (TemplateNotFoundException e) {
+            return Optional.empty();
+        }
+
         RecordingOperationSetSP newRecOpSetSP = cloneRecordingOperationSetSP(recordingOperationSetSP);
 
         newRecOpSetSP.operationsList = newRecOpSetSP.operationsList.stream().filter(op->op.eventType == filter).map(updateOp->{
