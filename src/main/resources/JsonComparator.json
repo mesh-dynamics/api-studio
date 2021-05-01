@@ -512,9 +512,8 @@
             "mt":"NoMatch",
             "matchmeta":"JsonDiff",
             "diffs": [
-                {"op":"replace","path":"/unordered/0/c","value":"4","fromValue":"3","resolution":"ERR_ValMismatch"},
-                {"op":"remove","path":"/unordered/2","value":{"a":"7","b":"8","c":"9"},"resolution":"ERR_Required"},
-                {"op":"add","path":"/unordered/2","value":{"a":"11","b":"8","c":"9"},"resolution":"ERR_NewField"}
+                {"op":"replace","path":"/unordered/2","value": {"a":"11","b":"8","c":"9"},"fromValue":{"a":"7","b":"8","c":"9"},"resolution":"ERR_Required"},
+                {"op":"replace","path":"/unordered/0/c","value":"4","fromValue":"3","resolution":"ERR_ValMismatch"}
             ],"recordedResponse":null,"replayedResponse":null
         }
     },
@@ -542,13 +541,11 @@
             "mt":"NoMatch",
             "matchmeta":"JsonDiff",
             "diffs":[
+                {"op":"replace","path":"/unordered/2","value":{"a":"11","b":{"\"b7\"":"b7","\"b8\"":"b8","\"b9\"":"b9"},"c":"9"},
+                    "fromValue":{"a":"7","b":{"\"b1\"":"b1","\"b2\"":"b2","\"b3\"":"b3"},"c":"9"},"resolution":"ERR_Required"},
                 {"op":"replace","path":"/unordered/0/c","value":"4","fromValue":"3","resolution":"ERR_ValMismatch"},
-                {"op":"add","path":"/unordered/1/b/1","value":"b4","resolution":"OK_Optional"},
-                {"op":"remove","path":"/unordered/1/b/1","value":"b8","resolution":"OK_Optional"},
-                {"op":"add","path":"/unordered/1/b/2","value":"b5","resolution":"OK_Optional"},
-                {"op":"remove","path":"/unordered/1/b/2","value":"b9","resolution":"OK_Optional"},
-                {"op":"add","path":"/unordered/2","value":{"a":"11","b":{"\"b7\"":"b7","\"b8\"":"b8","\"b9\"":"b9"},"c":"9"},"resolution":"ERR_NewField"},
-                {"op":"remove","path":"/unordered/2","value":{"a":"7","b":{"\"b1\"":"b1","\"b2\"":"b2","\"b3\"":"b3"},"c":"9"},"resolution":"ERR_Required"}
+                {"op":"replace","path":"/unordered/1/b/2","value":"b5","fromValue":"b9","resolution":"OK_Optional"},
+                {"op":"replace","path":"/unordered/1/b/1","value":"b4","fromValue":"b8","resolution":"OK_Optional"}
             ],
             "recordedResponse":null,
             "replayedResponse":null}

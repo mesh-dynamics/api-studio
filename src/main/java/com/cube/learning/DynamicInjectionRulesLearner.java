@@ -2,6 +2,7 @@ package com.cube.learning;
 
 import com.cube.dao.Result;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.md.core.Comparator.Diff;
 import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event;
 import io.md.dao.JsonDataObj;
@@ -15,8 +16,10 @@ import io.md.utils.Utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -69,7 +72,7 @@ public class DynamicInjectionRulesLearner {
         }
     }
 
-    private void processReplayMatchResults(Stream<ReqRespMatchResult> reqRespMatchResultStream, Set<DiffPath> diffPathHashSet) {
+    private void processReplayMatchResults(Stream<ReqRespMatchResult> reqRespMatchResultStream, Map<DiffPath, DiffPath> diffPathMap) {
         // NOTE: We are being sloppy here by not considering the req/resp method. But since it is
         // just filtering rules based on diffs, an occasional false-positive is admissible.
         // Retrieving method from orig events is too much of data processing overhead for marginal ben.
@@ -77,10 +80,22 @@ public class DynamicInjectionRulesLearner {
                 res.respCompareRes.diffs.forEach(
                     // Use set to de-dup recurring api,json path combinations.
                     diff -> {
-                        DiffPath diffPath = new DiffPath(res.path, diff.path);
-                        diff.fromValue.ifPresent(fVal -> diffPath.refValues.add(fVal.asText()));
-                        diff.value.ifPresent(val -> diffPath.refValues.add(val.asText()));
-                        diffPathHashSet.add(diffPath);
+                        if (diff.op == Diff.REPLACE){
+                            // Use only Replace as Remove is unlikely to be candidate because a
+                            // genuine inj candidate would be consistent. In case of multi instances
+                            // of an API with different query params where one of them has extraction,
+                            // at least one Diff instance SHOULD be with a REPLACE at which point the
+                            // Diff will be considered and the extraction gets activated.
+
+                            DiffPath diffPath = new DiffPath(res.path, diff.path);
+                            diff.fromValue.ifPresent(fVal -> diffPath.refValues.add(fVal.asText()));
+                            diff.value.ifPresent(val -> diffPath.refValues.add(val.asText()));
+                            diffPathMap.computeIfAbsent(diffPath, k -> diffPath).refValues
+                                // for case when diffPath already present but we want to
+                                // capture any new ref values
+                                .addAll(diffPath.refValues);
+
+                        }
                     }
                 )
         );
@@ -90,18 +105,18 @@ public class DynamicInjectionRulesLearner {
     public List<InjectionExtractionMeta> generateFilteredRules(DynamicInjectionConfig dynamicInjectionConfig, Stream<ReqRespMatchResult> reqRespMatchResultStream){
         final Set<InjectionExtractionMeta> selectedMetasSet = new HashSet<>();
         final PatriciaTrie<Set<InjectionExtractionMeta>> injectionExtractionMetaTrie = new PatriciaTrie<>();
-        final Set<DiffPath> diffPathHashSet = new HashSet<>();
+        final Map<DiffPath, DiffPath> DiffPathMap = new HashMap<>();
 
-        processReplayMatchResults(reqRespMatchResultStream, diffPathHashSet);
+        processReplayMatchResults(reqRespMatchResultStream, DiffPathMap);
 
         dynamicInjectionConfig.injectionExtractionMetas.forEach(meta ->
-                // Add all metas to a trie with json path as key
-                // Multiple APIPaths may have same json path, so add all apiPath Metas to the jsonPath key
-                injectionExtractionMetaTrie
-                    .computeIfAbsent(meta.extractionConfig.jsonPath, k -> new HashSet<>())
-                    .add(meta));
+            // Add all metas to a trie with json path as key
+            // Multiple APIPaths may have same json path, so add all apiPath Metas to the jsonPath key
+            injectionExtractionMetaTrie
+                .computeIfAbsent(meta.extractionConfig.jsonPath, k -> new HashSet<>())
+                .add(meta));
 
-        diffPathHashSet.forEach(diffPath ->
+        DiffPathMap.values().forEach(diffPath ->
             // Cannot use a hash-table as a) extConfig api path may be regex; and
             // b) the diff jsonPath may be at a parent path of the ext config json path, e.g.
             // extJsonPath at /body/id but diff is at /body as body itself is missing.
