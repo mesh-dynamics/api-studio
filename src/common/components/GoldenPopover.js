@@ -34,7 +34,7 @@ class GoldenPopover extends React.Component {
             showBug: false,
             showBugResponse: false,
             defaultRule: {
-                "path": this.props.jsonPath.replace("<BEGIN>", ""),
+                "path": this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", ""),
                 "dt": "",
                 "pt": "",
                 "ct": "",
@@ -43,7 +43,7 @@ class GoldenPopover extends React.Component {
                 "arrayCompKeyPath":""
             },
             newRule: {
-                "path": this.props.jsonPath.replace("<BEGIN>", ""),
+                "path": this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", ""),
                 "dt": "Default",
                 "pt": "Optional",
                 "ct": "Ignore",
@@ -85,8 +85,8 @@ class GoldenPopover extends React.Component {
         const { defaultRule, newRule, templateMatchType } = this.state;
         newRule[tag] = evt.target.value;
         //TODO: Optimize here, dispatch should be done on Apply button click
-        dispatch(cubeActions.addToDefaultRuleBook(jsonPath.replace("<BEGIN>", ""), defaultRule, templateMatchType));
-        dispatch(cubeActions.addToRuleBook(jsonPath.replace("<BEGIN>", ""), newRule, templateMatchType));
+        dispatch(cubeActions.addToDefaultRuleBook(jsonPath.replace("<BEGIN>", "").replace("<END>", ""), defaultRule, templateMatchType));
+        dispatch(cubeActions.addToRuleBook(jsonPath.replace("<BEGIN>", "").replace("<END>", ""), newRule, templateMatchType));
         this.setState({ newRule: newRule });
 
     }
@@ -110,7 +110,7 @@ class GoldenPopover extends React.Component {
         const { templateMatchType } = this.state;
         const operationsObj = {
             type: operationType, // "REPLACE" or "REMOVE";
-            path: jsonPath.replace("<BEGIN>", ""),
+            path: jsonPath.replace("<BEGIN>", "").replace("<END>", ""),
             newRule: this.state.newRule,
         };        
 
@@ -150,7 +150,7 @@ class GoldenPopover extends React.Component {
         } else {
             // golden update for lines without diff/resolutions
             operation["op"] = "REPLACE"; // replace left with right side
-            operation["path"] = jsonPath.replace("<BEGIN>", "");
+            operation["path"] = jsonPath.replace("<BEGIN>", "").replace("<END>", "");
             operation["value"] = null; // not required
             operation["eventType"] = eventType; 
         }
@@ -181,7 +181,7 @@ class GoldenPopover extends React.Component {
         let projectId = this.state.projectInput
         let issueTypeId = this.state.issueTypeId
         let apiPath = cube.pathResultsParams.path;
-        let jsonPath = this.props.jsonPath.replace("<BEGIN>", "");
+        let jsonPath = this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", "");
         let replayId = cube.pathResultsParams.replayId;
         let requestId  = ""; // TODO
         cubeService
@@ -209,12 +209,12 @@ class GoldenPopover extends React.Component {
                 cube.selectedApp, 
                 cube.pathResultsParams, 
                 reqOrRespCompare, 
-                jsonPath.replace("<BEGIN>", ""),
+                jsonPath.replace("<BEGIN>", "").replace("<END>", ""),
                 method
             );
             
             const newlyFetchedRule = {
-                path: jsonPath.replace("<BEGIN>", ""),
+                path: jsonPath.replace("<BEGIN>", "").replace("<END>", ""),
                 dt, 
                 pt: pt === "Default" ? "Optional" : pt, 
                 ct: ct === "Default" ? "Ignore": ct, 
@@ -228,7 +228,7 @@ class GoldenPopover extends React.Component {
             this.setState({ 
                 templateMatchType: reqOrRespCompare, 
                 defaultRule: {
-                    "path": this.props.jsonPath.replace("<BEGIN>", ""),
+                    "path": this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", ""),
                     "dt": "",
                     "pt": "",
                     "ct": "",
@@ -237,7 +237,7 @@ class GoldenPopover extends React.Component {
                     "arrayCompKeyPath":""
                 },
                 newRule: {
-                    "path": this.props.jsonPath.replace("<BEGIN>", ""),
+                    "path": this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", ""),
                     "dt": "Default",
                     "pt": "Optional",
                     "ct": "Ignore",
@@ -260,14 +260,14 @@ class GoldenPopover extends React.Component {
         // Keep this old implementation
         // const reqOrRespCompare = (eventType === "Response" ? "ResponseCompare" : "RequestCompare"); eventType
 
-        if(cube.defaultRuleBook[jsonPath.replace("<BEGIN>", "")]) {
-            const defaultRule = cube.defaultRuleBook[jsonPath.replace("<BEGIN>", "")];
-            const { templateMatchType } = cube.defaultRuleBook[jsonPath.replace("<BEGIN>", "")];
+        if(cube.defaultRuleBook[jsonPath.replace("<BEGIN>", "").replace("<END>", "")]) {
+            const defaultRule = cube.defaultRuleBook[jsonPath.replace("<BEGIN>", "").replace("<END>", "")];
+            const { templateMatchType } = cube.defaultRuleBook[jsonPath.replace("<BEGIN>", "").replace("<END>", "")];
             this.setState({ templateMatchType, defaultRule: { ...defaultRule }});
         }
 
-        if (cube.ruleBook[jsonPath.replace("<BEGIN>", "")]) {
-            const rule = cube.ruleBook[jsonPath.replace("<BEGIN>", "")];
+        if (cube.ruleBook[jsonPath.replace("<BEGIN>", "").replace("<END>", "")]) {
+            const rule = cube.ruleBook[jsonPath.replace("<BEGIN>", "").replace("<END>", "")];
             const { templateMatchType } = cube.ruleBook;
             this.setState({ templateMatchType, newRule: { ...rule } });
         } else {
@@ -294,7 +294,7 @@ class GoldenPopover extends React.Component {
 
     openJiraLink() {
         const { cube: { jiraBugs }, jsonPath, handleHidePopoverClick } = this.props;
-        const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath.replace("<BEGIN>", ""));
+        const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath.replace("<BEGIN>", "").replace("<END>", ""));
 
         window.open(issueUrl)
         handleHidePopoverClick();
@@ -356,7 +356,7 @@ class GoldenPopover extends React.Component {
     findInJiraBugs(){
         const {cube, jsonPath} = this.props;
         for (const op of cube.jiraBugs) {
-            if(jsonPath.replace("<BEGIN>", "")  == op.jsonPath){
+            if(jsonPath.replace("<BEGIN>", "").replace("<END>", "")  == op.jsonPath){
                 return true;
             }
         }
@@ -384,7 +384,7 @@ class GoldenPopover extends React.Component {
         let description =
             `Issue Details:
                 API Path: ${cube.pathResultsParams.path}
-                JSON Path: ${this.props.jsonPath.replace("<BEGIN>", "")}
+                JSON Path: ${this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", "")}
                 Analysis URL: ${window.location.href}
             `
         return description;
@@ -462,7 +462,7 @@ class GoldenPopover extends React.Component {
                     <div style={{ width: "500px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <div>
-                                <div>Path:&nbsp;<b>{this.props.jsonPath}</b></div>
+                                <div>Path:&nbsp;<b>{this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", "")}</b></div>
                                 <div>Data Type:&nbsp;<b>{this.state.newRule.dt}</b></div>
                             </div>
                             { 
@@ -587,7 +587,7 @@ class GoldenPopover extends React.Component {
                         UPDATE GOLDEN
                     </div>
                     <div style={{ width: "300px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
-                        <div>Path:&nbsp;<b>{this.props.jsonPath.replace("<BEGIN>", "")}</b></div>
+                        <div>Path:&nbsp;<b>{this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", "")}</b></div>
                         <div>Data Type:&nbsp;<b>{this.formatDtValue(this.state.newRule.dt)}</b></div>
                         {/* <div>Count of similar items:&nbsp;<b>105</b></div>  */}
                         {/* TODO: Above value is hardcoded. Find out more */}

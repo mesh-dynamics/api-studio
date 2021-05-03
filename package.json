@@ -32,6 +32,7 @@
         "cytoscape-klay": "^3.1.2",
         "cytoscape-popper": "^1.0.4",
         "decompress": "^4.2.1",
+        "detect-browser": "^5.2.0",
         "detect-indent": "^6.0.0",
         "diff": "^4.0.2",
         "download-file": "^0.1.5",

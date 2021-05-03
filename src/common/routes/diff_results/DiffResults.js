@@ -73,6 +73,8 @@ class DiffResults extends Component {
             tag: "",
             commitId: "",
             saveGoldenError: "",
+            goldenTemplateName: "",
+            goldenTemplateLabel: "",
 
             isFetching: true,
             numResults: 0,
@@ -295,8 +297,12 @@ class DiffResults extends Component {
         .then(
             (resultsData) => {
                 const facets = resultsData.data && resultsData.data.facets || {};
+                const goldenTemplateName = resultsData.data?.templateName
+                const goldenTemplateLabel = resultsData.data?.templateLabel
                 this.setState({
                     serviceFacets: facets.serviceFacets,
+                    goldenTemplateName,
+                    goldenTemplateLabel,
                 })
             }
         );
@@ -609,6 +615,8 @@ class DiffResults extends Component {
             showNewGolden,
             saveGoldenError,
             showSaveGoldenModal,
+            goldenTemplateName,
+            goldenTemplateLabel,
         } = this.state;
 
         
@@ -627,6 +635,8 @@ class DiffResults extends Component {
                     branch={branch}
                     version={version}
                     commitId={commitId}
+                    templateName={goldenTemplateName}
+                    templateLabel={goldenTemplateLabel}
                     cube={this.props.cube} 
                     showNewGolden={showNewGolden}
                     saveGoldenError={saveGoldenError}

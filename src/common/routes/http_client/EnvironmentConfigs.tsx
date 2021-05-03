@@ -462,7 +462,7 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
         const configData = JSON.parse(mockConfig.value);
         const configFileName = `${configData.name}.json`;
         
-        commonUtils.downloadAFileToClient(configFileName, mockConfig.value);
+        commonUtils.exportServiceConfigToClient(configFileName, mockConfig.value);
     }
 
     handleImportedFileContent = (fileContent: string) => {
@@ -714,7 +714,7 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
 
         return (
             <>
-                <span className="pull-left" style={{color: mockConfigStatusIsError ? "red" : ""}}>{mockConfigStatusText}</span>
+                <span className="pull-left md-service-config-footer-error" style={{color: mockConfigStatusIsError ? "red" : ""}}>{mockConfigStatusText}</span>
                 {
                     
                     showMockConfigList 
@@ -810,7 +810,7 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
                         </Tabs>
                     </div>
                 </Modal.Body>
-                <Modal.Footer style={{ height: "50px" }}>
+                <Modal.Footer style={{ height: "60px" }}>
                     {selectedTabKey === 0 && this.renderEnvironmentVariableConfigFooter()}
                     {selectedTabKey === 1 && this.renderMockConfigFooter()}
                     {selectedTabKey === 3 && this.renderSessionVariableConfigFooter()}

@@ -239,6 +239,13 @@ export function cube (state = initialState, action: ICubeAction) : ICubeState {
                 selectedApp: action.data,
                 selectedAppObj: appObj
             };
+
+        case cubeConstants.SET_SELECTED_APP_OBJECT: 
+            return {
+                ...state,
+                selectedAppObj: action.data
+            }
+
         case cubeConstants.SET_GATEWAY:
             return {
                 ...state,

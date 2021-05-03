@@ -68,3 +68,8 @@
 .md-env-modal-section {
     margin: 10px 0;
 }
+
+.md-service-config-footer-error {
+    text-align: left;
+    max-width: 665px;
+}

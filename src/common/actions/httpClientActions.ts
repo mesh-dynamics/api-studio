@@ -634,12 +634,20 @@ export const httpClientActions: IActionsType = {
         dispatch(httpClientActions.setMockConfigStatusText("Loading..."))
         const { 
             cube: { selectedApp }, 
-            authentication: { user: { customer_name: customerId } } 
+            authentication: { user: { customer_name: customerId } }, 
+            httpClient: {selectedMockConfig}
         } = getState();
         try {
             const mockConfigList = await cubeService.getAllMockConfigs(customerId, selectedApp!);
             dispatch(httpClientActions.setMockConfigList(mockConfigList))
             dispatch(httpClientActions.resetMockConfigStatusText())
+            let selectedMockConfigUpdated = mockConfigList.find((config) => config.key === selectedMockConfig)
+            if (!selectedMockConfigUpdated && mockConfigList?.length) {
+                selectedMockConfigUpdated = mockConfigList[0]
+            } 
+            if(selectedMockConfigUpdated) {
+                dispatch(httpClientActions.setSelectedMockConfig(selectedMockConfigUpdated.key))
+            }
             setDefaultMockContext({mockConfigList})
         } catch (e) {
             dispatch(httpClientActions.setMockConfigStatusText(e.response?.data.message, true))
@@ -734,5 +742,9 @@ export const httpClientActions: IActionsType = {
 
     updateOutgoingTabWithNewData: (tabId, outgoingTabId, reqData, collectionId, recordingId) => {
         return {type: httpClientConstants.UPDATE_OUTGOING_TAB_WITH_NEW_DATA, data: {tabId, outgoingTabId, reqData, collectionId, recordingId}}   
+    },
+
+    setSidebarTabActiveKey: (activeKey) => {
+        return {type: httpClientConstants.SET_SIDEBAR_TAB_ACTIVE_KEY, data: activeKey}
     },
 }
