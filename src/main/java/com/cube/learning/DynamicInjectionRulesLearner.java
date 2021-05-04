@@ -11,7 +11,7 @@ import io.md.injection.DynamicInjectionConfig;
 import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta.HTTPMethodType;
 import io.md.injection.DynamicInjector;
-import io.md.injection.InjectionExtractionMeta;
+import io.md.injection.ExternalInjectionExtraction;
 import io.md.utils.Utils;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -102,29 +102,29 @@ public class DynamicInjectionRulesLearner {
 
     }
 
-    public List<InjectionExtractionMeta> generateFilteredRules(DynamicInjectionConfig dynamicInjectionConfig, Stream<ReqRespMatchResult> reqRespMatchResultStream){
-        final Set<InjectionExtractionMeta> selectedMetasSet = new HashSet<>();
-        final PatriciaTrie<Set<InjectionExtractionMeta>> injectionExtractionMetaTrie = new PatriciaTrie<>();
+    public List<ExternalInjectionExtraction> generateFilteredRules(DynamicInjectionConfig dynamicInjectionConfig, Stream<ReqRespMatchResult> reqRespMatchResultStream){
+        final Set<ExternalInjectionExtraction> selectedMetasSet = new HashSet<>();
+        final PatriciaTrie<Set<ExternalInjectionExtraction>> externalInjectionExtractionTrie = new PatriciaTrie<>();
         final Map<DiffPath, DiffPath> DiffPathMap = new HashMap<>();
 
         processReplayMatchResults(reqRespMatchResultStream, DiffPathMap);
 
-        dynamicInjectionConfig.injectionExtractionMetas.forEach(meta ->
+        dynamicInjectionConfig.externalInjectionExtractions.forEach(meta ->
             // Add all metas to a trie with json path as key
             // Multiple APIPaths may have same json path, so add all apiPath Metas to the jsonPath key
-            injectionExtractionMetaTrie
-                .computeIfAbsent(meta.extractionConfig.jsonPath, k -> new HashSet<>())
+            externalInjectionExtractionTrie
+                .computeIfAbsent(meta.externalExtraction.jsonPath, k -> new HashSet<>())
                 .add(meta));
 
         DiffPathMap.values().forEach(diffPath ->
             // Cannot use a hash-table as a) extConfig api path may be regex; and
             // b) the diff jsonPath may be at a parent path of the ext config json path, e.g.
             // extJsonPath at /body/id but diff is at /body as body itself is missing.
-            injectionExtractionMetaTrie.prefixMap(diffPath.jsonPath).values()
-                .forEach(injectionExtractionMetas -> injectionExtractionMetas.forEach(meta -> {
-                        if (DynamicInjector.apiPathMatch(Arrays.asList(meta.extractionConfig.apiPath),
+            externalInjectionExtractionTrie.prefixMap(diffPath.jsonPath).values()
+                .forEach(externalInjectionExtractions -> externalInjectionExtractions.forEach(meta -> {
+                        if (DynamicInjector.apiPathMatch(Arrays.asList(meta.externalExtraction.apiPath),
                             diffPath.apiPath)) {
-                            if (diffPath.jsonPath.equals(meta.extractionConfig.jsonPath)) {
+                            if (diffPath.jsonPath.equals(meta.externalExtraction.jsonPath)) {
                                 // Take ref values only if json path is an exact match.
                                 meta.values.addAll(diffPath.refValues);
                             }
@@ -133,13 +133,13 @@ public class DynamicInjectionRulesLearner {
                     }
                 )));
 
-        final List<InjectionExtractionMeta> selectedMetasList = new ArrayList<>(selectedMetasSet);
+        final List<ExternalInjectionExtraction> selectedMetasList = new ArrayList<>(selectedMetasSet);
 
         Collections.sort(selectedMetasList);
         return selectedMetasList;
     }
 
-    public List<InjectionExtractionMeta> generateRules(Optional<Boolean> discardSingleValues)
+    public List<ExternalInjectionExtraction> generateRules(Optional<Boolean> discardSingleValues)
         throws JsonProcessingException {
         return diGen.generateConfigs(discardSingleValues.orElse(false));
     }

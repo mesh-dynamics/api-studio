@@ -18,7 +18,7 @@ import io.md.dao.ProtoDescriptorDAO;
 import io.md.dao.Recording.RecordingType;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
-import io.md.injection.InjectionExtractionMeta;
+import io.md.injection.ExternalInjectionExtraction;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.AbstractMap;
@@ -418,11 +418,11 @@ public interface ReqRespStore extends DataStore {
      * @param customer
      * @param app
      * @param version
-     * @param injectionExtractionMetaList
+     * @param externalInjectionExtractionList
      * @return
      */
     String saveDynamicInjectionConfigFromCsv(String customer, String app, String version,
-                                             List<InjectionExtractionMeta> injectionExtractionMetaList)
+                                             List<ExternalInjectionExtraction> externalInjectionExtractionList)
         throws SolrStoreException;
 
     /**

@@ -19,6 +19,7 @@ import io.md.core.FilterTransformMgr;
 import io.md.dao.CustomerAppConfig.Builder;
 import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.dao.Event.EventType;
+import io.md.injection.DynamicInjectionConfig;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
@@ -1902,7 +1903,14 @@ public class CubeStore {
                     if(extraction) {
                         DynamicInjector dynamicInjector = this.factory
                             .getMgr(request.customerId, request.app, dynamicCfgVersion);
+                        DynamicInjector authExtractor = this.factory
+                            .getMgr(request.customerId, request.app, Optional
+                                .of(DynamicInjectionConfig
+                                    .getAuthConfigVersion(request.customerId, request.app)));
                         dynamicInjector.extract(request, response.payload);
+                        // Having a separate authExtractor object instead of combining with the main
+                        // config to have cleaner code, as either of them may be missing
+                        authExtractor.extract(request, response.payload);
                         Map<String, String> strMap = DynamicInjector
                             .convertToStrMap(dynamicInjector.getExtractionMap());
                         extractionMapString = jsonMapper.writeValueAsString(strMap);

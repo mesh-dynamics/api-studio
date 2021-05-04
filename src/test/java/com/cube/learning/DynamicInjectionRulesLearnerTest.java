@@ -7,7 +7,7 @@ import com.cube.ws.Config;
 import io.md.dao.Event;
 import io.md.dao.Event.EventType;
 import io.md.dao.EventQuery;
-import io.md.injection.InjectionExtractionMeta;
+import io.md.injection.ExternalInjectionExtraction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -36,12 +36,12 @@ class DynamicInjectionRulesLearnerTest {
 
         diLearner.processEvents(events);
 
-        List<InjectionExtractionMeta> finalMetaList = diLearner.generateRules(discardSingleValues);
+        List<ExternalInjectionExtraction> finalInjExtList = diLearner.generateRules(discardSingleValues);
 
         System.out.print(config.jsonMapper
             .writerWithDefaultPrettyPrinter()
-            .writeValueAsString(finalMetaList));
+            .writeValueAsString(finalInjExtList));
 
-//        config.rrstore.saveDynamicInjectionConfigFromCsv(customerId, app, version, finalMetaList);
+//        config.rrstore.saveDynamicInjectionConfigFromCsv(customerId, app, version, finalInjExtList);
     }
 }

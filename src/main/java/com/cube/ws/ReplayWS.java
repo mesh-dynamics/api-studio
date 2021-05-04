@@ -7,6 +7,7 @@ import static io.md.core.Utils.buildErrorResponse;
 
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
+import com.cube.learning.DynamicInjectionGeneratedToActualConvertor;
 import com.cube.learning.DynamicInjectionRulesLearner;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.MappingIterator;
@@ -15,20 +16,22 @@ import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import io.md.dao.ReqRespMatchResult;
-import io.md.injection.InjectionExtractionMeta;
+import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
+import io.md.injection.DynamicInjectionConfig.InjectionMeta;
+import io.md.injection.ExternalInjectionExtraction;
+import io.md.injection.ExternalInjectionExtraction.ExternalExtraction;
+import io.md.injection.ExternalInjectionExtraction.ExternalInjection;
+import io.md.injection.ExternalInjectionExtraction.ExternalNamedInjectionExtraction;
 import io.md.injection.StaticInjection;
 import io.md.injection.StaticInjection.StaticInjectionMeta;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -48,7 +51,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -359,12 +361,12 @@ public class ReplayWS extends ReplayBasicWS {
 
         try {
 
-            List<InjectionExtractionMeta> finalMetaList = diLearner
+            List<ExternalInjectionExtraction> finalInjExtList = diLearner
                 .generateRules(discardSingleValues);
 
             return ServerUtils
-                .writeResponseToFile("learned_context_propagation_rules", finalMetaList,
-                    InjectionExtractionMeta.class, Optional.empty(), Optional.of(csvMapper));
+                .writeResponseToFile("learned_context_propagation_rules", finalInjExtList,
+                    ExternalInjectionExtraction.class, Optional.empty(), Optional.of(csvMapper));
 
         } catch (JsonProcessingException e) {
             LOGGER.error(
@@ -398,18 +400,18 @@ public class ReplayWS extends ReplayBasicWS {
         @PathParam("version") String version,
         @FormDataParam("file") InputStream uploadedInputStream) {
 
-        CsvSchema csvSchema = csvMapper.schemaFor(InjectionExtractionMeta.class)
+        CsvSchema csvSchema = csvMapper.schemaFor(ExternalInjectionExtraction.class)
             .withSkipFirstDataRow(true);
-        List<InjectionExtractionMeta> injectionExtractionMetaList;
+        List<ExternalInjectionExtraction> externalInjExtList;
 
         try {
-            MappingIterator<InjectionExtractionMeta> mi = csvMapper
-                .readerFor(InjectionExtractionMeta.class).
+            MappingIterator<ExternalInjectionExtraction> mi = csvMapper
+                .readerFor(ExternalInjectionExtraction.class).
                     with(csvSchema).readValues(uploadedInputStream);
-            injectionExtractionMetaList = mi.readAll();
+            externalInjExtList = mi.readAll();
             String dynamicInjectionConfigId = rrstore
                 .saveDynamicInjectionConfigFromCsv(customerId, app, version,
-                    injectionExtractionMetaList);
+                    externalInjExtList);
 
             return Response.ok().entity((new JSONObject(Map.of(
                 "Message", "Successfully saved Dynamic Injection Config",
@@ -464,6 +466,98 @@ public class ReplayWS extends ReplayBasicWS {
             .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
                 "DynamicInjectionConfig object not found")).build());
         return resp;
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("authExtractionConfig/{customerId}/{app}")
+    public Response getAuthExtractionConfig(@Context UriInfo uriInfo,
+        @PathParam("customerId") String customerId, @PathParam("app") String app) {
+        String version = DynamicInjectionConfig.getAuthConfigVersion(customerId, app);
+        Optional<DynamicInjectionConfig> dynamicInjectionConfig = rrstore.getDynamicInjectionConfig(
+            customerId, app, version);
+        String customerAppVersion = String
+            .format("customerId=%s, app=%s, version=%s", customerId, app, version);
+        return dynamicInjectionConfig.map(d -> {
+            try{
+                if (d.extractionMetas.size() > 0 && (d.injectionMetas.size() > 0)) {
+                    ExtractionMeta ext = d.extractionMetas.get(0);
+
+                    ExternalExtraction externalExtraction = DynamicInjectionGeneratedToActualConvertor
+                        .convertInternalExtractionToExternal(ext);
+
+                    InjectionMeta inj = d.injectionMetas.get(0);
+
+                    ExternalInjection externalInjection = DynamicInjectionGeneratedToActualConvertor
+                        .convertInternalInjectiontoExternal(inj);
+
+                    ExternalNamedInjectionExtraction externalNamedInjExt = new ExternalNamedInjectionExtraction(ext.name, externalExtraction, externalInjection);
+
+                    String json = jsonMapper.writeValueAsString(externalNamedInjExt);
+
+                    return Response.ok(json, MediaType.APPLICATION_JSON).build();
+                }
+            } catch (JsonProcessingException e) {
+                String errorMsg =
+                    "Error in converting Auth Extraction Config object to Json for "
+                        + customerAppVersion;
+                LOGGER.error(errorMsg, e);
+                return Response.serverError().entity(
+                    buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        errorMsg)).build();
+            }
+            return null; // Will hit if extConfig was created but was later overwritten with empty config
+        }).orElse(Response.status(Response.Status.NOT_FOUND)
+            .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+                "Auth Extraction Config not found for " + customerAppVersion)).build());
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("authExtractionConfig/{customerId}/{app}")
+    public Response saveAuthExtractionConfig(@Context UriInfo uriInfo,
+        @PathParam("customerId") String customerId, @PathParam("app") String app,
+        ExternalNamedInjectionExtraction namedInjExt) {
+        String version = DynamicInjectionConfig.getAuthConfigVersion(customerId, app);
+        String customerAppVersion = String
+            .format("customerId=%s, app=%s, version=%s", customerId, app, version);
+
+        ExternalInjection injection = namedInjExt.externalInjection;
+        injection.injectAllPaths = true;
+        if (injection.jsonPath.equals("")) injection.jsonPath = "/hdrs/authorization/0";
+
+        ExtractionMeta internalExtraction = DynamicInjectionGeneratedToActualConvertor.convertExternalExtractionToInternal(
+            namedInjExt.externalExtraction, namedInjExt.varName);
+
+        InjectionMeta internalInjection = DynamicInjectionGeneratedToActualConvertor
+            .convertExternalInjectionToInternal(namedInjExt.externalInjection, namedInjExt.varName,
+                namedInjExt.externalExtraction.apiPath, namedInjExt.externalExtraction.jsonPath,
+                namedInjExt.externalExtraction.method);
+
+        DynamicInjectionConfig dynamicInjectionConfig = new DynamicInjectionConfig(version,
+            customerId, app, Optional.empty(),
+            Collections.singletonList(internalExtraction), Collections.singletonList(internalInjection),
+            Collections.emptyList(), Collections.emptyList());
+
+        try {
+
+            String dynamicInjectionConfigId = rrstore
+                .saveDynamicInjectionConfig(dynamicInjectionConfig);
+            return Response.ok().entity((new JSONObject(Map.of(
+                "Message", "Successfully saved Dynamic Injection Config",
+                "ID", dynamicInjectionConfigId,
+                "dynamicInjectionConfigVersion", dynamicInjectionConfig.version))).toString())
+                .build();
+
+        } catch (SolrStoreException e) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(Constants.MESSAGE, "Unable to save Dynamic Injection Config",
+                    "dynamicInjectionConfig.version", dynamicInjectionConfig.version)), e);
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.SOLR_STORE_FAILED,
+                    "Unable to save Dynamic Injection Config: " +
+                        e.getStackTrace()))).build();
+        }
     }
 
     @GET
@@ -588,12 +682,12 @@ public class ReplayWS extends ReplayBasicWS {
             Stream<ReqRespMatchResult> reqRespMatchResultStream = resultWithFacets.result
                 .getObjects();
 
-            List<InjectionExtractionMeta> injectionExtractionMetas = diLearner
+            List<ExternalInjectionExtraction> externalInjectionExtractions = diLearner
                 .generateFilteredRules(diConfig, reqRespMatchResultStream);
 
             try {
-                return ServerUtils.writeResponseToFile("filtered_context_propagation_rules", injectionExtractionMetas,
-                    InjectionExtractionMeta.class, Optional.empty(), Optional.of(csvMapper));
+                return ServerUtils.writeResponseToFile("filtered_context_propagation_rules", externalInjectionExtractions,
+                    ExternalInjectionExtraction.class, Optional.empty(), Optional.of(csvMapper));
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format(
                     "Error in converting DynamicInjectionConfig object to Json for customerId:%s, app:%s, version:%s",

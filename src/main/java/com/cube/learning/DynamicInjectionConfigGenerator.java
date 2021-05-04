@@ -8,9 +8,9 @@ import io.md.dao.JsonDataObj;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta.HTTPMethodType;
 import io.md.injection.DynamicInjector;
-import io.md.injection.InjectionExtractionMeta;
-import io.md.injection.InjectionExtractionMeta.ExtractionConfig;
-import io.md.injection.InjectionExtractionMeta.InjectionConfig;
+import io.md.injection.ExternalInjectionExtraction;
+import io.md.injection.ExternalInjectionExtraction.ExternalExtraction;
+import io.md.injection.ExternalInjectionExtraction.ExternalInjection;
 import io.md.utils.Utils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -25,9 +25,9 @@ public class DynamicInjectionConfigGenerator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamicInjector.class);
 
     // These maps are to retrieve singleton objects for each unique inj/ext config and meta
-    private final HashMap<InjectionConfig, InjectionConfig> injectionConfigToObjectMap = new HashMap<>();
-    private final HashMap<ExtractionConfig, ExtractionConfig> extractionConfigToObjectMap = new HashMap<>();
-    private final HashMap<InjectionExtractionMeta, InjectionExtractionMeta> metaToObjectMap = new HashMap<>();
+    private final HashMap<ExternalInjection, ExternalInjection> injectionToObjectMap = new HashMap<>();
+    private final HashMap<ExternalExtraction, ExternalExtraction> extractionToObjectMap = new HashMap<>();
+    private final HashMap<ExternalInjectionExtraction, ExternalInjectionExtraction> injExtToObjectMap = new HashMap<>();
 
     // This map keeps track of which all values are already seen in requests, to avoid creating
     // extraction configs for them.
@@ -36,14 +36,13 @@ public class DynamicInjectionConfigGenerator {
     // Insertion Order of configs is important, hence using a linked hash for some maps.
 
     // This map keeps track of which all extraction configs are applicable for a particular value.
-    private final HashMap<String, LinkedHashSet<ExtractionConfig>> valueToExtractionConfigMap = new HashMap<>();
+    private final HashMap<String, LinkedHashSet<ExternalExtraction>> valueToExtractionMap = new HashMap<>();
 
     // These are 1-Many maps for injection to extraction and vice versa.
-    private final HashMap<InjectionConfig, LinkedHashSet<ExtractionConfig>> injectionToExtractionsMap = new HashMap<>();
-    private final HashMap<ExtractionConfig, LinkedHashSet<InjectionConfig>> extractionToInjectionsMap = new HashMap<>();
+    private final HashMap<ExternalInjection, LinkedHashSet<ExternalExtraction>> injToExtractionsMap = new HashMap<>();
 
     // List of qualifying injection-extraction metas
-    private final ArrayList<InjectionExtractionMeta> finalMetaList = new ArrayList<>();
+    private final ArrayList<ExternalInjectionExtraction> finalInjExtList = new ArrayList<>();
 
     // Map to match responses to requests for method extraction
     private final HashMap<String, HTTPMethodType> requestMatchMap = new HashMap<>();
@@ -65,49 +64,49 @@ public class DynamicInjectionConfigGenerator {
     private static final Map<String, String> regexPathsMap = new HashMap<>();
 
 
-    private ExtractionConfig getExtractionConfigInstance(String apiPath, String jsonPath,
+    private ExternalExtraction getExtractionInstance(String apiPath, String jsonPath,
         HTTPMethodType method) {
 
-        ExtractionConfig newDIConfig = new ExtractionConfig(apiPath, jsonPath, method);
-        return extractionConfigToObjectMap.computeIfAbsent(newDIConfig, k -> newDIConfig);
+        ExternalExtraction newDIConfig = new ExternalExtraction(apiPath, jsonPath, method);
+        return extractionToObjectMap.computeIfAbsent(newDIConfig, k -> newDIConfig);
 
     }
 
-    private InjectionConfig getInjectionConfigInstance(String apiPath, String jsonPath,
+    private ExternalInjection getExternalInjectionInstance(String apiPath, String jsonPath,
         HTTPMethodType method, String xfm, Boolean injectAllPaths) {
 
-        InjectionConfig newDIConfig = new InjectionConfig(apiPath, jsonPath, method, xfm, injectAllPaths);
-        return injectionConfigToObjectMap.computeIfAbsent(newDIConfig, k -> newDIConfig);
+        ExternalInjection newDIConfig = new ExternalInjection(apiPath, jsonPath, method, xfm, injectAllPaths);
+        return injectionToObjectMap.computeIfAbsent(newDIConfig, k -> newDIConfig);
 
     }
 
-    private InjectionExtractionMeta getMetaInstance(ExtractionConfig extractionConfig,
-        InjectionConfig injectionConfig) {
+    private ExternalInjectionExtraction getMetaInstance(ExternalExtraction extractionConfig,
+        ExternalInjection externalInjection) {
 
-        InjectionExtractionMeta newMeta = new InjectionExtractionMeta(extractionConfig,
-            injectionConfig);
-        return metaToObjectMap.computeIfAbsent(newMeta, k -> newMeta);
+        ExternalInjectionExtraction newMeta = new ExternalInjectionExtraction(extractionConfig,
+            externalInjection);
+        return injExtToObjectMap.computeIfAbsent(newMeta, k -> newMeta);
 
     }
 
-    private Optional<LinkedHashSet<ExtractionConfig>> getExtractionSetForValue(String value) {
-        return Optional.ofNullable(valueToExtractionConfigMap.get(value));
+    private Optional<LinkedHashSet<ExternalExtraction>> getExtractionSetForValue(String value) {
+        return Optional.ofNullable(valueToExtractionMap.get(value));
     }
 
-    private LinkedHashSet<ExtractionConfig> createExtractionSetForValue(String value) {
+    private LinkedHashSet<ExternalExtraction> createExtractionSetForValue(String value) {
 
-        return valueToExtractionConfigMap.computeIfAbsent(value, k -> new LinkedHashSet<>());
+        return valueToExtractionMap.computeIfAbsent(value, k -> new LinkedHashSet<>());
     }
 
-    private Optional<LinkedHashSet<ExtractionConfig>> getExtractionSetForInjection(
-        InjectionConfig injectionConfig) {
-        return Optional.ofNullable(injectionToExtractionsMap.get(injectionConfig));
+    private Optional<LinkedHashSet<ExternalExtraction>> getExtractionSetForInjection(
+        ExternalInjection externalInjection) {
+        return Optional.ofNullable(injToExtractionsMap.get(externalInjection));
     }
 
-    private LinkedHashSet<ExtractionConfig> createExtractionSetForInjection(
-        InjectionConfig injectionConfig) {
-        return injectionToExtractionsMap
-            .computeIfAbsent(injectionConfig, k -> new LinkedHashSet<>());
+    private LinkedHashSet<ExternalExtraction> createExtractionSetForInjection(
+        ExternalInjection externalInjection) {
+        return injToExtractionsMap
+            .computeIfAbsent(externalInjection, k -> new LinkedHashSet<>());
     }
 
     public void processJSONObject(JsonDataObj jsonDataObj, String apiPath, String baseJSONPath,
@@ -128,8 +127,8 @@ public class DynamicInjectionConfigGenerator {
 
     }
 
-    private ExtractionConfig getFirstPostOrElseFirstGetExtConfig(Set<ExtractionConfig> extractionConfigs){
-        for (ExtractionConfig extractionConfig : extractionConfigs) {
+    private ExternalExtraction getFirstPostOrElseFirstGetExt(Set<ExternalExtraction> extractionConfigs){
+        for (ExternalExtraction extractionConfig : extractionConfigs) {
             if (extractionConfig.method == HTTPMethodType.POST){
                 return extractionConfig;
             }
@@ -191,7 +190,7 @@ public class DynamicInjectionConfigGenerator {
             if (eventType == Event.EventType.HTTPResponse) {
                 if (!valuesAlreadySeenInRequestSet.contains(stringValue)) {
                     // Consider for extraction
-                    ExtractionConfig extConfig = getExtractionConfigInstance(apiPath, jsonPath,
+                    ExternalExtraction extConfig = getExtractionInstance(apiPath, jsonPath,
                         method);
                     extConfig.instanceCount++;
                     extConfig.values.add(stringValue);  // Set, so duplication is taken care of
@@ -218,16 +217,16 @@ public class DynamicInjectionConfigGenerator {
 
                 final String finalApiPath = modifiedApiPath;
 
-                Optional<LinkedHashSet<ExtractionConfig>> extractionConfigsForPresentValue = getExtractionSetForValue(
+                Optional<LinkedHashSet<ExternalExtraction>> extractionsForPresentValue = getExtractionSetForValue(
                     lookupVal);
 
-                if (extractionConfigsForPresentValue.isEmpty()){
+                if (extractionsForPresentValue.isEmpty()){
                     // Retry with modified value. injectAllPaths is retained as it is path-based.
                     Pair<String, String> lookupValAndXfm = getLookupValAndXfm(jsonPath, stringValue);
                     lookupVal = lookupValAndXfm.getLeft();
                     xfm = lookupValAndXfm.getRight();
                     valuesAlreadySeenInRequestSet.add(lookupVal);
-                    extractionConfigsForPresentValue = getExtractionSetForValue(lookupVal);
+                    extractionsForPresentValue = getExtractionSetForValue(lookupVal);
                 }
 
                 final String finalLookupVal = lookupVal;
@@ -245,51 +244,51 @@ public class DynamicInjectionConfigGenerator {
                 // value_{suffix} variable name matching, if the first returns a null, it will be ineffective,
                 // in which case the second injection config will kick-in.
 
-                extractionConfigsForPresentValue.ifPresent(esForValue -> {
+                extractionsForPresentValue.ifPresent(esForValue -> {
 
-                    InjectionConfig injectionConfig = getInjectionConfigInstance(apiPath, jsonPath,
+                    ExternalInjection injection = getExternalInjectionInstance(apiPath, jsonPath,
                         method, finalXfm, injectAllPaths);
 
-                    if (injectionConfig.values.contains(finalLookupVal)) {
+                    if (injection.values.contains(finalLookupVal)) {
                         // The extraction set for a previously seen value is already processed
                         return;
                     }
 
-                    injectionConfig.values.add(finalLookupVal);
-                    injectionConfig.instanceCount++;
+                    injection.values.add(finalLookupVal);
+                    injection.instanceCount++;
 
-                    Optional<LinkedHashSet<ExtractionConfig>> existingSet = getExtractionSetForInjection(
-                        injectionConfig);
+                    Optional<LinkedHashSet<ExternalExtraction>> existingSet = getExtractionSetForInjection(
+                        injection);
 
                     // Use only the best extraction, keeping others as its equivalence set candidates
                     // and record their count
-                    ExtractionConfig bestExtractionConfigForValue = getFirstPostOrElseFirstGetExtConfig(
+                    ExternalExtraction bestExtractionForValue = getFirstPostOrElseFirstGetExt(
                         esForValue);
 
                     existingSet
-                        .or(() -> Optional.of(createExtractionSetForInjection(injectionConfig)))
+                        .or(() -> Optional.of(createExtractionSetForInjection(injection)))
                         .ifPresent(existingSetForInj -> {
 
-                            InjectionExtractionMeta injectionExtractionMeta = getMetaInstance(
-                                bestExtractionConfigForValue,
-                                injectionConfig);
+                            ExternalInjectionExtraction injectionExtraction = getMetaInstance(
+                                bestExtractionForValue,
+                                injection);
 
-                            if (!existingSetForInj.contains(bestExtractionConfigForValue)) {
-                                existingSetForInj.add(bestExtractionConfigForValue);
+                            if (!existingSetForInj.contains(bestExtractionForValue)) {
+                                existingSetForInj.add(bestExtractionForValue);
 
                                 // Only if this extraction config is seen for the first time for this
                                 // injection, update the equivalence set size.
 
                                 // All other extractions for the same value contribute to the equivalence set
-                                injectionExtractionMeta.extractionEquivalenceSetSize = esForValue
+                                injectionExtraction.extractionEquivalenceSetSize = esForValue
                                     .size();
                             }
 
                             // Count for this pair
-                            injectionExtractionMeta.instanceCount++;
+                            injectionExtraction.instanceCount++;
 
                             // Add reference values for this specific pair
-                            injectionExtractionMeta.values.add(finalLookupVal);
+                            injectionExtraction.values.add(finalLookupVal);
 
                             if (!finalApiPath.equals(apiPath)){
                                 // This is a regex-ed path. Overwrite existing instance
@@ -329,29 +328,29 @@ public class DynamicInjectionConfigGenerator {
         }
     }
 
-    public List<InjectionExtractionMeta> generateConfigs(Boolean discardSingleValues)
+    public List<ExternalInjectionExtraction> generateConfigs(Boolean discardSingleValues)
         throws JsonProcessingException {
 
-        Map<InjectionExtractionMeta, InjectionExtractionMeta> regexedMetasMap = new HashMap<>();
+        Map<ExternalInjectionExtraction, ExternalInjectionExtraction> regexedMetasMap = new HashMap<>();
 
-        for (InjectionExtractionMeta injectionExtractionMeta : metaToObjectMap.keySet()) {
-            String injApiPath = injectionExtractionMeta.injectionConfig.apiPath;
-            injectionExtractionMeta.injectionConfig.apiPath = Optional
+        for (ExternalInjectionExtraction injectionExtraction : injExtToObjectMap.keySet()) {
+            String injApiPath = injectionExtraction.externalInjection.apiPath;
+            injectionExtraction.externalInjection.apiPath = Optional
                 .ofNullable(regexPathsMap.get(injApiPath)).orElse(injApiPath);
             regexedMetasMap
-                .computeIfAbsent(injectionExtractionMeta, k -> injectionExtractionMeta).values
-                .addAll(injectionExtractionMeta.values); // Add new new ref values
+                .computeIfAbsent(injectionExtraction, k -> injectionExtraction).values
+                .addAll(injectionExtraction.values); // Add new new ref values
         }
 
-        for (InjectionExtractionMeta injectionExtractionMeta : regexedMetasMap.keySet()) {
-            if (!discardSingleValues || injectionExtractionMeta.values.size() > 1) {
-                injectionExtractionMeta.calculateScores();
-                finalMetaList.add(injectionExtractionMeta);
+        for (ExternalInjectionExtraction injectionExtraction : regexedMetasMap.keySet()) {
+            if (!discardSingleValues || injectionExtraction.values.size() > 1) {
+                injectionExtraction.calculateScores();
+                finalInjExtList.add(injectionExtraction);
             }
         }
 
-        Collections.sort(finalMetaList);
+        Collections.sort(finalInjExtList);
 
-        return finalMetaList;
+        return finalInjExtList;
     }
 }

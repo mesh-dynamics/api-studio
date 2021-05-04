@@ -347,14 +347,15 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.2.53.0</version>
+			<version>1.2.54.0</version>
 <!--			<version>1.1-SNAPSHOT</version>-->
 		</dependency>
 
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons-server</artifactId>
-			<version>1.0.68.0</version>
+			<version>1.0.69.0</version>
+<!--			<version>1.1-SNAPSHOT</version>-->
 		</dependency>
 		<dependency>
 			<groupId>io.cube</groupId>
