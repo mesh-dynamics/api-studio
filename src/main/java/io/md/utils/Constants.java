@@ -180,7 +180,7 @@ public class Constants {
     public static final String DYNACMIC_INJECTION_CONFIG_VERSION_FIELD = "dynamicInjectionConfigVersion";
     public static final String EXTRACTION_METAS_JSON_FIELD = "extractionMetasJson";
     public static final String INJECTION_METAS_JSON_FIELD = "injectionMetasJson";
-    public static final String INJECTION_EXTRACTION_METAS_JSON_FIELD = "injectionExtractionMetasJson";
+    public static final String EXTERNAL_INJECTION_EXTRACTIONS_JSON_FIELD = "externalInjectionExtractionsJson";
     public static final String STATIC_INJECTION_MAP_FIELD = "staticInjectionMap";
     public static final String PROTO_DESCRIPTOR_FILE_FIELD = "protoDescriptorFile";
 
