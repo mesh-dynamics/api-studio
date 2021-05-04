@@ -11,17 +11,17 @@ import java.util.Objects;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
-@JsonPropertyOrder({"overallScore", "refValue(s)", "extractionConfig", "injectionConfig",
+@JsonPropertyOrder({"overallScore", "refValues", "extractionConfig", "injectionConfig",
     "valueCountScore", "valueQualityScore", "extractionMethodScore", "extractionUniquenessScore"})
-public class InjectionExtractionMeta implements Comparable{
+public class ExternalInjectionExtraction implements Comparable{
 
     @JsonUnwrapped
-    public ExtractionConfig extractionConfig;
+    public ExternalExtraction externalExtraction;
 
     @JsonUnwrapped
-    public InjectionConfig injectionConfig;
+    public ExternalInjection externalInjection;
 
-    @JsonProperty("refValue(s)")
+    @JsonProperty("refValues")
     public Set<String> values = new HashSet<>();
 
     @JsonProperty("overallScore")
@@ -55,40 +55,40 @@ public class InjectionExtractionMeta implements Comparable{
     @JsonIgnore
     public Integer extractionEquivalenceSetSize = 0;
 
-    public InjectionExtractionMeta(){
+    public ExternalInjectionExtraction(){
         // Default constructor to handle no default constructor found JSON exception when deserializing
         super();
     }
 
-    public InjectionExtractionMeta(ExtractionConfig extractionConfig, InjectionConfig injectionConfig) {
-        this.extractionConfig = extractionConfig;
-        this.injectionConfig = injectionConfig;
+    public ExternalInjectionExtraction(ExternalExtraction externalExtraction, ExternalInjection externalInjection) {
+        this.externalExtraction = externalExtraction;
+        this.externalInjection = externalInjection;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        InjectionExtractionMeta that = (InjectionExtractionMeta) o;
-        return extractionConfig.equals(that.extractionConfig) &&
-            injectionConfig.equals(that.injectionConfig);
+        ExternalInjectionExtraction that = (ExternalInjectionExtraction) o;
+        return externalExtraction.equals(that.externalExtraction) &&
+            externalInjection.equals(that.externalInjection);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(extractionConfig, injectionConfig);
+        return Objects.hash(externalExtraction, externalInjection);
     }
 
-    @JsonPropertyOrder({"ext_apiPath", "ext_jsonPath", "ext_method"})
-    public static class ExtractionConfig implements Comparable{
+    @JsonPropertyOrder({"extApiPath", "extJsonPath", "extMethod"})
+    public static class ExternalExtraction implements Comparable{
 
-        @JsonProperty("ext_apiPath")
+        @JsonProperty("extApiPath")
         public String apiPath;
 
-        @JsonProperty("ext_jsonPath")
+        @JsonProperty("extJsonPath")
         public  String jsonPath;
 
-        @JsonProperty("ext_method")
+        @JsonProperty("extMethod")
         public HTTPMethodType method;
 
         @JsonIgnore
@@ -100,12 +100,14 @@ public class InjectionExtractionMeta implements Comparable{
         @JsonIgnore
         public String nameSuffix;
 
-        public ExtractionConfig() {
+        public ExternalExtraction() {
             // Default constructor to handle no default constructor found JSON exception when deserializing
-            super();
+            apiPath="";
+            jsonPath="";
+            method=HTTPMethodType.POST;
         }
 
-        public ExtractionConfig(String apiPath, String jsonPath, HTTPMethodType method) {
+        public ExternalExtraction(String apiPath, String jsonPath, HTTPMethodType method) {
             this.apiPath = apiPath;
             this.jsonPath = jsonPath;
             this.method = method;
@@ -115,7 +117,7 @@ public class InjectionExtractionMeta implements Comparable{
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            ExtractionConfig that = (ExtractionConfig) o;
+            ExternalExtraction that = (ExternalExtraction) o;
             return apiPath.equals(that.apiPath) &&
                 jsonPath.equals(that.jsonPath) &&
                 method.equals(that.method);
@@ -125,7 +127,7 @@ public class InjectionExtractionMeta implements Comparable{
         public int compareTo(@NotNull Object o) {
 
 
-            ExtractionConfig that = (ExtractionConfig) o;
+            ExternalExtraction that = (ExternalExtraction) o;
 
             int apiPathComp = this.apiPath.compareTo(that.apiPath);
             if (apiPathComp != 0) return apiPathComp;
@@ -143,22 +145,22 @@ public class InjectionExtractionMeta implements Comparable{
 
     }
 
-    @JsonPropertyOrder({"inj_apiPath", "inj_jsonPath", "inj_method", "Transform", "InjectAllPaths"})
-    public static class InjectionConfig implements Comparable{
+    @JsonPropertyOrder({"injApiPath", "injJsonPath", "injMethod", "transform", "injectAllPaths"})
+    public static class ExternalInjection implements Comparable{
 
-        @JsonProperty("inj_apiPath")
+        @JsonProperty("injApiPath")
         public String apiPath;
 
-        @JsonProperty("inj_jsonPath")
+        @JsonProperty("injJsonPath")
         public String jsonPath;
 
-        @JsonProperty("inj_method")
+        @JsonProperty("injMethod")
         public HTTPMethodType method;
 
-        @JsonProperty("Transform")
+        @JsonProperty("transform")
         public String xfm;
 
-        @JsonProperty("InjectAllPaths")
+        @JsonProperty("injectAllPaths")
         public Boolean injectAllPaths = false;
 
         @JsonIgnore
@@ -167,12 +169,15 @@ public class InjectionExtractionMeta implements Comparable{
         @JsonIgnore
         public Integer instanceCount = 0; // Number of times this config has featured in a request
 
-        public InjectionConfig() {
+        public ExternalInjection() {
             // Default constructor to handle no default constructor found JSON exception when deserializing
-            super();
+            apiPath = "";
+            jsonPath = "";
+            method = HTTPMethodType.POST;
+            injectAllPaths = false;
         }
 
-        public InjectionConfig(String apiPath, String jsonPath, HTTPMethodType method, String xfm,
+        public ExternalInjection(String apiPath, String jsonPath, HTTPMethodType method, String xfm,
             Boolean injectAllPaths) {
             this.apiPath = apiPath;
             this.jsonPath = jsonPath;
@@ -185,7 +190,7 @@ public class InjectionExtractionMeta implements Comparable{
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            InjectionConfig that = (InjectionConfig) o;
+            ExternalInjection that = (ExternalInjection) o;
             return apiPath.equals(that.apiPath) &&
                 jsonPath.equals(that.jsonPath) &&
                 method.equals(that.method);
@@ -194,7 +199,7 @@ public class InjectionExtractionMeta implements Comparable{
         @Override
         public int compareTo(@NotNull Object o) {
 
-            InjectionConfig that = (InjectionConfig) o;
+            ExternalInjection that = (ExternalInjection) o;
 
             int apiPathComp = this.apiPath.compareTo(that.apiPath);
             if (apiPathComp != 0) return apiPathComp;
@@ -235,8 +240,8 @@ public class InjectionExtractionMeta implements Comparable{
     public void calculateScores(){
         this.valueCountScore = this.values.size() > 1 ? 1 : 0;
         this.valueQualityScore = getStringScore(this.values.iterator().next());
-        this.extractionMethodScore = this.extractionConfig.method == HTTPMethodType.POST
-            || this.extractionConfig.method == HTTPMethodType.PUT ? 1 : 0;
+        this.extractionMethodScore = this.externalExtraction.method == HTTPMethodType.POST
+            || this.externalExtraction.method == HTTPMethodType.PUT ? 1 : 0;
         this.extractionUniquenessScore =
             this.extractionEquivalenceSetSize > 0 ? (float) 1 / this.extractionEquivalenceSetSize
                 : 0;
@@ -254,18 +259,44 @@ public class InjectionExtractionMeta implements Comparable{
     @Override
     public int compareTo(@NotNull Object meta) {
 
-        InjectionExtractionMeta that = (InjectionExtractionMeta)meta;
+        ExternalInjectionExtraction that = (ExternalInjectionExtraction)meta;
 
         // Sort in reverse overall score order
         if (!that.overallScore.equals(this.overallScore)) {
             return that.overallScore.compareTo(this.overallScore);
         }
 
-        int extConfigComp = this.extractionConfig.compareTo(that.extractionConfig);
+        int extConfigComp = this.externalExtraction.compareTo(that.externalExtraction);
         if (extConfigComp != 0) return extConfigComp;
 
-        return this.injectionConfig.compareTo(that.injectionConfig);
+        return this.externalInjection.compareTo(that.externalInjection);
 
+    }
+
+    public static class ExternalNamedInjectionExtraction {
+        @JsonProperty("varName")
+        public String varName;
+
+        @JsonUnwrapped
+        public ExternalExtraction externalExtraction;
+
+        @JsonUnwrapped
+        public ExternalInjection externalInjection;
+
+        public ExternalNamedInjectionExtraction() {
+            // Default constructor for Jackson
+            varName = "";
+            externalExtraction = new ExternalExtraction();
+            externalInjection = new ExternalInjection();
+        }
+
+        public ExternalNamedInjectionExtraction(String varName,
+            ExternalExtraction externalExtraction,
+            ExternalInjection externalInjection) {
+            this.varName = varName;
+            this.externalExtraction = externalExtraction;
+            this.externalInjection = externalInjection;
+        }
     }
 }
 

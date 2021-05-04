@@ -48,10 +48,13 @@ public class DynamicInjectionConfig {
 	public List<StaticValue> staticValues;
 
 	@JsonIgnore
-	public List<InjectionExtractionMeta> injectionExtractionMetas;
+	public List<ExternalInjectionExtraction> externalInjectionExtractions;
 
-	public static final String staticVersionSuffix = "_Static";
+	public static final String staticVersionSuffix = "::Static";
 
+	public static String getAuthConfigVersion(String customer, String app){
+		return customer + "::" + app;
+	}
 	// Default constructor for Jackson
 	private DynamicInjectionConfig() {
 		version = "";
@@ -66,7 +69,7 @@ public class DynamicInjectionConfig {
 	public DynamicInjectionConfig(String version, String customerId, String app,
 		Optional<Instant> timestamp,
 		List<ExtractionMeta> extractionMetas, List<InjectionMeta> injectionMetas,
-		List<StaticValue> staticValues, List<InjectionExtractionMeta> injectionExtractionMetas) {
+		List<StaticValue> staticValues, List<ExternalInjectionExtraction> externalInjectionExtractions) {
 		this.version = version;
 		this.customerId = customerId;
 		this.app = app;
@@ -74,7 +77,7 @@ public class DynamicInjectionConfig {
 		this.extractionMetas = extractionMetas;
 		this.injectionMetas = injectionMetas;
 		this.staticValues = staticValues;
-		this.injectionExtractionMetas = injectionExtractionMetas;
+		this.externalInjectionExtractions = externalInjectionExtractions;
 	}
 
 	static public class ExtractionMeta {
