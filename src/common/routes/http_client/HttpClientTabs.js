@@ -1226,7 +1226,7 @@ class HttpClientTabs extends Component {
                                 }, 5000);
                             }
 
-                            dispatch(httpClientActions.updateContextMap(JSON.parse(parsedTraceReqData.extractionMap)));
+                            dispatch(httpClientActions.updateContextMapAfterResponse(JSON.parse(parsedTraceReqData.extractionMap)));
                         } catch (error) {
                             console.error("Error ", error);
                             throw new Error(error);

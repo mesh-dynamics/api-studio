@@ -9,7 +9,7 @@ const getCurrentEnvironment = (environmentList, selectedEnvironment) => {
 // returns current EnvVArs
 //There is an issue if store is fetched in this way. You can use this function (or any caller of this function) in reducer.
 const getCurrentEnvVars = () => {
-  const { httpClient: { environmentList, selectedEnvironment } } = store.getState();
+  const { httpClient: { environmentList, selectedEnvironment, contextMap } } = store.getState();
   const currentEnvironment = getCurrentEnvironment(environmentList, selectedEnvironment);
 
   // convert list of envvar objects to a map
@@ -17,7 +17,10 @@ const getCurrentEnvVars = () => {
   Object.fromEntries(
     currentEnvironment.vars.map(({key, value}) => ([key, value]))
   ) : {};
-  return currentEnvVars;
+  const sessionVars = Object.fromEntries(
+    Object.entries(contextMap).map(([key, valObj]) => ([key, valObj.value]))
+  )
+  return {...currentEnvVars, ...sessionVars};
 }
 
 // returns a function that can be used to render the given environment vars on an input

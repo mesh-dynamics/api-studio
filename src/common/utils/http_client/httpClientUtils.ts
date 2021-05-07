@@ -36,16 +36,17 @@ export function sortCatalogTraceChildren(apiTraces: any[]) {
 
 export function getMergedContextMap(
   existingContextMap: IContextMap,
-  newData: IKeyValuePairs<any>
+  newData: IKeyValuePairs<any>,
+  afterResponse: boolean = false
 ) {
   const newContextMap: IContextMap = {};
   Object.entries(existingContextMap || {}).forEach(([key, value]) => {
     if (value.createdOn > Date.now() - 1000 * 60 * 60 * 24) {
-      newContextMap[key] = value;
+      newContextMap[key] = {...value, isNew: false};
     }
   });
   Object.entries(newData || {}).forEach(([key, value]) => {
-    newContextMap[key] = { value, createdOn: Date.now() };
+    newContextMap[key] = { value, createdOn: Date.now(), isNew: afterResponse };
   });
   return newContextMap;
 }

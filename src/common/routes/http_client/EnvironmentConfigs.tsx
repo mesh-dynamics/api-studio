@@ -19,7 +19,7 @@ export interface IMockConfigsState{
     addNewEnv: boolean,
     selectedTabKey: number;
     selectedEnv: IEnvironmentConfig,
-    sessionVars: IConfigVars,
+    sessionVars: IConfigVars[],
 }
 export interface IMockConfigsProps{
     httpClient: IHttpClientStoreState;

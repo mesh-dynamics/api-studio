@@ -32,6 +32,11 @@ export const httpClientActions: IActionsType = {
     updateContextMap: (value) => {
         return {type: httpClientConstants.UPDATE_CONTEXT_MAP, data: {value}};
     },
+
+    updateContextMapAfterResponse: (value) => {
+        return {type: httpClientConstants.UPDATE_CONTEXT_MAP_AFTER_RESPONSE, data: {value}};
+    },
+    
     updateGeneralSettings: (key, value) => {
         return {type: httpClientConstants.UPDATE_GENERAL_SETTINGS, data: {key, value}};
     },

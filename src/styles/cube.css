@@ -1287,6 +1287,11 @@ table.tile_info td i {
 table.tile_info td:first-child {
     width: 83%
 }
+
+.table {
+    word-break: break-all;
+}
+
 td span {
     line-height: inherit
 }

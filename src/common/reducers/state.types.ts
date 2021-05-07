@@ -390,6 +390,7 @@ export interface IContextMap {
   [key: string]: {
     value: any;
     createdOn: number; //timestamp when context map entry is added
+    isNew: boolean;
   };
 }
 export interface IEventData {

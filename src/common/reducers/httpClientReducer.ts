@@ -623,6 +623,14 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             }
         }
 
+        case httpClientConstants.UPDATE_CONTEXT_MAP_AFTER_RESPONSE: {
+
+            return {
+                ...state,
+                contextMap: getMergedContextMap( state.contextMap, data.value, true)
+            }
+        }
+
         case httpClientConstants.UPDATE_CONTEXT_MAP: {
 
             return {

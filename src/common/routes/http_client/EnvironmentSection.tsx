@@ -142,6 +142,14 @@ class EnvironmentSection extends React.Component<
     this.props.dispatch(httpClientActions.showMockConfigList(false));
   };
 
+  handleSessionVarEdit = () => {
+    this.setState({
+      showSelectedEnvModal: false,
+      showMockConfigModal: true,
+      tabIndexForEdit: 3
+    })
+  };
+
   hideMockConfigModal = () => {
     const { dispatch } = this.props;
     dispatch(httpClientActions.resetMockConfigStatusText());
@@ -165,9 +173,9 @@ class EnvironmentSection extends React.Component<
       environmentList, 
       selectedEnvironment, 
       mockConfigList, 
-      selectedMockConfig
+      selectedMockConfig,
+      contextMap,
     } = this.props;
-
     const currentEnvironment = getCurrentEnvironment(environmentList, selectedEnvironment);
 
     const currentMockConfig: IMockConfigValue = getCurrentMockConfig(mockConfigList, selectedMockConfig);
@@ -236,6 +244,43 @@ class EnvironmentSection extends React.Component<
                   </table>
                 )}
                 {currentEnvironment && _.isEmpty(currentEnvironment.vars) && (<span>No variables defined for this environment</span>)}
+              </div>
+            </div>
+            <div className="md-env-modal-section">
+              <div className="md-env-modal-section-header">
+                <div>
+                  Session Variables:
+                </div>
+                <div>
+                  {
+                    <span onClick={this.handleSessionVarEdit} style={{ cursor: "pointer" }}>
+                      Edit
+                    </span>
+                  }
+                </div>  
+              </div>
+              <div className="md-env-modal-section-details">
+                {!_.isEmpty(contextMap) ? 
+                  <table className="table table-hover md-env-table-custom">
+                    <thead>
+                      <tr>
+                        <th style={{ width: "20%" }}>Variable</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(contextMap).map(([key, value]) => (
+                        <tr key={key} style={{fontWeight: (value.isNew ? "bold" :"normal")}}>
+                          <td >{key}</td>
+                          <td >
+                            {value.value}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                </table> 
+                : <span>No session variables present</span>
+              }
               </div>
             </div>
             <div className="md-env-modal-section">
@@ -388,7 +433,8 @@ const mapStateToProps = (state: IStoreState) => {
       selectedEnvironment, 
       mockConfigList, 
       selectedMockConfig,
-      serviceToAddAction 
+      serviceToAddAction,
+      contextMap, 
     },
   } = state;
 
@@ -397,7 +443,8 @@ const mapStateToProps = (state: IStoreState) => {
     selectedEnvironment,
     mockConfigList,
     selectedMockConfig,
-    serviceToAddAction
+    serviceToAddAction,
+    contextMap,
   };
 }
 
