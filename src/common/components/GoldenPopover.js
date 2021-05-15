@@ -37,6 +37,7 @@ class GoldenPopover extends React.Component {
                 "path": this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", ""),
                 "dt": "",
                 "pt": "",
+                "ptInheritance": null,
                 "ct": "",
                 "em": "",
                 "customization": null,
@@ -46,6 +47,7 @@ class GoldenPopover extends React.Component {
                 "path": this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", ""),
                 "dt": "Default",
                 "pt": "Optional",
+                "ptInheritance": null,
                 "ct": "Ignore",
                 "em": "Default",
                 "customization": null,
@@ -83,12 +85,19 @@ class GoldenPopover extends React.Component {
     setRule(tag, evt) {
         const { dispatch, jsonPath } = this.props;
         const { defaultRule, newRule, templateMatchType } = this.state;
-        newRule[tag] = evt.target.value;
+        if(tag == "ptInheritance") {
+            newRule[tag] = evt.target.value==="Default" ? null : evt.target.value;
+        } else {
+            newRule[tag] = evt.target.value;
+        }
+        
+        if(tag == "pt") {
+            newRule["ptInheritance"] = null;
+        }
         //TODO: Optimize here, dispatch should be done on Apply button click
         dispatch(cubeActions.addToDefaultRuleBook(jsonPath.replace("<BEGIN>", "").replace("<END>", ""), defaultRule, templateMatchType));
         dispatch(cubeActions.addToRuleBook(jsonPath.replace("<BEGIN>", "").replace("<END>", ""), newRule, templateMatchType));
         this.setState({ newRule: newRule });
-
     }
 
     getKeyFromTOS = () => {
@@ -204,7 +213,7 @@ class GoldenPopover extends React.Component {
         const { cube, jsonPath, user: { customer_name: customerId }, method } = this.props;
 
         try {
-            const { path, dt, pt, ct, em , customization } = await cubeService.getResponseTemplate(
+            const { path, dt, pt, ptInheritance, ct, em , customization } = await cubeService.getResponseTemplate(
                 customerId,
                 cube.selectedApp, 
                 cube.pathResultsParams, 
@@ -216,7 +225,8 @@ class GoldenPopover extends React.Component {
             const newlyFetchedRule = {
                 path: jsonPath.replace("<BEGIN>", "").replace("<END>", ""),
                 dt, 
-                pt: pt === "Default" ? "Optional" : pt, 
+                pt: pt === "Default" ? "Optional" : pt,
+                ptInheritance, 
                 ct: ct === "Default" ? "Ignore": ct, 
                 em, 
                 customization  
@@ -231,6 +241,7 @@ class GoldenPopover extends React.Component {
                     "path": this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", ""),
                     "dt": "",
                     "pt": "",
+                    "ptInheritance": null,
                     "ct": "",
                     "em": "",
                     "customization": null,
@@ -240,6 +251,7 @@ class GoldenPopover extends React.Component {
                     "path": this.props.jsonPath.replace("<BEGIN>", "").replace("<END>", ""),
                     "dt": "Default",
                     "pt": "Optional",
+                    "ptInheritance": null,
                     "ct": "Ignore",
                     "em": "Default",
                     "customization": null,
@@ -500,10 +512,24 @@ class GoldenPopover extends React.Component {
                                             <select value={this.state.newRule.pt} className="width-100" onChange={(e) => this.setRule("pt", e)}>
                                                 <option value="Required">Required</option>
                                                 <option value="Optional">Optional</option>
+                                                <option value="RequiredIfInGolden">RequiredIfInGolden</option>
+                                                <option value="RequiredIdentical">RequiredIdentical</option>
                                             </select>
                                         </td>
                                     </tr>
-
+                                    <tr>
+                                        <td>Presence Subfields</td>
+                                        <td>{this.state.defaultRule.ptInheritance || "Default"}</td>
+                                        <td>
+                                            <select value={this.state.newRule.ptInheritance || "Default"} className="width-100" onChange={(e) => this.setRule("ptInheritance", e)}>
+                                                <option value="Default">Default</option>
+                                                <option value="Required">Required</option>
+                                                <option value="Optional">Optional</option>
+                                                <option value="RequiredIfInGolden">RequiredIfInGolden</option>
+                                                <option value="RequiredIdentical">RequiredIdentical</option>
+                                            </select>
+                                        </td>
+                                    </tr>
                                     <tr>
                                         <td>Data Type</td>
                                         <td>{this.formatDtValue(this.state.defaultRule.dt)}</td>
