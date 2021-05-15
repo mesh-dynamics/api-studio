@@ -23,6 +23,7 @@ import statusCodeList from "../../status-code-list";
 import {resolutionsIconMap} from '../../components/Resolutions.js';
 import { cubeService } from '../../services';
 import { getParameterCaseInsensitive, isJsonOrGrpcMime } from '../../../shared/utils';
+import {processSetsInDiff} from "../../utils/diff/diff-process"
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -727,7 +728,9 @@ class ViewTrace extends Component {
                 }
             });
 
-            let updatedReductedDiffArrayWithCollapsible = this.addCompressToggleData(updatedReductedDiffArray, this.state.collapseLength, this.state.maxLinesLength);
+            let updatedDiffArrayProcessedSets = processSetsInDiff(updatedReductedDiffArray, item.xfmdSetPaths)
+
+            let updatedReductedDiffArrayWithCollapsible = this.addCompressToggleData(updatedDiffArrayProcessedSets, this.state.collapseLength, this.state.maxLinesLength);
 
             let updatedReducedDiffArrayRespHdr = reducedDiffArrayRespHdr && reducedDiffArrayRespHdr.map((eachItem) => {
                 return {

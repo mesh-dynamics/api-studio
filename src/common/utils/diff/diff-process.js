@@ -46,7 +46,7 @@ const validateAndCleanHTTPMessageParts = (messagePart, headers) => {
     return cleanedMessagepart;
 }
 
-const getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefix, service, path, app, replayId, recordingId, templateVersion, eventType) => {
+const getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefix, service, path, app, replayId, recordingId, templateVersion, eventType, setPaths) => {
     if (!serverSideDiff) return null; 
     let actpart = JSON.stringify(sortJson(replayedPart), undefined, 4);
     let expPart = JSON.stringify(sortJson(recordedPart), undefined, 4);
@@ -64,7 +64,8 @@ const getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefi
             eventType: eventType,
         }
     });
-    return updatedReductedDiffArrayMsgPart;
+    const updatedDiffArrayMsgPartProcessedSets = processSetsInDiff(updatedReductedDiffArrayMsgPart, setPaths)
+    return updatedDiffArrayMsgPartProcessedSets;
 }
 
 const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId, templateVersion, collapseLength, maxLinesLength) => {
@@ -178,6 +179,7 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
             }
         }
         let updatedReductedDiffArray = reductedDiffArray && reductedDiffArray.map((eachItem) => {
+            if(eachItem.jsonPath) 
             return {
                 ...eachItem,
                 recordReqId: item.recordReqId,
@@ -192,8 +194,9 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
             }
         });
 
+        let updatedDiffArrayProcessedSets = processSetsInDiff(updatedReductedDiffArray, item.respSetPaths)
 
-        let updatedReductedDiffArrayWithCollapsible = addCompressToggleData(updatedReductedDiffArray, collapseLength, maxLinesLength);
+        let updatedReductedDiffArrayWithCollapsible = addCompressToggleData(updatedDiffArrayProcessedSets, collapseLength, maxLinesLength);
         
         let updatedReducedDiffArrayRespHdr = reducedDiffArrayRespHdr && reducedDiffArrayRespHdr.map((eachItem) => {
             return {
@@ -238,10 +241,10 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
         }
 
         const reqEventType = "Request";
-        reductedDiffArrayReqHeaders = getDiffForMessagePart(replayedRequestHeaders, recordedRequestHeaders, item.reqCompDiff, "/hdrs", item.service, item.path, app, replayId, recordingId, templateVersion, reqEventType);
-        reductedDiffArrayReqQParams = getDiffForMessagePart(replayedRequestQParams, recordedRequestQParams, item.reqCompDiff, "/queryParams", item.service, item.path, app, replayId, recordingId, templateVersion, reqEventType);
-        reductedDiffArrayReqFParams = getDiffForMessagePart(replayedRequestFParams, recordedRequestFParams, item.reqCompDiff, "/queryParams", item.service, item.path, app, replayId, recordingId, templateVersion, reqEventType);
-        reductedDiffArrayReqBody = getDiffForMessagePart(replayedRequestBody, recordedRequestBody, item.reqCompDiff, "/body", item.service, item.path, app, replayId, recordingId, templateVersion, reqEventType);
+        reductedDiffArrayReqHeaders = getDiffForMessagePart(replayedRequestHeaders, recordedRequestHeaders, item.reqCompDiff, "/hdrs", item.service, item.path, app, replayId, recordingId, templateVersion, reqEventType, item.reqSetPaths);
+        reductedDiffArrayReqQParams = getDiffForMessagePart(replayedRequestQParams, recordedRequestQParams, item.reqCompDiff, "/queryParams", item.service, item.path, app, replayId, recordingId, templateVersion, reqEventType, item.reqSetPaths);
+        reductedDiffArrayReqFParams = getDiffForMessagePart(replayedRequestFParams, recordedRequestFParams, item.reqCompDiff, "/queryParams", item.service, item.path, app, replayId, recordingId, templateVersion, reqEventType, item.reqSetPaths);
+        reductedDiffArrayReqBody = getDiffForMessagePart(replayedRequestBody, recordedRequestBody, item.reqCompDiff, "/body", item.service, item.path, app, replayId, recordingId, templateVersion, reqEventType, item.reqSetPaths);
 
         return {
             ...item,
@@ -364,8 +367,52 @@ const updateResolutionFilterPaths = (diffLayoutData) => {
       });
   };
 
+const processSetsInDiff = (reductedDiffArray, setPaths) => {
+    // convert the paths to match into regex
+    // sort by length before conversion to match the longest path
+    const setPathRegexList = setPaths?.sort((a, b) => (b.length - a.length))
+                                        .map(setPath => (new RegExp(`${setPath.replace("*", ".*?")}`))) || []
+    return reductedDiffArray.filter(item => item?.jsonPath)
+        .map(item => {
+            let value = item.value
+            const jsonPath = item.jsonPath.replace("<BEGIN>", "")
+            for(const setPathRegex of setPathRegexList) {
+                const matches = jsonPath.match(setPathRegex)
+                if(matches) {
+                    const restPath = jsonPath.substr(matches[0].length).split("/")
+                    if(restPath.length == 1){
+                        // no suffix in path, i.e. start of set
+                        // change '{' to '['
+                        let i = value.lastIndexOf("{")
+                        if(i > -1) {
+                            value = value.substr(0, i) + "[" + value.substr(i + 1)
+                        } else {
+                            i = value.lastIndexOf("}")
+                            if(i > -1) {
+                                value = value.substr(0, i) + "]" + value.substr(i + 1)
+                            } else{
+                                console.error("could not find begin or end of the set")
+                            }
+                        }
+                    } else {
+                        if(restPath.length == 2) {
+                            // start of object in set
+                            // drop the key
+
+                            value = value.replace(/\".*\":\s?/, "")
+                        }
+                    }
+                    break // matched the longest prefix
+                }
+            }
+            return {
+                ...item, value
+            }
+        })
+}
 export {
     validateAndCreateDiffLayoutData, 
     addCompressToggleData,
     updateResolutionFilterPaths,
+    processSetsInDiff,
 }
