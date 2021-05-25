@@ -7,6 +7,7 @@ import { IHttpClientTabDetails, IKeyValuePairs, IStoreState } from "../../../../
 import { deriveTabNameFromTabObject, getTabByTabId } from "../../../../common/utils/http_client/httpClientUtils";
 import { UpdatePollingMetaDataDialog } from "./UpdatePollingMetaDataDialog";
 import EditableLabel from "../EditableLabel";
+import "./TabInfo.css"
 export interface ITabInfoProps {
   tabId: string;
   tab: IHttpClientTabDetails;
@@ -50,7 +51,12 @@ function TabInfo(props: ITabInfoProps) {
     const name = deriveTabNameFromTabObject(props.tab);
     return (
       <span className="top-bar-name" title="Name of tab" style={{ display: "inline-flex" }}>
-        <b>Name:</b> <EditableLabel handleEditComplete={onEditTitle} label={name} />
+        <b>Name:&nbsp;</b> 
+        <EditableLabel 
+          handleEditComplete={onEditTitle} 
+          label={name} 
+          textClassName="tab-name-label-text"
+        />
       </span>
     ); 
   };

@@ -1,4 +1,5 @@
 import Tippy from "@tippy.js/react";
+import classNames from "classnames";
 import React, { FC, useState, useEffect, ChangeEvent } from "react";
 
 import "./EditableLabel.css";
@@ -10,7 +11,8 @@ interface EditableLabelProps {
     handleEditComplete: HandleEditComplete;
     onEditCanceled? : Function,
     /** To remotely control the edit mode set this else default is undefined */
-    allowEdit?: boolean; 
+    allowEdit?: boolean;
+    textClassName?: string
 }
 
 const EMPTY_STRING: string = "";
@@ -79,12 +81,13 @@ const EditableLabel: FC<EditableLabelProps> = (props) => {
                     </Tippy>
                     </>
                     :
+                    <>
                     <span
-                        className="editable-label-text"
+                        className={classNames("editable-label-text", props.textClassName)}
                     >
-                        {label}
-                        {props.allowEdit == undefined && <i className="far fa-edit editable-label-icon"  onClick={() => setAllowEdit(true)}></i>}
+                        {label} 
                     </span>
+                    <span>{props.allowEdit == undefined && <i className="far fa-edit editable-label-icon"  onClick={() => setAllowEdit(true)}></i>}</span></>
             }
         </div>
     )
