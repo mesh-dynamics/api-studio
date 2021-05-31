@@ -41,6 +41,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.exceptions.JedisException;
+import redis.embedded.RedisServer;
 
 import com.cube.cache.RedisPubSub;
 import com.cube.cache.TemplateCache;
@@ -62,6 +63,14 @@ public class Config {
 
     private static final Logger LOGGER = LogManager.getLogger(Config.class);
     private static final String CONFFILE = "cube.conf";
+    private static RedisServer redisServer;
+
+    static {
+	    int redisPort = Integer.parseInt(CommonUtils.fromEnvOrSystemProperties("redis_port").orElse("6379"));
+	    RedisServer redisServer = new RedisServer(redisPort);
+	    redisServer.start();
+    }
+
     public static int REDIS_DELETE_TTL; // redis key expiry timeout in seconds
 	public static int DISRUPTOR_QUEUE_SIZE;
 
