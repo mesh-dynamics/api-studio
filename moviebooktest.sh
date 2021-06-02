@@ -58,6 +58,8 @@ call_deploy_script() {
 
 call_replay() {
 	RECORDING_ID=$(cat apps/moviebook/kubernetes/recording_id.temp)
+	TEMPLATESET_NAME=$(cat apps/moviebook/kubernetes/templateset_name.temp)
+	TEMPLATESET_LABEL=$(cat apps/moviebook/kubernetes/templateset_label.temp)
 	REPLAY_PATHS=minfo/listmovies,minfo/returnmovie,minfo/rentmovie,minfo/liststores
 	REPLAY_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.meshdynamics.io
 	CUBE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.meshdynamics.io
@@ -70,7 +72,7 @@ call_replay() {
 	done
 
 	REPLAY_PATHS=${TEMP_PATH::${#TEMP_PATH}-1}
-	BODY="$REPLAY_PATHS&endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&analyze=true&templateSetVer=DEFAULT&userId=$USER_ID&transforms=$TRANSFORMS"
+	BODY="$REPLAY_PATHS&endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&analyze=true&templateSetName=$TEMPLATESET_NAME&templateSetLabel=$TEMPLATESET_LABEL&userId=$USER_ID&transforms=$TRANSFORMS"
 
 	COUNT=0
 	while [ "$http_code" != "200" ] || [ "$REPLAY_ID" = "none" ] && [ "$COUNT" != "5" ]; do

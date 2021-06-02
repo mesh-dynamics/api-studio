@@ -164,6 +164,8 @@ kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 		-d "$BODY")
 	  echo $RESPONSE
 	  RECORDING_ID=$(echo $RESPONSE | jq -r ".id")
+	  TEMPLATESET_NAME=$(echo $RESPONSE | jq -r ".templateSetName")
+	  TEMPLATESET_LABEL=$(echo $RESPONSE | jq -r ".templateSetLabel")
 		if [ $RECORDING_ID == "null" ]; then
 			unset RECORDING_ID
 		fi
@@ -175,8 +177,12 @@ kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 		sleep 5
 	done
   echo "RECORDING_ID:" $RECORDING_ID
+  echo "TEMPLATESET_NAME:" $TEMPLATESET_NAME
+  echo "TEMPLATESET_LABEL:" $TEMPLATESET_LABEL
 
 	echo $RECORDING_ID > $RECORDING_ID_TEMP_FILE
+	echo $TEMPLATESET_NAME > $TEMPLATESETNAME_TEMP_FILE
+	echo $TEMPLATESET_LABEL > $TEMPLATESETLABEL_TEMP_FILE
 }
 
 stop_record() {
@@ -362,6 +368,8 @@ main () {
 		exit 1 #Exist with nonzero exit code
 	fi
 	TEMPLATE_VERSION_TEMP_FILE=$APP_DIR/kubernetes/template_version.temp
+	TEMPLATESETNAME_TEMP_FILE=$APP_DIR/kubernetes/templateset_name.temp
+	TEMPLATESETLABEL_TEMP_FILE=$APP_DIR/kubernetes/templateset_label.temp
 	RECORDING_ID_TEMP_FILE=$APP_DIR/kubernetes/recording_id.temp
 	get_environment #check kubernetes context
 	case "$1" in
