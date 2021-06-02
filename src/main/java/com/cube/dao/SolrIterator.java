@@ -200,7 +200,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
         QueryResponse response = null;
         Optional<QueryResponse> toReturn = Optional.empty();
         try {
-            response = solr.query(query, METHOD.POST);
+            response = solr.query(query, METHOD.GET);
             toReturn = Optional.of(response);
         } catch (SolrServerException | IOException e) {
 	        LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,

@@ -3,6 +3,7 @@
  */
 package com.cube.ws;
 
+import java.nio.file.FileSystems;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -17,6 +18,7 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.impl.MDHttpSolrClient;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -154,6 +156,7 @@ public class Config {
 		properties = new java.util.Properties();
 		System.setProperty("io.md.intent" , "noop");
 		commonConfig = CommonConfig.getInstance();
+		String runMode = null;
 		String solrurl = null;
     int size = Integer.valueOf(fromEnvOrProperties("response_size", "1"));
     pathsToKeepLimit = Long.valueOf(fromEnvOrProperties("paths_to_keep_limit", "1000"));
@@ -161,27 +164,31 @@ public class Config {
         try {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
+            runMode = fromEnvOrProperties("run_mode" , "local");
             String solrBaseUrl = fromEnvOrProperties("solr_base_url" , "http://18.222.86.142:8983/solr/");
             String solrCore = fromEnvOrProperties("solr_core" , "cube");
             solrurl = Utils.appendUrlPath(solrBaseUrl , solrCore);
         } catch(Exception eta){
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
             eta.printStackTrace();
-            LOGGER.info(String.format("Using default solrurl IP %s", solrurl));
         }
-        if (solrurl != null) {
-            solr =  new MDHttpSolrClient.Builder(solrurl).build();
-            ReqRespStoreSolr storeSolr = new ReqRespStoreSolr(solr , this);
-            rrstore = storeSolr;
-            templateCache = storeSolr.templateCache;
-            ProtoDescriptorCacheProvider.instantiateCache(rrstore);
-	        protoDescriptorCache = ProtoDescriptorCacheProvider.getInstance()
-		        .orElseThrow(() -> new Exception("Cannot instantiate ProtoDescriptorCache"));
+        if (runMode != null && !runMode.equals("local") && solrurl != null) {
+            solr = new MDHttpSolrClient.Builder(solrurl).build();
+            LOGGER.info(String.format("Using solrurl IP %s", solrurl));
+
         } else {
-            final String msg = String.format("Solrurl missing in the config file %s", CONFFILE);
-            LOGGER.error(msg);
-            throw new Exception(msg);
+            String solrHome = fromEnvOrProperties("data_dir", "/var/lib/meshd/data") + "/solr";
+            solr = new EmbeddedSolrServer(FileSystems.getDefault().getPath(solrHome), "cube");
+            final String msg = String.format("Using embedded solr with home dir path %s", solrHome);
+            LOGGER.info(msg);
         }
+
+        ReqRespStoreSolr storeSolr = new ReqRespStoreSolr(solr, this);
+        rrstore = storeSolr;
+        templateCache = storeSolr.templateCache;
+        ProtoDescriptorCacheProvider.instantiateCache(rrstore);
+        protoDescriptorCache = ProtoDescriptorCacheProvider.getInstance()
+            .orElseThrow(() -> new Exception("Cannot instantiate ProtoDescriptorCache"));
 
         gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
             .registerTypeAdapter(Pattern.class, new GsonPatternSerializer())
