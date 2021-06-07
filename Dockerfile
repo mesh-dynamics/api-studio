@@ -25,6 +25,16 @@ RUN echo yes | keytool -importcert -alias startssl -keystore \
     /docker-java-home/lib/security/cacerts -storepass changeit -file ca.cer
 COPY --from=build target/cubews-V1-SNAPSHOT.war /usr/local/tomcat/webapps/ROOT.war
 RUN mkdir -p /usr/local/tomcat/newrelic/logs
+#Data Copy for embedded Solr
+RUN mkdir -p /var/lib/meshd/data/solr
+RUN mkdir -p /var/lib/meshd/datasrc/embedded_solr_config
+
+#copy the local solr to container
+#COPY src/main/resources/embedded_solr_config/ /var/lib/meshd/data/solr/
+#Copy the solr resources to datasrc directory where if required it can be copied to data/solr by the process.
+COPY src/main/resources/embedded_solr_config/ /var/lib/meshd/datasrc/embedded_solr_config/
+RUN ls -la /var/lib/meshd/datasrc/embedded_solr_config/*
+
 RUN useradd tomcat
 RUN chown -R tomcat /usr/local/tomcat/newrelic/logs
 ADD ./src/main/resources/newrelic.jar /usr/local/tomcat/newrelic/newrelic.jar

@@ -3,6 +3,7 @@
  */
 package com.cube.ws;
 
+import java.io.File;
 import java.nio.file.FileSystems;
 import java.time.Duration;
 import java.time.Instant;
@@ -14,6 +15,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Singleton;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -177,7 +179,22 @@ public class Config {
             LOGGER.info(String.format("Using solrurl IP %s", solrurl));
 
         } else {
+
             String solrHome = fromEnvOrProperties("data_dir", "/var/lib/meshd/data") + "/solr";
+            File solrXml = new File(solrHome + "/"+"solr.xml");
+            //Check if the solr.xml exists. If yes do nothing
+	        //If no that means it it is the first time container start. Copy from datasrc directory
+	        if(!solrXml.exists()){
+	        	String solrDataSrc = fromEnvOrProperties("datasrc_dir", "/var/lib/meshd/datasrc/embedded_solr_config");
+		        File solrHomeDir = new File(solrHome);
+		        if(!solrHomeDir.exists()){
+			        solrHomeDir.mkdirs();
+		        }
+		        FileUtils.copyDirectory(new File(solrDataSrc) , solrHomeDir);
+		        LOGGER.info(String.format("Copying solr data from %s to %s" , solrDataSrc , solrHome ));
+	        }else{
+	        	LOGGER.info("SolrXml already exists at location "+solrXml.getAbsolutePath());
+	        }
             solr = new EmbeddedSolrServer(FileSystems.getDefault().getPath(solrHome), "cube");
             final String msg = String.format("Using embedded solr with home dir path %s", solrHome);
             LOGGER.info(msg);
