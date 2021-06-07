@@ -12,7 +12,7 @@ import io.md.injection.ExternalInjectionExtraction;
 import io.md.injection.ExternalInjectionExtraction.ExternalExtraction;
 import io.md.injection.ExternalInjectionExtraction.ExternalInjection;
 import io.md.utils.Utils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,9 +73,10 @@ public class DynamicInjectionConfigGenerator {
     }
 
     private ExternalInjection getExternalInjectionInstance(String apiPath, String jsonPath,
-        HTTPMethodType method, String xfm, Boolean injectAllPaths) {
+        HTTPMethodType method, String keyXfm, String valueXfm, Boolean injectAllPaths) {
 
-        ExternalInjection newDIConfig = new ExternalInjection(apiPath, jsonPath, method, xfm, injectAllPaths);
+        ExternalInjection newDIConfig = new ExternalInjection(apiPath, jsonPath, method, keyXfm,
+            valueXfm, injectAllPaths);
         return injectionToObjectMap.computeIfAbsent(newDIConfig, k -> newDIConfig);
 
     }
@@ -157,14 +158,17 @@ public class DynamicInjectionConfigGenerator {
      * @param value
      * @return Pair (lookupValue, Xfrm)
      */
-    private Pair<String, String> getLookupValAndXfm(String jsonPath,
+    private Triple<String, String, String> getLookupValAndKeyXfmAndValXfm(String jsonPath,
         String value) {
         if (jsonPath.toLowerCase().startsWith(AUTH_HDR) && value.toLowerCase()
             .startsWith("bearer")) {
-            return Pair.of(value.replaceFirst("^[Bb]earer", "").trim(),
-                "Bearer " + InjectionMeta.valueMarker);
+            return Triple.of(value.replaceFirst("^[Bb]earer", "").trim(),
+                // Remove Bearer prefix from the key
+                "Bearer (.+)" + InjectionMeta.keyTransformSeparator + "$1",
+                // Add Bearer prefix to the extracted value
+                "(.+)" + InjectionMeta.keyTransformSeparator + "Bearer $1");
         } else {
-            return Pair.of(value, InjectionMeta.valueMarker);
+            return Triple.of(value, "", "");
         }
     }
 
@@ -202,7 +206,8 @@ public class DynamicInjectionConfigGenerator {
             } else if (eventType == Event.EventType.HTTPRequest) {
 
                 String lookupVal = stringValue;
-                String xfm = InjectionMeta.valueMarker;
+                String keyXfm = "";
+                String valueXfm = "";
                 Boolean injectAllPaths = shouldInjectAllPaths(jsonPath);
                 // Add to map to keep track of values already spotted in requests
                 valuesAlreadySeenInRequestSet.add(lookupVal);
@@ -222,15 +227,17 @@ public class DynamicInjectionConfigGenerator {
 
                 if (extractionsForPresentValue.isEmpty()){
                     // Retry with modified value. injectAllPaths is retained as it is path-based.
-                    Pair<String, String> lookupValAndXfm = getLookupValAndXfm(jsonPath, stringValue);
+                    Triple<String, String, String> lookupValAndXfm = getLookupValAndKeyXfmAndValXfm(jsonPath, stringValue);
                     lookupVal = lookupValAndXfm.getLeft();
-                    xfm = lookupValAndXfm.getRight();
+                    keyXfm = lookupValAndXfm.getMiddle();
+                    valueXfm = lookupValAndXfm.getRight();
                     valuesAlreadySeenInRequestSet.add(lookupVal);
                     extractionsForPresentValue = getExtractionSetForValue(lookupVal);
                 }
 
                 final String finalLookupVal = lookupVal;
-                final String finalXfm = xfm;
+                final String finalKeyXfm = keyXfm;
+                final String finalValXfm = valueXfm;
 
                 // If no extraction set exists for the present injection, create a new set with
                 // the first extraction in the set for the present value (which is also the place of value's first appearance).
@@ -247,7 +254,7 @@ public class DynamicInjectionConfigGenerator {
                 extractionsForPresentValue.ifPresent(esForValue -> {
 
                     ExternalInjection injection = getExternalInjectionInstance(apiPath, jsonPath,
-                        method, finalXfm, injectAllPaths);
+                        method, finalKeyXfm, finalValXfm, injectAllPaths);
 
                     if (injection.values.contains(finalLookupVal)) {
                         // The extraction set for a previously seen value is already processed

@@ -13,12 +13,13 @@
         "output" : {
             "mt":"FuzzyMatch",
             "matchmeta":"JsonDiff",
+            "setPaths" : [],
             "diffs":[
                 {"op":"replace","path":"/hdr/h3","value":5.458,"fromValue":5.456,"resolution":"OK_Ignore"},
                 {"op":"replace","path":"/body/b2/1","value":2,"fromValue":3,"resolution":"OK_Ignore"},
                 {"op":"replace","path":"/body/b1","value":"test456","fromValue":"test123","resolution":"OK_Ignore"},
                 {"op":"add","path":"/b3","value":{"a1":"a1v1","a2":15},"resolution":"OK_Optional"}
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -39,12 +40,13 @@
         "output": {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
+            "setPaths" : [],
             "diffs": [
                 {"op":"replace","path":"/hdr/h3","value":5.458,"fromValue":5.456,"resolution":"ERR_ValMismatch"},
                 {"op":"replace","path":"/body/b2/1","value":2,"fromValue":3,"resolution":"ERR_ValMismatch"},
                 {"op":"replace","path":"/body/b1","value":"test456","fromValue":"test123","resolution":"ERR_ValMismatch"},
                 {"op":"add","path":"/b3","value":{"a1":"a1v1","a2":15},"resolution":"ERR_NewField"}
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -63,7 +65,8 @@
         "output": {
             "mt":           "ExactMatch",
             "matchmeta":    "JsonDiff",
-            "diffs": [],"recordedResponse":null,"replayedResponse":null
+            "setPaths" : [],
+            "diffs": [],"lhs":null,"rhs":null
         }
     },
 
@@ -84,12 +87,13 @@
         "output": {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
+            "setPaths" : [],
             "diffs":[
                 {"op":"replace","path":"/hdr/h3","value":5.458,"fromValue":5.456,"resolution":"OK_OptionalMismatch"},
                 {"op":"replace","path":"/body/b2/1","value":2,"fromValue":3,"resolution":"OK_Ignore"},
                 {"op":"replace","path":"/body/b1","value":"test456","fromValue":"test123","resolution":"OK_OptionalMismatch"},
                 {"op":"add","path":"/b3","value":{"a1":"a1v1","a2":15},"resolution":"ERR_NewField"}
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -109,9 +113,10 @@
     "output": {
       "mt":           "NoMatch",
       "matchmeta":    "JsonDiff",
+      "setPaths" : [],
       "diffs":[
         {"op": "add",       "path": "/b3",          "value": { "a1": "a1v1", "a2": 15},         "resolution":"ERR_NewField"   }
-      ],"recordedResponse":null,"replayedResponse":null
+      ],"lhs":null,"rhs":null
     }
   },
 
@@ -137,12 +142,13 @@
         "output": {
             "mt":           "FuzzyMatch",
             "matchmeta":    "JsonDiff",
+            "setPaths" : [],
             "diffs":[
                 { "op": "replace",  "path": "/ceiling", "value": 4.469,                 "fromValue": 4.468,                 "resolution": "OK_CustomMatch" },
                 { "op": "replace",  "path": "/round",   "value": 4.469,                 "fromValue": 4.468,                 "resolution": "OK_CustomMatch" },
                 { "op": "replace",  "path": "/floor",   "value": 4.469,                 "fromValue": 4.468,                 "resolution": "OK_CustomMatch" },
                 { "op": "replace",  "path": "/email",   "value": "vineetks@yahoo.com",  "fromValue": "vineet@beehyv.com",   "resolution": "OK_CustomMatch" }
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -168,12 +174,13 @@
         "output": {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
+            "setPaths" : [],
             "diffs":[
                 { "op": "replace",  "path": "/ceiling", "value": 4.471,                 "fromValue": 4.468,                 "resolution": "ERR_ValMismatch" },
                 { "op": "replace",  "path": "/round",   "value": 4.464,                 "fromValue": 4.468,                 "resolution": "ERR_ValMismatch" },
                 { "op": "replace",  "path": "/floor",   "value": 4.459,                 "fromValue": 4.468,                 "resolution": "ERR_ValMismatch" },
                 { "op": "replace",  "path": "/email",   "value": "www.vineetks.in",     "fromValue": "vineet@beehyv.com",   "resolution": "ERR_ValFormatMismatch" }
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -191,10 +198,11 @@
         "output" : {
             "mt":           "FuzzyMatch",
             "matchmeta":    "JsonDiff",
+            "setPaths" : [],
             "diffs": [
                 {"op":"remove","path":"/body/b2","value":{"0":1,"1":3,"2":3},"resolution":"OK_Optional"},
                 {"op":"add","path":"/b3","value":{"a1":"a1v1","a2":15},"resolution":"OK_Optional"}
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -213,9 +221,10 @@
         "output": {
             "mt":           "FuzzyMatch",
             "matchmeta":    "JsonDiff",
+            "setPaths" : [],
             "diffs":[
                 {"op":"remove","path":"/body/b2","value":{"0":1,"1":3,"2":3},"resolution":"OK_Optional"}
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -234,9 +243,10 @@
         "output": {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
+            "setPaths" : [],
             "diffs": [
                 { "op": "remove",   "path": "/body/b2",  "value": {"0":1,"1":3,"2":3},   "resolution": "ERR_Required" }
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -271,6 +281,7 @@
         "output": {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
+            "setPaths" : [],
             "diffs": [
                 { "op": "noop", "path": "/int1", "value": 1,         "resolution": "ERR_ValTypeMismatch" },
                 { "op": "add", "path": "/int1", "value": 1,         "resolution": "ERR_RequiredGolden" },
@@ -284,7 +295,7 @@
                 { "op": "add", "path": "/str4", "value": "Monica",  "resolution": "OK_Optional"  },
                 { "op": "add", "path": "/str5", "value": "Monica",  "resolution": "OK_Optional"  },
                 { "op": "add", "path": "/str6", "value": "Monica",  "resolution": "OK_Optional"           }
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -320,6 +331,7 @@
         "output" : {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
+            "setPaths" : [],
             "diffs": [
                 { "op": "replace",  "path": "/string",      "value": 123,               "fromValue": "5c80e878323659a64d123db4",        "resolution":"ERR_ValTypeMismatch" },
                 { "op": "replace",  "path": "/int",         "value": "35",              "fromValue": 35,                                "resolution":"ERR_ValTypeMismatch" },
@@ -328,7 +340,7 @@
                 { "op": "replace",  "path": "/rptArr",      "value": 123,               "fromValue": {"0" : "dolore","1" : "irure" },             "resolution":"ERR_ValTypeMismatch" },
                 { "op": "replace",  "path": "/nrptArr/0",   "value": "string",          "fromValue": { "id": 0 },                       "resolution":"OK_Ignore" },
                 { "op": "replace",  "path": "/nrptArr/1",   "value": 123,               "fromValue": { "name": "Steele Dominguez" },    "resolution":"OK_Ignore" }
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -369,7 +381,8 @@
         "output": {
             "mt":           "ExactMatch",
             "matchmeta":    "JsonDiff",
-            "diffs":[],"recordedResponse":null,"replayedResponse":null
+            "setPaths" : [],
+            "diffs":[],"lhs":null,"rhs":null
         }
     },
 
@@ -412,6 +425,7 @@
         "output": {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
+            "setPaths" : [],
             "diffs": [
                 { "op": "replace",  "path": "/string",              "value": "cube-root",   "fromValue": "cube",    "resolution": "ERR_ValMismatch"     },
                 { "op": "replace",  "path": "/int",                 "value": 36,            "fromValue": 35,        "resolution": "ERR_ValMismatch"     },
@@ -422,7 +436,7 @@
                 { "op": "replace",  "path": "/obj-1/obj-2/string",  "value": "ice cube",    "fromValue": "cube",    "resolution": "OK_Ignore"           },
                 { "op": "replace",  "path": "/obj-1/obj-2/int",     "value": 34,            "fromValue": 35,        "resolution": "OK_Ignore"           },
                 { "op": "replace",  "path": "/obj-1/obj-2/float",   "value": 41.4,          "fromValue": 41.1,      "resolution": "OK_Ignore"           }
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -452,11 +466,12 @@
         "output": {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
+            "setPaths" : [],
             "diffs": [
                 { "op": "replace",  "path": "/rptArr2/2",   "value": 5,         "fromValue":"Joey", "resolution": "ERR_ValTypeMismatch" },
                 { "op": "replace",  "path": "/rptArr1/2",   "value": 4,         "fromValue":3,      "resolution": "ERR_ValMismatch"     },
                 { "op": "replace",  "path": "/rptArr3/1",   "value": "Monica",  "fromValue":6.5,    "resolution": "ERR_ValTypeMismatch" }
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -484,10 +499,11 @@
         {
             "mt":"FuzzyMatch",
             "matchmeta":"JsonDiff",
+            "setPaths" : [],
             "diffs":[
                 {"op":"replace","path":"/display_actors/0","value":"ZELLWEGER, MINNIE","fromValue":"BERRY, KARL","resolution":"OK_Ignore"},
                 {"op":"replace","path":"/display_actors/2","value":"BERRY, KARL","fromValue":"ZELLWEGER, MINNIE","resolution":"OK_Ignore"}
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -511,10 +527,56 @@
         {
             "mt":"NoMatch",
             "matchmeta":"JsonDiff",
+            "setPaths": ["/unordered"],
             "diffs": [
-                {"op":"replace","path":"/unordered/2","value": {"a":"11","b":"8","c":"9"},"fromValue":{"a":"7","b":"8","c":"9"},"resolution":"ERR_Required"},
-                {"op":"replace","path":"/unordered/0/c","value":"4","fromValue":"3","resolution":"ERR_ValMismatch"}
-            ],"recordedResponse":null,"replayedResponse":null
+                {"op":"replace","path":"/unordered/\"1\"/c","value": "4","fromValue":"3","resolution":"ERR_ValMismatch"},
+                {"op":"remove","path":"/unordered/\"7\"","value":{"a":"7","b":"8","c":"9"},"resolution":"ERR_Required"},
+                {"op":"add","path":"/unordered/\"11\"","value":{"a":"11","b":"8","c":"9"},"resolution":"ERR_NewField"}
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "unorderedSetsNested" : {"json1": {"body": {"unordered": [{"a": "1", "b": "2", "c": [{"c1": "123", "c2": "456"}, {"c1": "135", "c2": "246"}]},
+        {"a": "4", "b": "5", "c": [{"c1": "123", "c2": "456"}, {"c1": "135", "c2": "246"}]},
+        {"a": "7", "b": "8", "c": [{"c1": "123", "c2": "456"}, {"c1": "135", "c2": "246"}]}]}},
+        "json2": {"body": {"unordered": [{"a": "11", "b": "8", "c": [{"c1": "135", "c2": "246"}, {"c1": "123", "c2": "456"}]},
+            {"a": "1", "b": "2", "c": [{"c1": "135", "c2": "246"}, {"c1": "123", "c2": "456"}]},
+            {"a": "4", "b": "5", "c": [{"c1": "135", "c2": "246"}, {"c1": "123", "c2": "456"}]}]}},
+
+        "rules" : [
+            { "path": "/body/unordered",   "dataType": "Set",     "presenceType": "Required",
+                "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath" :  "/a" },
+            { "path": "/body/unordered/0/c",   "dataType": "Set",     "presenceType": "RequiredIfInGolden",
+                "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath" :  null }
+        ],
+
+        "output" :
+        {
+            "mt":"NoMatch",
+            "matchmeta":"JsonDiff",
+            "setPaths" : ["/body/unordered/*/c", "/body/unordered"],
+            "diffs": [
+                {"op": "remove", "path": "/body/unordered/\"7\"", "value": {"a": "7", "b": "8", "c": {"{\"c1\":\"123\",\"c2\":\"456\"}": {"c1": "123", "c2": "456"}, "{\"c1\":\"135\",\"c2\":\"246\"}": {"c1": "135", "c2": "246"}}}, "resolution": "ERR_Required"},
+                {"op": "add", "path": "/body/unordered/\"11\"", "value": {"a": "11", "b": "8", "c": {"{\"c1\":\"135\",\"c2\":\"246\"}": {"c1": "135", "c2": "246"}, "{\"c1\":\"123\",\"c2\":\"456\"}": {"c1": "123", "c2": "456"}}}, "resolution": "ERR_NewField"}
+            ],"lhs":null,"rhs":null
+        }
+    },
+    "unorderedSetPrimitiveValues": {"json1": {"body": ["BERRY, KARL", "WILSON, WILL", "ZELLWEGER, MINNIE"]},
+        "json2": {"body": ["ZELLWEGER, MINNIE", "WILSON, BILL", "BERRY, KARL"]},
+
+        "rules": [
+            { "path": "/body",   "dataType": "Set",     "presenceType": "Required",
+                "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath" :  null }
+        ],
+        "output":
+        {
+            "mt":"NoMatch",
+            "matchmeta":"JsonDiff",
+            "setPaths" : ["/body"],
+            "diffs":[
+                {"op": "remove", "path": "/body/\"WILSON, WILL\"", "value": "WILSON, WILL", "resolution": "ERR_Required"},
+                {"op": "add", "path": "/body/\"WILSON, BILL\"", "value": "WILSON, BILL", "resolution": "ERR_NewField"}
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -540,15 +602,18 @@
         {
             "mt":"NoMatch",
             "matchmeta":"JsonDiff",
-            "diffs":[
-                {"op":"replace","path":"/unordered/2","value":{"a":"11","b":{"\"b7\"":"b7","\"b8\"":"b8","\"b9\"":"b9"},"c":"9"},
-                    "fromValue":{"a":"7","b":{"\"b1\"":"b1","\"b2\"":"b2","\"b3\"":"b3"},"c":"9"},"resolution":"ERR_Required"},
-                {"op":"replace","path":"/unordered/0/c","value":"4","fromValue":"3","resolution":"ERR_ValMismatch"},
-                {"op":"replace","path":"/unordered/1/b/2","value":"b5","fromValue":"b9","resolution":"OK_Optional"},
-                {"op":"replace","path":"/unordered/1/b/1","value":"b4","fromValue":"b8","resolution":"OK_Optional"}
+            "setPaths" : ["/unordered", "/unordered/*/b"],
+            "diffs": [
+                {"op": "replace", "path": "/unordered/\"1\"/c", "value": "4", "fromValue": "3", "resolution": "ERR_ValMismatch"},
+                {"op": "remove", "path": "/unordered/\"4\"/b/\"b8\"", "value": "b8", "resolution": "OK_Optional"},
+                {"op": "remove", "path": "/unordered/\"4\"/b/\"b9\"", "value": "b9", "resolution": "OK_Optional"},
+                {"op": "add", "path": "/unordered/\"4\"/b/\"b4\"", "value": "b4", "resolution": "OK_Optional"},
+                {"op": "add", "path": "/unordered/\"4\"/b/\"b5\"", "value": "b5", "resolution": "OK_Optional"},
+                {"op": "remove", "path": "/unordered/\"7\"", "value": {"a": "7", "b": {"\"b1\"": "b1", "\"b2\"": "b2", "\"b3\"": "b3"}, "c": "9"}, "resolution": "ERR_Required"},
+                {"op": "add", "path": "/unordered/\"11\"", "value": {"a": "11", "b": {"\"b7\"": "b7", "\"b8\"": "b8", "\"b9\"": "b9"}, "c": "9"}, "resolution": "ERR_NewField"}
             ],
-            "recordedResponse":null,
-            "replayedResponse":null}
+            "lhs":null,
+            "rhs":null}
     },
 
 
@@ -571,11 +636,12 @@
         {
             "mt":"NoMatch",
             "matchmeta":"JsonDiff",
+            "setPaths": ["/unordered"],
             "diffs": [
                 {"op":"remove","path":"/unordered","value":{"\"1\"":{"a":"1","b":"2","c":"3"},
                     "\"4\"":{"a":"4","b":"5","c":"6"},"\"7\"":{"a":"7","b":"8","c":"9"}},"resolution":"ERR_Required"},
                 {"op":"add","path":"/unordered1","value":{"a":"11","b":"8","c":"9"},"resolution":"OK_Optional"}
-            ],"recordedResponse":null,"replayedResponse":null
+            ],"lhs":null,"rhs":null
         }
     },
 
@@ -596,9 +662,10 @@
         "output" : {
             "mt" : "ExactMatch",
             "matchmeta" : "JsonDiff",
+            "setPaths" : ["/unordered"],
             "diffs" : [] ,
-            "recordedResponse":null,
-            "replayedResponse":null
+            "lhs":null,
+            "rhs":null
         }
     },
 
@@ -621,9 +688,10 @@
         "output" : {
             "mt" : "ExactMatch",
             "matchmeta" : "JsonDiff",
+            "setPaths" : ["/unordered", "/unordered/*"],
             "diffs" : [] ,
-            "recordedResponse":null,
-            "replayedResponse":null
+            "lhs":null,
+            "rhs":null
         }
     }
 }

@@ -121,7 +121,7 @@ class JsonComparatorTest  {
 
 		JsonComparator comparator = new JsonComparator(template, config.jsonMapper);
 		Match m = comparator.compare(json1, json2);
-		m = new Match(m.mt, m.matchmeta, m.diffs);
+		m = new Match(m.mt, m.matchmeta, m.diffs, m.setPaths);
 		String mjson = config.jsonMapper.writeValueAsString(m);
 		JSONAssert.assertEquals(expected, mjson, JSONCompareMode.NON_EXTENSIBLE);
 	}
@@ -322,6 +322,30 @@ class JsonComparatorTest  {
 	@DisplayName("Unordered Array test")
 	final void unorderedArrayTest() throws JsonProcessingException, JSONException {
 		JSONObject testData = object.getJSONObject("unorderedArrayDiff");
+		compareTest(testData);
+	}
+
+    /**
+     * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Unordered Nested Sets")
+    final void unorderedSetsNestedTest() throws JsonProcessingException, JSONException {
+        JSONObject testData = object.getJSONObject("unorderedSetsNested");
+        compareTest(testData);
+    }
+
+    /**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Unordered Set Primitive Values")
+	final void unorderedSetPrimitiveValuesTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("unorderedSetPrimitiveValues");
 		compareTest(testData);
 	}
 

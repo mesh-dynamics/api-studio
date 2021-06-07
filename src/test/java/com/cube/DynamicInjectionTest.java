@@ -137,14 +137,14 @@ public class DynamicInjectionTest {
 
             InjectionMeta injectionMeta1 = new InjectionMeta(Arrays.asList(""), "/hdrs/cookie/0",
                 true
-                , "${Golden.Request: /hdrs/cookie/0 : cookie1 ([^;]+)}_value", Optional.empty()
-                , Optional.of("cookie1 ([^;]+)"), HTTPMethodType.POST, Optional.empty(),
+                , "${Golden.Request: /hdrs/cookie/0 : cookie1 ([^;]+)}_value", Optional.empty(),
+                Optional.empty(), Optional.of("cookie1 ([^;]+)"), HTTPMethodType.POST, Optional.empty(),
                 "minfo/health", "/hdrs/cookie/0", HTTPMethodType.POST);
 
             InjectionMeta injectionMeta2 = new InjectionMeta(Arrays.asList(""), "/hdrs/cookie/0",
                 true
-                , "${Golden.Request: /hdrs/cookie/0 : cookie2 ([^;\\]]+)}_value", Optional.empty()
-                , Optional.of("cookie2 ([^;\\]]+)"), HTTPMethodType.POST, Optional.empty(),
+                , "${Golden.Request: /hdrs/cookie/0 : cookie2 ([^;\\]]+)}_value", Optional.empty(),
+                Optional.empty(), Optional.of("cookie2 ([^;\\]]+)"), HTTPMethodType.POST, Optional.empty(),
                 "minfo/health", "/hdrs/cookie/0", HTTPMethodType.POST);
 
             injectionMetaList.add(injectionMeta1);

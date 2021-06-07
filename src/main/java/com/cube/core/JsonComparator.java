@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +27,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.flipkart.zjsonpatch.DiffFlags;
 import com.flipkart.zjsonpatch.JsonDiff;
@@ -42,7 +40,6 @@ import io.md.core.TemplateEntry;
 import io.md.dao.DataObj;
 import io.md.dao.JsonDataObj;
 import io.md.dao.LazyParseAbstractPayload;
-import io.md.core.Utils;
 
 import com.cube.ws.Config;
 
@@ -104,14 +101,16 @@ public class JsonComparator implements Comparator {
 
         Set<String> arrayPathsToReconstructLHS = new HashSet<>();
 		Set<String> arrayPathsToReconstructRHS = new HashSet<>();
+		Set<String> setPathsLHS = new HashSet<>();
+		Set<String> setPathsRHS = new HashSet<>();
 
         //convert arrays to objects
 		JsonNode lhsConverted, rhsConverted;
 		try {
-			 lhsConverted = ServerUtils.convertArrayToObject(lhsRoot, template, ""
-				, arrayPathsToReconstructLHS, jsonMapper);
-			 rhsConverted = ServerUtils.convertArrayToObject(rhsRoot, template, ""
-				, arrayPathsToReconstructRHS, jsonMapper);
+			 lhsConverted = ServerUtils.convertArrayToObject(lhsRoot, template, "", setPathsLHS
+                 , arrayPathsToReconstructLHS, jsonMapper);
+			 rhsConverted = ServerUtils.convertArrayToObject(rhsRoot, template, "", setPathsRHS
+                 , arrayPathsToReconstructRHS, jsonMapper);
 		 } catch (JsonProcessingException e) {
 			LOGGER.error("Error in converting arrays to objects ", e);
 			return new Match(MatchType.Exception, e.getMessage(), result);
@@ -175,48 +174,18 @@ public class JsonComparator implements Comparator {
         	ServerUtils.reconstructArray(lhsConverted , rhsConverted, path.getLeft(),  diffTreeMap, jsonMapper);
         });
 
-        HashMap<String, Comparator.Diff> resultPathToObjectMap = new HashMap<>();
-        List<Comparator.Diff> resultList = new ArrayList<>();
-
-        result.forEach(res -> {
-
-            if (res.op.equals(Diff.NOOP) || res.op.equals(Diff.REPLACE)) {
-                resultList.add(res);
-            } else {
-                Diff existingRes = resultPathToObjectMap.get(res.path);
-
-                if (existingRes != null) {
-                    Diff newRes;
-                    if (existingRes.op.equals(Diff.ADD) && res.op.equals(Diff.REMOVE)) {
-                        newRes = new Diff(Diff.REPLACE, res.path, existingRes.value,
-                            Optional.empty(),
-                            res.value,
-                            existingRes.resolution.isErr() ? existingRes.resolution
-                                : res.resolution);
-                        resultPathToObjectMap.remove(res.path);
-                        resultList.add(newRes);
-                    } else if (existingRes.op.equals(Diff.REMOVE) && res.op.equals(Diff.ADD)) {
-                        newRes = new Diff(Diff.REPLACE, res.path, res.value, Optional.empty(),
-                            existingRes.value,
-                            existingRes.resolution.isErr() ? existingRes.resolution
-                                : res.resolution);
-                        resultPathToObjectMap.remove(res.path);
-                        resultList.add(newRes);
-                    } else {
-                        // Should never happen. In this case, we retain only the earlier one.
-                    }
-                } else{
-                    resultPathToObjectMap.put(res.path, res);
-                }
-            }
-        });
-
-        resultList.addAll(resultPathToObjectMap.values());
-
         MatchType mt = (numerrs > 0) ? MatchType.NoMatch :
             (diffs.length > 0) ? MatchType.FuzzyMatch : MatchType.ExactMatch;
-        return new Match(mt, matchmeta, resultList, Optional.of(lhsConverted) ,
-	        Optional.of(rhsConverted));
+
+        Set<String> setPathsUnion = new HashSet<>(setPathsLHS);
+        setPathsUnion.addAll(setPathsRHS);
+
+
+        return new Match(mt, matchmeta, result, new ArrayList<>(setPathsUnion),
+            // Avoid replication by storing lhs and rhs objects only if modified
+            // which would be the case only if there are some sets
+            setPathsLHS.size() > 0 ? Optional.of(lhsConverted) : Optional.empty(),
+            setPathsRHS.size() > 0 ? Optional.of(rhsConverted) : Optional.empty());
     }
 
     @Override

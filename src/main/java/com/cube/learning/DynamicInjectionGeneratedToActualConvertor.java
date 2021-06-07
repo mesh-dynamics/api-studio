@@ -49,8 +49,8 @@ public class DynamicInjectionGeneratedToActualConvertor {
         InjectionMeta injectionMeta) {
         return new ExternalInjection(
             injectionMeta.apiPaths.size() > 0 ? injectionMeta.apiPaths.get(0) : "",
-            injectionMeta.jsonPath, injectionMeta.method, injectionMeta.xfm.orElse(""),
-            injectionMeta.injectAllPaths);
+            injectionMeta.jsonPath, injectionMeta.method, injectionMeta.keyTransform.orElse(""),
+            injectionMeta.valueTransform.orElse(""), injectionMeta.injectAllPaths);
     }
 
     public static ExtractionMeta convertExternalExtractionToInternal(ExternalExtraction extConfig, String varName){
@@ -75,10 +75,15 @@ public class DynamicInjectionGeneratedToActualConvertor {
             injConfig.jsonPath,
             injConfig.injectAllPaths,
             varName,
+
             // Include only if there is some change from the default
-            injConfig.xfm == null || injConfig.xfm.equals("") || injConfig.xfm
-                .equals(InjectionMeta.valueMarker) ? Optional.empty()
-                : Optional.of(injConfig.xfm),
+            injConfig.keyTransform == null || injConfig.keyTransform.equals("") ? Optional.empty()
+                : Optional.of(injConfig.valueTransform),
+
+            // Include only if there is some change from the default
+            injConfig.valueTransform == null || injConfig.valueTransform.equals("") ? Optional.empty()
+                : Optional.of(injConfig.valueTransform),
+
             null,
             injConfig.method,
             Optional.empty(),
