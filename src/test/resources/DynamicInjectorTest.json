@@ -55,7 +55,9 @@
             "name": "${Golden.Request: /hdrs/authorization/0}_login_token_100",
             "regex": null,
             "method": "GET",
-            "forEach": null
+            "forEach": null,
+            "injKeyTransform": "Bearer (.+)::$1",
+            "valueTransform": "Bearer ${value}"
           },
           {
             "apiPaths": [
@@ -73,7 +75,7 @@
 
         ]
       },
-      "extractionMap": {"Bearer abc_login_token_100":"Bearer xyz", "222_genre-group_genre_group_id_730":"222", "login_token":"Bearer xyz"}
+      "extractionMap": {"abc_login_token_100":"xyz", "222_genre-group_genre_group_id_730":"222", "login_token":"xyz"}
     },
   "reqAndRespEvents": [
     {
@@ -112,7 +114,7 @@
         "eventType":"HTTPResponse",
         "runId":"2021-04-20T06:21:50.795538Z",
         "seqId":"0U",
-        "payload":["HTTPResponsePayload",{"hdrs":{":status":["200"],"access-control-allow-origin":["*"],"content-type":["application/json"],"content-length":["182"],"date":["Fri, 16 Apr 2021 09:12:30 GMT"],"x-envoy-upstream-service-time":["210"]},"body":{"token":"Bearer abc"},"payloadState":"UnwrappedDecoded","status":200}]
+        "payload":["HTTPResponsePayload",{"hdrs":{":status":["200"],"access-control-allow-origin":["*"],"content-type":["application/json"],"content-length":["182"],"date":["Fri, 16 Apr 2021 09:12:30 GMT"],"x-envoy-upstream-service-time":["210"]},"body":{"token":"abc"},"payloadState":"UnwrappedDecoded","status":200}]
       },
 
       "testResp": {
@@ -131,7 +133,7 @@
         "eventType":"HTTPResponse",
         "runId":"2021-04-20T06:21:50.795538Z",
         "seqId":"0U",
-        "payload":["HTTPResponsePayload",{"hdrs":{":status":["200"],"access-control-allow-origin":["*"],"content-type":["application/json"],"content-length":["182"],"date":["Fri, 16 Apr 2021 09:12:30 GMT"],"x-envoy-upstream-service-time":["210"]},"body":{"token":"Bearer xyz"},"payloadState":"UnwrappedDecoded","status":200}]
+        "payload":["HTTPResponsePayload",{"hdrs":{":status":["200"],"access-control-allow-origin":["*"],"content-type":["application/json"],"content-length":["182"],"date":["Fri, 16 Apr 2021 09:12:30 GMT"],"x-envoy-upstream-service-time":["210"]},"body":{"token":"xyz"},"payloadState":"UnwrappedDecoded","status":200}]
       }
     },
     {

@@ -35,8 +35,8 @@ public class StaticInjection{
             staticValueList.add(new StaticValue(varName, config.value));
             injectionMetaList.add(
                 new InjectionMeta(config.apiPaths, config.jsonPath, false,
-                    varName, Optional.empty(), Optional.empty(), config.method, Optional.empty(),
-                    Optional.empty()));
+                    varName, Optional.empty(), Optional.empty(), Optional.empty(), config.method,
+                    Optional.empty(), Optional.empty()));
         });
         return new DynamicInjectionConfig(version, customerId, app, Optional.empty(),
             Collections.emptyList(), injectionMetaList, staticValueList, Collections.emptyList());

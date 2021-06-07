@@ -155,17 +155,22 @@ public interface Comparator {
 		 * @param diffs
 		 */
 		public Match(MatchType mt, String matchmeta, List<Diff> diffs) {
-			this(mt, matchmeta, diffs, Optional.empty(), Optional.empty());
+			this(mt, matchmeta, diffs, Collections.EMPTY_LIST, Optional.empty(), Optional.empty());
 		}
 
-		public Match(MatchType mt, String matchmeta, List<Diff> diffs
-			, Optional<JsonNode> recordedResponse , Optional<JsonNode> replayedResponse) {
+		public Match(MatchType mt, String matchmeta, List<Diff> diffs, List<String> setPaths) {
+			this(mt, matchmeta, diffs, setPaths, Optional.empty(), Optional.empty());
+		}
+
+		public Match(MatchType mt, String matchmeta, List<Diff> diffs, List<String> setPaths,
+			Optional<JsonNode> lhs, Optional<JsonNode> rhs) {
 			super();
 			this.mt = mt;
 			this.matchmeta = matchmeta;
 			this.diffs = diffs;
-			this.recordedResponse = recordedResponse;
-			this.replayedResponse = replayedResponse;
+			this.setPaths = setPaths;
+			this.lhs = lhs;
+			this.rhs = rhs;
 		}
 
 		// for Jackson serialization
@@ -173,15 +178,16 @@ public interface Comparator {
 			this.mt = MatchType.Default;
 			this.matchmeta = "";
 			this.diffs = Collections.EMPTY_LIST;
-			this.recordedResponse = Optional.empty();
-			this.replayedResponse = Optional.empty();
+			this.setPaths = Collections.EMPTY_LIST;
+			this.lhs = Optional.empty();
+			this.rhs = Optional.empty();
 		}
-
 		public MatchType mt;
 		final public String matchmeta;
 		final public List<Diff> diffs;
-		final public Optional<JsonNode> recordedResponse;
-		final public Optional<JsonNode> replayedResponse;
+		final public List<String> setPaths;
+		final public Optional<JsonNode> lhs;
+		final public Optional<JsonNode> rhs;
 
 
 		public void merge(Match other, boolean needDiff, String prefixpath) {

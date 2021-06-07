@@ -211,9 +211,24 @@ public class DynamicInjector {
 		});
 	}
 
+	private String getTransformedValue(String original, String transformExpr){
+		String[] fromAndTo = transformExpr.split(InjectionMeta.keyTransformSeparator);
+		if (fromAndTo.length ==2 ){
+			return original.replaceFirst(fromAndTo[0], fromAndTo[1]);
+		}else{
+			return original;
+		}
+
+	}
+
 	private void injectAtPath(String name, String path, InjectionMeta injectionMeta,
 		StringSubstitutor sub, Event request) {
 		String key = sub.replace(name);
+
+		if (injectionMeta.keyTransform.isPresent()){
+			key = getTransformedValue(key, injectionMeta.keyTransform.get());
+		}
+
 		DataObj value = extractionMap.get(key);
 
 		// Try non-inj-path-val-specific key search. Would only find this key if corresponding
@@ -228,12 +243,9 @@ public class DynamicInjector {
 
 				DataObj xfmdValue;
 
-				if (injectionMeta.xfm.isPresent() && value.isLeaf()) {
+				if (injectionMeta.valueTransform.isPresent() && value.isLeaf()) {
 					// Transform is applicable only for leaf nodes
-					StringSubstitutor valueSubstitutorinXfm = new StringSubstitutor(
-						Map.of(InjectionMeta.valueName, value.serializeDataObj()));
-
-					String xfmdString = valueSubstitutorinXfm.replace(injectionMeta.xfm.get());
+					String xfmdString = getTransformedValue(value.serializeDataObj(), injectionMeta.valueTransform.get());
 
 					xfmdValue = new JsonDataObj(new TextNode(xfmdString), jsonMapper);
 

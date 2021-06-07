@@ -160,8 +160,11 @@ public class DynamicInjectionConfig {
 		@JsonProperty("name")
 		public final String name;
 
-		@JsonProperty("transform")
-		public final Optional<String> xfm;
+		@JsonProperty("keyTransform")
+		public final Optional<String> keyTransform;
+
+		@JsonProperty("valueTransform")
+		public final Optional<String> valueTransform;
 
 		@JsonProperty("regex")
 		public final Optional<String> regex;
@@ -176,25 +179,24 @@ public class DynamicInjectionConfig {
 		public final Optional<Metadata> metadata;
 
 		@JsonIgnore
-		public static final String valueName = "value";
-
-		@JsonIgnore
-		public static final String valueMarker = "${" + valueName + "}";
+		public static final String keyTransformSeparator = "::";
 
 
 
 		public InjectionMeta() {
 			this(Collections.EMPTY_LIST, "", false, "", Optional.empty(), Optional.empty(),
+				Optional.empty(),
 				HTTPMethodType.POST, Optional.empty(), Optional.empty());
 		}
 		public InjectionMeta(List<String> apiPaths, String jsonPath, boolean injectAllPaths
-			, String name, Optional<String> xfm, Optional<String> regex, HTTPMethodType method,
+			, String name, Optional<String> keyTransform, Optional<String> valueTransform, Optional<String> regex, HTTPMethodType method,
 			Optional<ForEachStruct> forEach, Optional<Metadata> metadata) {
 			this.apiPaths = apiPaths;
 			this.jsonPath = jsonPath;
 			this.injectAllPaths = injectAllPaths;
 			this.name = name;
-			this.xfm = xfm;
+			this.keyTransform = keyTransform;
+			this.valueTransform = valueTransform;
 			this.regex = regex;
 			this.method = method;
 			this.forEach = forEach;
@@ -202,13 +204,14 @@ public class DynamicInjectionConfig {
 		}
 
 		public InjectionMeta(List<String> apiPaths, String jsonPath, boolean injectAllPaths
-			, String name, Optional<String> xfm, Optional<String> regex, HTTPMethodType method,
+			, String name, Optional<String> keyTransform, Optional<String> valueTransform, Optional<String> regex, HTTPMethodType method,
 			Optional<ForEachStruct> forEach, String extractionApiPath, String extractionJsonPath,
 			HTTPMethodType extractionMethod) {
-			this(apiPaths, jsonPath, injectAllPaths, name, xfm, regex, method, forEach,
+			this(apiPaths, jsonPath, injectAllPaths, name, keyTransform, valueTransform, regex, method,
+				forEach,
 				Optional.of(new Metadata(ExtractionMeta
 					.getExtractionId(extractionApiPath, extractionJsonPath, extractionMethod),
-				extractionJsonPath)));
+					extractionJsonPath)));
 		}
 
 		public String map(String original, String replacement) {

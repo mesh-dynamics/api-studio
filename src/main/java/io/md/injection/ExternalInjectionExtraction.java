@@ -145,7 +145,8 @@ public class ExternalInjectionExtraction implements Comparable{
 
     }
 
-    @JsonPropertyOrder({"injApiPath", "injJsonPath", "injMethod", "transform", "injectAllPaths"})
+    @JsonPropertyOrder({"injApiPath", "injJsonPath", "injMethod", "keyTransform",
+        "valueTransform", "injectAllPaths"})
     public static class ExternalInjection implements Comparable{
 
         @JsonProperty("injApiPath")
@@ -157,8 +158,11 @@ public class ExternalInjectionExtraction implements Comparable{
         @JsonProperty("injMethod")
         public HTTPMethodType method;
 
-        @JsonProperty("transform")
-        public String xfm;
+        @JsonProperty("keyTransform")
+        public String keyTransform;
+
+        @JsonProperty("valueTransform")
+        public String valueTransform;
 
         @JsonProperty("injectAllPaths")
         public Boolean injectAllPaths = false;
@@ -174,15 +178,18 @@ public class ExternalInjectionExtraction implements Comparable{
             apiPath = "";
             jsonPath = "";
             method = HTTPMethodType.POST;
+            this.keyTransform = "";
+            this.valueTransform = "";
             injectAllPaths = false;
         }
 
-        public ExternalInjection(String apiPath, String jsonPath, HTTPMethodType method, String xfm,
-            Boolean injectAllPaths) {
+        public ExternalInjection(String apiPath, String jsonPath, HTTPMethodType method,
+            String keyTransform, String valueTransform, Boolean injectAllPaths) {
             this.apiPath = apiPath;
             this.jsonPath = jsonPath;
             this.method = method;
-            this.xfm = xfm;
+            this.keyTransform = keyTransform;
+            this.valueTransform = valueTransform;
             this.injectAllPaths = injectAllPaths;
         }
 
