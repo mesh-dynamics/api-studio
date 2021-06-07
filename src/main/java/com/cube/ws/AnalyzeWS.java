@@ -877,7 +877,7 @@ public class AnalyzeWS {
 	            }
 	            recordings.add(recordingOpt.get());
             }
-            String recordingInfo = "";
+            String recordingInfo = "\"";
             if (recordingNotFound) {
                 LOGGER.error("Unable to find recording corresponding to given replay");
             } else {
