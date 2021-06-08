@@ -1,0 +1,24 @@
+{
+	"type": "GRPCResponsePayload",
+	"hdrs": {
+		":status": [
+			"200"
+		],
+		"content-type": [
+			"application/grpc"
+		],
+		"grpc-encoding": [
+			"identity"
+		],
+		"grpc-accept-encoding": [
+			"gzip"
+		],
+		"x-envoy-upstream-service-time": [
+			"2"
+		]
+	},
+	"body": "AAAAAE8KOkJlcmtzaGlyZSBWYWxsZXkgTWFuYWdlbWVudCBBcmVhIFRyYWlsLCBKZWZmZXJzb24sIE5KLCBVU0ESEQiapozDARCWn5ic/f////8B",
+	"payloadState": "WrappedDecoded",
+	"path": "routeguide.RouteGuide/GetFeature"
+}
+

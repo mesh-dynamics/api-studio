@@ -1,0 +1,73 @@
+{
+  "version": "DefaultMovieInfo",
+  "customerId": "CubeCorp",
+  "app": "MovieInfo",
+  "timestamp": 1608264519.805,
+  "extraction": [
+    {
+      "apiPath": "minfo/login",
+      "method": "POST",
+      "name": "${Golden.Response: /body/token}_login_token_100",
+      "value": "${TestSet.Response: /body/token}",
+      "reset": true,
+      "valueObject": false,
+      "forEach": null
+    },
+    {
+      "apiPath": "minfo/login",
+      "method": "POST",
+      "name": "login_token",
+      "value": "${TestSet.Response: /body/token}",
+      "reset": true,
+      "valueObject": false,
+      "forEach": null
+    },
+    {
+      "apiPath": "minfo/genre-group",
+      "method": "POST",
+      "name": "${Golden.Response: /body/genre_group_id}_genre-group_genre_group_id_730",
+      "value": "${TestSet.Response: /body/genre_group_id}",
+      "reset": true,
+      "valueObject": false,
+      "forEach": null
+    },
+  ],
+  "injection": [
+    {
+      "apiPaths": [
+        "minfo/getMovieList"
+      ],
+      "jsonPath": "/queryParams/genreGroupId/0",
+      "injectAllPaths": false,
+      "name": "${Golden.Request: /queryParams/genreGroupId/0}_genre-group_genre_group_id_730",
+      "regex": null,
+      "method": "GET",
+      "forEach": null
+    },
+    {
+      "apiPaths": [
+        "minfo/getMovieList"
+      ],
+      "jsonPath": "/hdrs/authorization/0",
+      "injectAllPaths": true,
+      "name": "${Golden.Request: /hdrs/authorization/0}_login_token_100",
+      "regex": null,
+      "method": "GET",
+      "forEach": null
+    },
+    {
+      "apiPaths": [
+        "minfo/getMovieList"
+      ],
+      "jsonPath": "/hdrs/authorization/0",
+      "injectAllPaths": true,
+      "name": "login_token",
+      "regex": null,
+      "method": "GET",
+      "forEach": null
+    }
+  ],
+  "static": [
+
+  ]
+}
