@@ -1798,8 +1798,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private SolrInputDocument eventToSolrDoc(Event event) {
         final SolrInputDocument doc = new SolrInputDocument();
-        String id = event.eventType.toString().concat("-").concat(event.service).concat("-").concat(event.apiPath).concat("-")
-            .concat(event.reqId);
+        // We want to shard based on requestId. so the join queries can work in the same shard (join queries don't work across shards).
+        // prefix!XXXX  prefix is taken as suggested shard
+        String id = event.reqId.concat("!").concat(event.eventType.toString()).concat("-").concat(event.service).concat("-").concat(event.apiPath);
 
         doc.setField(IDF, id);
         doc.setField(TYPEF, Types.Event.toString());
