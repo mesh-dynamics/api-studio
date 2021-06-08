@@ -1281,6 +1281,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (templateIds.isEmpty()) return Collections.EMPTY_LIST;
         SolrQuery query = new SolrQuery("*:*");
         addFilter(query, IDF, templateIds);
+        addSort(query, PATHF, true);
         Optional<Integer> maxResults = Optional.of(templateIds.size());
         return SolrIterator.getStream(solr, query, maxResults).flatMap(this::solrDocToCompareTemplate)
             .collect(Collectors.toList());
