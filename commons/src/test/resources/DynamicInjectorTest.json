@@ -1,0 +1,256 @@
+{
+  "DynamicExtractionTest":
+    {
+      "dynamicInjectionConfig": {
+        "version": "DefaultMovieInfo",
+        "customerId": "CubeCorp",
+        "app": "MovieInfo",
+        "extraction": [
+          {
+            "apiPath": "minfo/login",
+            "method": "POST",
+            "name": "${Golden.Response: /body/token}_login_token_100",
+            "value": "${TestSet.Response: /body/token}",
+            "reset": true,
+            "valueObject": false,
+            "forEach": null
+          },
+          {
+            "apiPath": "minfo/login",
+            "method": "POST",
+            "name": "login_token",
+            "value": "${TestSet.Response: /body/token}",
+            "reset": true,
+            "valueObject": false,
+            "forEach": null
+          },
+          {
+            "apiPath": "minfo/genre-group",
+            "method": "POST",
+            "name": "${Golden.Response: /body/genre_group_id}_genre-group_genre_group_id_730",
+            "value": "${TestSet.Response: /body/genre_group_id}",
+            "reset": true,
+            "valueObject": false,
+            "forEach": null
+          }
+        ],
+        "injection": [
+          {
+            "apiPaths": [
+              "minfo/getMovieList"
+            ],
+            "jsonPath": "/queryParams/genreGroupId/0",
+            "injectAllPaths": false,
+            "name": "${Golden.Request: /queryParams/genreGroupId/0}_genre-group_genre_group_id_730",
+            "regex": null,
+            "method": "GET",
+            "forEach": null
+          },
+          {
+            "apiPaths": [
+              "minfo/getMovieList"
+            ],
+            "jsonPath": "/hdrs/authorization/0",
+            "injectAllPaths": true,
+            "name": "${Golden.Request: /hdrs/authorization/0}_login_token_100",
+            "regex": null,
+            "method": "GET",
+            "forEach": null,
+            "injKeyTransform": "Bearer (.+)::$1",
+            "valueTransform": "Bearer ${value}"
+          },
+          {
+            "apiPaths": [
+              "minfo/getMovieList"
+            ],
+            "jsonPath": "/hdrs/authorization/0",
+            "injectAllPaths": true,
+            "name": "login_token",
+            "regex": null,
+            "method": "GET",
+            "forEach": null
+          }
+        ],
+        "static": [
+
+        ]
+      },
+      "extractionMap": {"abc_login_token_100":"xyz", "222_genre-group_genre_group_id_730":"222", "login_token":"xyz"}
+    },
+  "reqAndRespEvents": [
+    {
+      "goldenReq": {
+        "type_s":"Event",
+        "customerId":"CubeCorp",
+        "app":"MovieInfo",
+        "service":"movieinfo",
+        "instanceId":"record",
+        "collection":"476014eb-9f68-4a38-90b2-31a39ac2348a",
+        "traceId":"faacfed715a5793fa852a3192143d7ff",
+        "spanId":"a852a3192143d7ff",
+        "parentSpanId":"NA",
+        "timestamp":"2021-04-16T09:12:30.568Z",
+        "reqId":"movieinfo-faacfed715a5793fa852a3192143d7ff-ac2c1194-087f-4282-b1f1-f657796d5909",
+        "apiPath":"minfo/login",
+        "eventType":"HTTPRequest",
+        "runId":"2021-04-20T06:21:50.795538Z",
+        "seqId":"0U",
+        "payload":["HTTPRequestPayload",{"hdrs":{":authority":["moviebook.prod.v2.cubecorp.io"],":path":["/minfo/login"],":method":["POST"],"content-length":["64"],"sec-ch-ua":["\"Google Chrome\";v=\"89\", \"Chromium\";v=\"89\", \";Not A Brand\";v=\"99\""],"sec-ch-ua-mobile":["?0"],"user-agent":["Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36"],"content-type":["application/x-www-form-urlencoded"],"accept":["*/*"],"origin":["https://moviebook.prod.v2.cubecorp.io"],"sec-fetch-site":["same-origin"],"sec-fetch-mode":["cors"],"sec-fetch-dest":["empty"],"referer":["https://moviebook.prod.v2.cubecorp.io/login"],"accept-encoding":["gzip, deflate, br"],"accept-language":["en-US,en;q=0.9"],"x-forwarded-for":["172.20.49.75"],"x-forwarded-proto":["http"],"x-request-id":["806c784f-2c1a-4803-9a60-799a95c90b9e"],"x-istio-attributes":["CicKGGRlc3RpbmF0aW9uLnNlcnZpY2UubmFtZRILEgltb3ZpZWluZm8KMwodZGVzdGluYXRpb24uc2VydmljZS5uYW1lc3BhY2USEhIQbW92aWVib29rLXJlY29yZApOCgpzb3VyY2UudWlkEkASPmt1YmVybmV0ZXM6Ly9pc3Rpby1pbmdyZXNzZ2F0ZXdheS1kNGY4ZDc5ZGMtNmhmNHAuaXN0aW8tc3lzdGVtCkoKGGRlc3RpbmF0aW9uLnNlcnZpY2UuaG9zdBIuEixtb3ZpZWluZm8ubW92aWVib29rLXJlY29yZC5zdmMuY2x1c3Rlci5sb2NhbApIChdkZXN0aW5hdGlvbi5zZXJ2aWNlLnVpZBItEitpc3RpbzovL21vdmllYm9vay1yZWNvcmQvc2VydmljZXMvbW92aWVpbmZv"],"x-b3-traceid":["faacfed715a5793fa852a3192143d7ff"],"x-b3-spanid":["a852a3192143d7ff"],"x-b3-sampled":["0"],"x-envoy-internal":["true"]},"body":{"password":["password123@"],"username":["MARY.SMITH@sakilacustomer.org"]},"payloadState":"UnwrappedDecoded","method":"POST","queryParams":{},"path":"minfo/login","pathSegments":["minfo","login"]}]
+      },
+
+      "goldenResp": {
+        "type_s":"Event",
+        "customerId":"CubeCorp",
+        "app":"MovieInfo",
+        "service":"movieinfo",
+        "instanceId":"record",
+        "collection":"476014eb-9f68-4a38-90b2-31a39ac2348a",
+        "traceId":"faacfed715a5793fa852a3192143d7ff",
+        "spanId":"a852a3192143d7ff",
+        "parentspanId":"NA",
+        "timestamp":"2021-04-16T09:12:30.832Z",
+        "reqId":"movieinfo-faacfed715a5793fa852a3192143d7ff-ac2c1194-087f-4282-b1f1-f657796d5909",
+        "apiPath":"minfo/login",
+        "eventType":"HTTPResponse",
+        "runId":"2021-04-20T06:21:50.795538Z",
+        "seqId":"0U",
+        "payload":["HTTPResponsePayload",{"hdrs":{":status":["200"],"access-control-allow-origin":["*"],"content-type":["application/json"],"content-length":["182"],"date":["Fri, 16 Apr 2021 09:12:30 GMT"],"x-envoy-upstream-service-time":["210"]},"body":{"token":"abc"},"payloadState":"UnwrappedDecoded","status":200}]
+      },
+
+      "testResp": {
+        "type_s":"Event",
+        "customerId":"CubeCorp",
+        "app":"MovieInfo",
+        "service":"movieinfo",
+        "instanceId":"record",
+        "collection":"476014eb-9f68-4a38-90b2-31a39ac2348a",
+        "traceId":"faacfed715a5793fa852a3192143d7ff",
+        "spanId":"a852a3192143d7ff",
+        "parentspanId":"NA",
+        "timestamp":"2021-04-16T09:12:30.832Z",
+        "reqId":"movieinfo-faacfed715a5793fa852a3192143d7ff-ac2c1194-087f-4282-b1f1-f657796d5909",
+        "apiPath":"minfo/login",
+        "eventType":"HTTPResponse",
+        "runId":"2021-04-20T06:21:50.795538Z",
+        "seqId":"0U",
+        "payload":["HTTPResponsePayload",{"hdrs":{":status":["200"],"access-control-allow-origin":["*"],"content-type":["application/json"],"content-length":["182"],"date":["Fri, 16 Apr 2021 09:12:30 GMT"],"x-envoy-upstream-service-time":["210"]},"body":{"token":"xyz"},"payloadState":"UnwrappedDecoded","status":200}]
+      }
+    },
+    {
+      "goldenReq":{
+        "type_s":"Event",
+        "customerId":"CubeCorp",
+        "app":"MovieInfo",
+        "service":"movieinfo",
+        "instanceId":"record",
+        "collection":"476014eb-9f68-4a38-90b2-31a39ac2348a",
+        "traceId":"9f814fc671ac96effb4069e40bf59bcd",
+        "spanId":"fb4069e40bf59bcd",
+        "parentSpanId":"NA",
+        "timestamp":"2021-04-16T09:13:08.443Z",
+        "reqId":"movieinfo-9f814fc671ac96effb4069e40bf59bcd-01b11e27-e84b-4a47-a3a6-6d0c2a79cb17",
+        "apiPath":"minfo/genre-group",
+        "eventType":"HTTPRequest",
+        "runId":"2021-04-20T06:21:50.795538Z",
+        "seqId":"Eq",
+        "payload":["HTTPRequestPayload",{"hdrs":{":authority":["moviebook.prod.v2.cubecorp.io"],":path":["/minfo/genre-group"],":method":["POST"],"content-length":["59"],"sec-ch-ua":["\"Google Chrome\";v=\"89\", \"Chromium\";v=\"89\", \";Not A Brand\";v=\"99\""],"accept":["application/json, text/plain, */*"],"authorization":["Bearer abc"],"sec-ch-ua-mobile":["?0"],"user-agent":["Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36"],"content-type":["application/json"],"origin":["https://moviebook.prod.v2.cubecorp.io"],"sec-fetch-site":["same-origin"],"sec-fetch-mode":["cors"],"sec-fetch-dest":["empty"],"referer":["https://moviebook.prod.v2.cubecorp.io/"],"accept-encoding":["gzip, deflate, br"],"accept-language":["en-US,en;q=0.9"],"x-forwarded-for":["172.20.49.75"],"x-forwarded-proto":["http"],"x-request-id":["1611a597-b123-4818-9c10-4c0c5ec73db8"],"x-istio-attributes":["CkoKGGRlc3RpbmF0aW9uLnNlcnZpY2UuaG9zdBIuEixtb3ZpZWluZm8ubW92aWVib29rLXJlY29yZC5zdmMuY2x1c3Rlci5sb2NhbApIChdkZXN0aW5hdGlvbi5zZXJ2aWNlLnVpZBItEitpc3RpbzovL21vdmllYm9vay1yZWNvcmQvc2VydmljZXMvbW92aWVpbmZvCicKGGRlc3RpbmF0aW9uLnNlcnZpY2UubmFtZRILEgltb3ZpZWluZm8KMwodZGVzdGluYXRpb24uc2VydmljZS5uYW1lc3BhY2USEhIQbW92aWVib29rLXJlY29yZApOCgpzb3VyY2UudWlkEkASPmt1YmVybmV0ZXM6Ly9pc3Rpby1pbmdyZXNzZ2F0ZXdheS1kNGY4ZDc5ZGMtNmhmNHAuaXN0aW8tc3lzdGVt"],"x-b3-traceid":["9f814fc671ac96effb4069e40bf59bcd"],"x-b3-spanid":["fb4069e40bf59bcd"],"x-b3-sampled":["0"],"x-envoy-internal":["true"]},"body":{"name":"sp14","categories":["Family","Comedy","Children"]},"payloadState":"UnwrappedDecoded","method":"POST","queryParams":{},"path":"minfo/genre-group","pathSegments":["minfo","genre-group"]}]
+      },
+
+      "goldenResp":{
+        "type_s":"Event",
+        "customerId":"CubeCorp",
+        "app":"MovieInfo",
+        "service":"movieinfo",
+        "instanceId":"record",
+        "collection":"476014eb-9f68-4a38-90b2-31a39ac2348a",
+        "traceId":"9f814fc671ac96effb4069e40bf59bcd",
+        "spanId":"fb4069e40bf59bcd",
+        "parentspanId":"NA",
+        "timestamp":"2021-04-16T09:13:09.608Z",
+        "reqId":"movieinfo-9f814fc671ac96effb4069e40bf59bcd-01b11e27-e84b-4a47-a3a6-6d0c2a79cb17",
+        "apiPath":"minfo/genre-group",
+        "eventType":"HTTPResponse",
+        "runId":"2021-04-20T06:21:50.795538Z",
+        "seqId":"Eq",
+        "payload":["HTTPResponsePayload",{"hdrs":{":status":["200"],"access-control-allow-origin":["*"],"content-type":["application/json"],"content-length":["52"],"date":["Fri, 16 Apr 2021 09:13:09 GMT"],"x-envoy-upstream-service-time":["1145"]},"body":{"genre_group_id":222,"name":"sp14","customer_id":1},"payloadState":"UnwrappedDecoded","status":200}]
+      },
+
+      "testResp":{
+        "type_s":"Event",
+        "customerId":"CubeCorp",
+        "app":"MovieInfo",
+        "service":"movieinfo",
+        "instanceId":"record",
+        "collection":"476014eb-9f68-4a38-90b2-31a39ac2348a",
+        "traceId":"9f814fc671ac96effb4069e40bf59bcd",
+        "spanId":"fb4069e40bf59bcd",
+        "parentspanId":"NA",
+        "timestamp":"2021-04-16T09:13:09.608Z",
+        "reqId":"movieinfo-9f814fc671ac96effb4069e40bf59bcd-01b11e27-e84b-4a47-a3a6-6d0c2a79cb17",
+        "apiPath":"minfo/genre-group",
+        "eventType":"HTTPResponse",
+        "runId":"2021-04-20T06:21:50.795538Z",
+        "seqId":"Eq",
+        "payload":["HTTPResponsePayload",{"hdrs":{":status":["200"],"access-control-allow-origin":["*"],"content-type":["application/json"],"content-length":["52"],"date":["Fri, 16 Apr 2021 09:13:09 GMT"],"x-envoy-upstream-service-time":["1145"]},"body":{"genre_group_id":222,"name":"sp14","customer_id":1},"payloadState":"UnwrappedDecoded","status":200}]}
+    },
+
+    {
+      "goldenReq": {
+        "type_s":"Event",
+        "customerId":"CubeCorp",
+        "app":"MovieInfo",
+        "service":"movieinfo",
+        "instanceId":"record",
+        "collection":"476014eb-9f68-4a38-90b2-31a39ac2348a",
+        "traceId":"3b99ca35f03744fbe89fc67db24b9480",
+        "spanId":"e89fc67db24b9480",
+        "parentSpanId":"NA",
+        "timestamp":"2021-04-16T09:13:12.741Z",
+        "reqId":"movieinfo-3b99ca35f03744fbe89fc67db24b9480-75d8d6f9-8d67-408f-b421-d3b640be2de6",
+        "apiPath":"minfo/getMovieList",
+        "eventType":"HTTPRequest",
+        "runId":"2021-04-20T06:21:50.795538Z",
+        "seqId":"Kz",
+        "payload":["HTTPRequestPayload",{"hdrs":{":authority":["moviebook.prod.v2.cubecorp.io"],":path":["/minfo/getMovieList?genreGroupId=222"],":method":["GET"],"sec-ch-ua":["\"Google Chrome\";v=\"89\", \"Chromium\";v=\"89\", \";Not A Brand\";v=\"99\""],"accept":["application/json, text/plain, */*"],"authorization":["Bearer abc"],"sec-ch-ua-mobile":["?0"],"user-agent":["Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36"],"sec-fetch-site":["same-origin"],"sec-fetch-mode":["cors"],"sec-fetch-dest":["empty"],"referer":["https://moviebook.prod.v2.cubecorp.io/"],"accept-encoding":["gzip, deflate, br"],"accept-language":["en-US,en;q=0.9"],"x-forwarded-for":["172.20.49.75"],"x-forwarded-proto":["http"],"x-request-id":["752509af-5311-4b61-b15b-45d78cab62bc"],"x-istio-attributes":["CkoKGGRlc3RpbmF0aW9uLnNlcnZpY2UuaG9zdBIuEixtb3ZpZWluZm8ubW92aWVib29rLXJlY29yZC5zdmMuY2x1c3Rlci5sb2NhbApIChdkZXN0aW5hdGlvbi5zZXJ2aWNlLnVpZBItEitpc3RpbzovL21vdmllYm9vay1yZWNvcmQvc2VydmljZXMvbW92aWVpbmZvCicKGGRlc3RpbmF0aW9uLnNlcnZpY2UubmFtZRILEgltb3ZpZWluZm8KMwodZGVzdGluYXRpb24uc2VydmljZS5uYW1lc3BhY2USEhIQbW92aWVib29rLXJlY29yZApOCgpzb3VyY2UudWlkEkASPmt1YmVybmV0ZXM6Ly9pc3Rpby1pbmdyZXNzZ2F0ZXdheS1kNGY4ZDc5ZGMtNmhmNHAuaXN0aW8tc3lzdGVt"],"x-b3-traceid":["3b99ca35f03744fbe89fc67db24b9480"],"x-b3-spanid":["e89fc67db24b9480"],"x-b3-sampled":["0"],"content-length":["0"],"x-envoy-internal":["true"]},"body":"","payloadState":"UnwrappedDecoded","method":"GET","queryParams":{"genreGroupId":["222"]},"path":"minfo/getMovieList","pathSegments":["minfo","getMovieList"]}]
+      },
+
+      "goldenResp":{
+        "type_s":"Event",
+        "customerId":"CubeCorp",
+        "app":"MovieInfo",
+        "service":"movieinfo",
+        "instanceId":"record",
+        "collection":"476014eb-9f68-4a38-90b2-31a39ac2348a",
+        "traceId":"3b99ca35f03744fbe89fc67db24b9480",
+        "spanId":"e89fc67db24b9480",
+        "parentspanId":"NA",
+        "timestamp":"2021-04-16T09:13:13.122Z",
+        "reqId":"movieinfo-3b99ca35f03744fbe89fc67db24b9480-75d8d6f9-8d67-408f-b421-d3b640be2de6",
+        "apiPath":"minfo/getMovieList",
+        "eventType":"HTTPResponse",
+        "runId":"2021-04-20T06:21:50.795538Z",
+        "seqId":"Kz",
+        "payload":["HTTPResponsePayload",{"hdrs":{":status":["200"],"content-type":["application/json"],"transfer-encoding":["chunked"],"date":["Fri, 16 Apr 2021 09:13:13 GMT"],"x-envoy-upstream-service-time":["301"]},"body":[{"special_features":"Deleted Scenes","rental_duration":6,"rental_rate":2.99,"last_update":"2006-02-15 05:03:42.0","release_year":"2006-01-01","length":130,"replacement_cost":22.99,"rating":"G","description":"A Fast-Paced Documentary of a Pastry Chef And a Dentist who must Pursue a Forensic Psychologist in The Gulf of Mexico","film_id":5,"language_id":1,"title":"AFRICAN EGG"}],"payloadState":"UnwrappedDecoded","status":200}]
+      },
+
+      "testResp":{
+        "type_s":"Event",
+        "customerId":"CubeCorp",
+        "app":"MovieInfo",
+        "service":"movieinfo",
+        "instanceId":"record",
+        "collection":"476014eb-9f68-4a38-90b2-31a39ac2348a",
+        "traceId":"3b99ca35f03744fbe89fc67db24b9480",
+        "spanId":"e89fc67db24b9480",
+        "parentspanId":"NA",
+        "timestamp":"2021-04-16T09:13:13.122Z",
+        "reqId":"movieinfo-3b99ca35f03744fbe89fc67db24b9480-75d8d6f9-8d67-408f-b421-d3b640be2de6",
+        "apiPath":"minfo/getMovieList",
+        "eventType":"HTTPResponse",
+        "runId":"2021-04-20T06:21:50.795538Z",
+        "seqId":"Kz",
+        "payload":["HTTPResponsePayload",{"hdrs":{":status":["200"],"content-type":["application/json"],"transfer-encoding":["chunked"],"date":["Fri, 16 Apr 2021 09:13:13 GMT"],"x-envoy-upstream-service-time":["301"]},"body":[{"special_features":"Deleted Scenes","rental_duration":6,"rental_rate":2.99,"last_update":"2006-02-15 05:03:42.0","release_year":"2006-01-01","length":130,"replacement_cost":22.99,"rating":"G","description":"A Fast-Paced Documentary of a Pastry Chef And a Dentist who must Pursue a Forensic Psychologist in The Gulf of Mexico","film_id":5,"language_id":1,"title":"AFRICAN EGG"}],"payloadState":"UnwrappedDecoded","status":200}]
+      }
+    }
+  ]
+}
