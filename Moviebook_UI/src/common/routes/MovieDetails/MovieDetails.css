@@ -1,0 +1,33 @@
+.title-bar {
+    background: #ffcc33;
+    padding: 20px;
+}
+
+.movie-title {
+    font-size: 22px;
+    font-weight: 300;
+}
+.row {
+    margin: 0;
+}
+.cast {
+    padding: 20px;
+    border: 1px solid #dddddd;
+}
+.reviews {
+    border: 1px dotted #dddddd;
+    margin-bottom: 10px;
+}
+.reviews h5 {
+    background: #dddddd;
+    padding: 10px;
+}
+.review {
+    margin: 20px 10px;
+}
+.small {
+    font-size: 0.6em;
+}
+.modal-header {
+    background: #ffcc33;
+}

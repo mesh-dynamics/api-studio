@@ -1,0 +1,21 @@
+.nav-dropdown-menu {
+	margin-left: 12px;
+}
+
+.nav-dropdown-toggle {
+	display: flex;
+	align-items: center;
+}
+
+.nav-right-menu {
+	display: flex;
+}
+
+.nav-search-input {
+	padding-left: 10px;
+}
+
+.nav-brand-text {
+	color: white !important;
+	cursor: pointer;
+}

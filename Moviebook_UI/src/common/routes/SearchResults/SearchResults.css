@@ -1,0 +1,14 @@
+.img-holder {
+    width: 100%;
+    height: 150px;
+    background: #efefef;
+    border: 2px solid #ddd;
+    cursor: pointer;
+}
+.img-holder:hover {
+    background: #aaaaaa;
+}
+.background-grey {
+    background: #aaaaaa;
+    padding: 10px;
+}
