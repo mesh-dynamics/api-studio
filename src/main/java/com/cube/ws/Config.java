@@ -45,6 +45,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.exceptions.JedisException;
+import redis.embedded.RedisServer;
 
 import com.cube.cache.RedisPubSub;
 import com.cube.cache.TemplateCache;
@@ -66,6 +67,8 @@ public class Config {
 
     private static final Logger LOGGER = LogManager.getLogger(Config.class);
     private static final String CONFFILE = "cube.conf";
+    private static RedisServer redisServer;
+
     public static int REDIS_DELETE_TTL; // redis key expiry timeout in seconds
 	public static int DISRUPTOR_QUEUE_SIZE;
 
@@ -180,6 +183,7 @@ public class Config {
 
         } else {
 
+        	//Embedded Solr
             String solrHome = fromEnvOrProperties("data_dir", "/var/lib/meshd/data") + "/solr";
             File solrXml = new File(solrHome + "/"+"solr.xml");
             //Check if the solr.xml exists. If yes do nothing
@@ -198,6 +202,11 @@ public class Config {
             solr = new EmbeddedSolrServer(FileSystems.getDefault().getPath(solrHome), "cube");
             final String msg = String.format("Using embedded solr with home dir path %s", solrHome);
             LOGGER.info(msg);
+
+            //Embedded Redis
+	        int redisPort = Integer.parseInt(CommonUtils.fromEnvOrSystemProperties("redis_port").orElse("6379"));
+	        redisServer = new RedisServer(redisPort);
+	        redisServer.start();
         }
 
         ReqRespStoreSolr storeSolr = new ReqRespStoreSolr(solr, this);
