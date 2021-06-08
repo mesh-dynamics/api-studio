@@ -1,0 +1,93 @@
+.gcBrowse-view-golden-icon-container {
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.gcBrowse-view-golden-icon {
+    font-size: 12px;
+    color: #757575;    
+}
+
+.gcBrowse-modal-heading-color {
+    color: white;
+    margin-left: 5px;
+}
+
+.gcBrowse-modal-body-container {
+    padding: 10px 25px; 
+    border: 1px dashed #ddd
+}
+
+.gcBrowse-modal-body-table-container {
+    height: 300px;
+    overflow-y: auto;
+}
+
+.gcBrowse-spinner-root {
+    height: 300px;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+}
+    
+.gcBrowse-spinner-inner {
+    display: flex; 
+    align-items: center;
+}
+
+.gcBrowse-delete-body-container {
+    display: flex;
+    flex: 1;
+    justify-content: center;
+}
+
+.gcBrowse-delete-body-content {
+    display: flex;
+    flex-direction: column; 
+    font-size: 20;
+}
+
+.gcBrowse-action-buttons {
+    display: flex;
+    font-size: 10px;
+    color: rgb(255 255 255);
+    background: rgb(97 96 96);
+}
+
+.gcBrowse-value-n {
+    margin-left: 10px;
+}
+
+.gcBrowse-selected-item-wrapper {
+    display: inline-flex;
+    flex-direction: column;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gcBrowse-selected-group {
+    padding: 3px 5px;
+    border: 1px solid rgb(121 121 121);
+    border-radius: 3px;
+}
+
+.gcBrowse-selected-item-group {
+    background-color: #fffee6;
+}
+
+
+.gcBrowse-button-full {
+    width: 100%;
+    padding: 5px;
+    display: flex;
+    font-size: 11px;
+    justify-content: center;
+    border-radius: 2px;
+}
+
+.gcBrowse-button-container {
+    display: flex;
+    justify-content: space-between; 
+    margin-top: 5px;
+}

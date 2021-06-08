@@ -1,0 +1,79 @@
+#settings {
+    width: 100%;
+    height: 100%;
+}
+
+.settings-page-header {
+    font-weight: 600;
+    border-color: #ddd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 2px;
+    font-size: 16px;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 14px;
+}
+
+.settings-panel {
+    background-color: #DCD1B5;
+    color: #484848;
+    padding: 10px 15px;
+    font-size: 12px;
+}
+
+.settings-cancel-button {
+    background-color: #FFFFFF;
+    color: #616060;
+    border: 1px solid #616060;
+}
+
+.settings-parent-container {
+    padding: 20px;
+    background-color: #eaeaea;
+    justify-content: center;
+}
+
+.settings-width-100 {
+    width: 100%;
+}
+
+.settings-action-buttons {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.settings-margin-left-10 {
+    margin-left: 10px;
+}
+
+.settings-error-text {
+    margin-left: 44px;
+    font-size: 11px;
+    color: red;
+}
+
+.settings-no-border {
+    border-radius: 0 !important;
+}
+
+.settings-custom-save-button {
+    padding: 3px 25px;
+}
+
+.settings-custom-back-button {
+    padding: 3px 5px;
+}
+
+.settings-btn-link {
+    border: none;
+    margin: 0;
+}
+
+.settings-left-padding {
+    padding-left: 5px;
+}

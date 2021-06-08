@@ -1,0 +1,29 @@
+.light-label {
+  font-weight: 300;
+  color: #adabab;
+}
+.light-button {
+  background: #adadad !important;
+}
+
+.link-navigation {
+  border: 1px #dcdada solid;
+  border-radius: 2px;
+  margin-left: 5px;
+  margin-top: 5px;
+  padding: 3px;
+}
+.link-navigation:hover {
+  border: 1px #aba4a4 solid;
+}
+.heading {
+  color: rgb(63, 18, 18);
+  font-size: larger;
+}
+.tagline {
+  color: gray;
+  font-size: smaller;
+}
+.link-navigation:hover .heading {
+  text-decoration: underline;
+}

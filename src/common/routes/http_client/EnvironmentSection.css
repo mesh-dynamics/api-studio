@@ -1,0 +1,75 @@
+.md-env-modal-section-header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid gray;
+    padding: 5px 0;
+}
+
+.md-env-modal-section-details {
+    padding: 5px 10px;
+}
+
+.md-env-modal-table-small-margin {
+    margin-bottom: 5px;
+}
+
+.md-env-modal-target-url-light {
+    opacity: 0.5;
+}
+
+
+.md-env-button-text {
+    padding-left: 10px;
+}
+
+.md-env-select-label {
+    font-size: 11px;
+}
+
+.md-env-select-container {
+    display: flex;
+    align-items: flex-start;
+    margin-right: 5px;
+    flex-direction: column;
+    margin-bottom: -5px;
+}
+
+.md-env-select {
+    font-size: 12px;
+    cursor: pointer;
+}
+
+
+.md-env-config-header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.md-env-config-header-label {
+    font-size: 14px;
+}
+
+.md-env-config-close {
+    color: #FFFFFF;
+    cursor: pointer;
+}
+
+.md-env-table-custom {
+    margin: 0;
+    border-bottom: 1px solid #e4e4e4;
+}
+
+.md-env-config-modal-body {
+    height: 450px;
+    overflow: hidden;
+}
+
+.md-env-modal-section {
+    margin: 10px 0;
+}
+
+.md-service-config-footer-error {
+    text-align: left;
+    max-width: 665px;
+}
