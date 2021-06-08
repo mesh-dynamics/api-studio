@@ -1,4 +1,4 @@
-# Install Istio and generate Evnoy filters to send data to Meshdynamics services
+# Install Istio and generate Envoy filters to send data to Meshdynamics services
 
 ## Install Istio
 
