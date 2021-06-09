@@ -30,7 +30,6 @@ import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
 import io.md.dao.FnReqRespPayload.RetStatus;
 
-import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 
 import io.md.utils.Constants;
@@ -201,16 +200,15 @@ public class SolrIterator implements Iterator<SolrDocument> {
         Optional<QueryResponse> toReturn = Optional.empty();
         try {
 
-	        if(config.runMode != null && config.runMode.equals(Config.runModeLocal)) {
+	        if(config.isRunModeLocal != null && config.isRunModeLocal) {
 	        	//In embedded Solr, the POST requests fail with an exception.
 		        //GET seems to work even for updates.
 		        //https://issues.apache.org/jira/browse/SOLR-12858
 		        response = solr.query(query, METHOD.GET);
-	        }
-	        else {
+	        } else {
 	        	response = solr.query(query, METHOD.POST);
 	        }
-	        
+
             toReturn = Optional.of(response);
         } catch (SolrServerException | IOException e) {
 	        LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,

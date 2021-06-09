@@ -44,7 +44,6 @@ import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.exceptions.JedisException;
 import redis.embedded.RedisServer;
 
 import com.cube.cache.RedisPubSub;
@@ -104,10 +103,10 @@ public class Config {
 
     public final PubSubMgr pubSubMgr;
 
-    public static final String runModeLocal = "local";
+    public static final String RUN_MODE_LOCAL_PROP = "local";
+	public static final String RUN_MODE_CLOUD_PROP = "cloud";
 
-	public static final String runModeCloud = "cloud";
-	public String runMode;
+	public Boolean isRunModeLocal = null;
 
 
 	public static class JedisConnResourceProvider {
@@ -168,6 +167,7 @@ public class Config {
 		System.setProperty("io.md.intent" , "noop");
 		commonConfig = CommonConfig.getInstance();
 		String solrurl = null;
+		String runModeString;
     int size = Integer.valueOf(fromEnvOrProperties("response_size", "1"));
     pathsToKeepLimit = Long.valueOf(fromEnvOrProperties("paths_to_keep_limit", "1000"));
     responseSize =  size*1000000;
@@ -175,7 +175,8 @@ public class Config {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
             // TODO: SET run_mode as "local" when moved to final repo
-            runMode = fromEnvOrProperties("run_mode" , Config.runModeCloud);
+	        runModeString = fromEnvOrProperties("run_mode" , Config.RUN_MODE_CLOUD_PROP);
+	        isRunModeLocal = runModeString.equals(Config.RUN_MODE_LOCAL_PROP);
             String solrBaseUrl = fromEnvOrProperties("solr_base_url" , "http://18.222.86.142:8983/solr/");
             String solrCore = fromEnvOrProperties("solr_core" , "cube");
             solrurl = Utils.appendUrlPath(solrBaseUrl , solrCore);
@@ -183,7 +184,7 @@ public class Config {
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
             eta.printStackTrace();
         }
-        if (runMode != null && !runMode.equals(Config.runModeLocal) && solrurl != null) {
+        if (isRunModeLocal != null && !isRunModeLocal && solrurl != null) {
             solr = new MDHttpSolrClient.Builder(solrurl).build();
             LOGGER.info(String.format("Using solrurl IP %s", solrurl));
 
