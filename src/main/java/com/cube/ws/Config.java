@@ -3,6 +3,8 @@
  */
 package com.cube.ws;
 
+import java.io.File;
+import java.nio.file.FileSystems;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -13,10 +15,12 @@ import java.util.regex.Pattern;
 
 import javax.inject.Singleton;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.impl.MDHttpSolrClient;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -40,7 +44,7 @@ import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.exceptions.JedisException;
+import redis.embedded.RedisServer;
 
 import com.cube.cache.RedisPubSub;
 import com.cube.cache.TemplateCache;
@@ -62,6 +66,8 @@ public class Config {
 
     private static final Logger LOGGER = LogManager.getLogger(Config.class);
     private static final String CONFFILE = "cube.conf";
+    private static RedisServer redisServer;
+
     public static int REDIS_DELETE_TTL; // redis key expiry timeout in seconds
 	public static int DISRUPTOR_QUEUE_SIZE;
 
@@ -97,7 +103,13 @@ public class Config {
 
     public final PubSubMgr pubSubMgr;
 
-    public static class JedisConnResourceProvider {
+    public static final String RUN_MODE_LOCAL_PROP = "local";
+	public static final String RUN_MODE_CLOUD_PROP = "cloud";
+
+	public Boolean isRunModeLocal = false;
+
+
+	public static class JedisConnResourceProvider {
     	public static final Duration PING_WAIT = Duration.ofMillis(1000);
 	    private final GenericObjectPoolConfig poolConfig;
 	    private final String redisHost;
@@ -155,33 +167,61 @@ public class Config {
 		System.setProperty("io.md.intent" , "noop");
 		commonConfig = CommonConfig.getInstance();
 		String solrurl = null;
+		String runModeString;
     int size = Integer.valueOf(fromEnvOrProperties("response_size", "1"));
     pathsToKeepLimit = Long.valueOf(fromEnvOrProperties("paths_to_keep_limit", "1000"));
     responseSize =  size*1000000;
         try {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
+            // TODO: SET run_mode as "local" when moved to final repo
+	        runModeString = fromEnvOrProperties("run_mode" , Config.RUN_MODE_CLOUD_PROP);
+	        isRunModeLocal = runModeString.equals(Config.RUN_MODE_LOCAL_PROP);
             String solrBaseUrl = fromEnvOrProperties("solr_base_url" , "http://18.222.86.142:8983/solr/");
             String solrCore = fromEnvOrProperties("solr_core" , "cube");
             solrurl = Utils.appendUrlPath(solrBaseUrl , solrCore);
         } catch(Exception eta){
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
             eta.printStackTrace();
-            LOGGER.info(String.format("Using default solrurl IP %s", solrurl));
         }
-        if (solrurl != null) {
-            solr =  new MDHttpSolrClient.Builder(solrurl).build();
-            ReqRespStoreSolr storeSolr = new ReqRespStoreSolr(solr , this);
-            rrstore = storeSolr;
-            templateCache = storeSolr.templateCache;
-            ProtoDescriptorCacheProvider.instantiateCache(rrstore);
-	        protoDescriptorCache = ProtoDescriptorCacheProvider.getInstance()
-		        .orElseThrow(() -> new Exception("Cannot instantiate ProtoDescriptorCache"));
+        if (!isRunModeLocal && solrurl != null) {
+            solr = new MDHttpSolrClient.Builder(solrurl).build();
+            LOGGER.info(String.format("Using solrurl IP %s", solrurl));
+
         } else {
-            final String msg = String.format("Solrurl missing in the config file %s", CONFFILE);
-            LOGGER.error(msg);
-            throw new Exception(msg);
+
+        	//Embedded Solr
+            String solrHome = fromEnvOrProperties("data_dir", "/var/lib/meshd/data") + "/solr";
+            File solrXml = new File(solrHome + "/"+"solr.xml");
+            //Check if the solr.xml exists. If yes do nothing
+	        //If no that means it it is the first time container start. Copy from datasrc directory
+	        if(!solrXml.exists()){
+	        	String solrDataSrc = fromEnvOrProperties("datasrc_dir", "/var/lib/meshd/datasrc/embedded_solr_config");
+		        File solrHomeDir = new File(solrHome);
+		        if(!solrHomeDir.exists()){
+			        solrHomeDir.mkdirs();
+		        }
+		        FileUtils.copyDirectory(new File(solrDataSrc) , solrHomeDir);
+		        LOGGER.info(String.format("Copying solr data from %s to %s" , solrDataSrc , solrHome ));
+	        }else{
+	        	LOGGER.info("SolrXml already exists at location "+solrXml.getAbsolutePath());
+	        }
+            solr = new EmbeddedSolrServer(FileSystems.getDefault().getPath(solrHome), "cube");
+            final String msg = String.format("Using embedded solr with home dir path %s", solrHome);
+            LOGGER.info(msg);
+
+            //Embedded Redis
+	        int redisPort = Integer.parseInt(CommonUtils.fromEnvOrSystemProperties("redis_port").orElse("6379"));
+	        redisServer = new RedisServer(redisPort);
+	        redisServer.start();
         }
+
+        ReqRespStoreSolr storeSolr = new ReqRespStoreSolr(solr, this);
+        rrstore = storeSolr;
+        templateCache = storeSolr.templateCache;
+        ProtoDescriptorCacheProvider.instantiateCache(rrstore);
+        protoDescriptorCache = ProtoDescriptorCacheProvider.getInstance()
+            .orElseThrow(() -> new Exception("Cannot instantiate ProtoDescriptorCache"));
 
         gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
             .registerTypeAdapter(Pattern.class, new GsonPatternSerializer())
