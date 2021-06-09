@@ -1,0 +1,697 @@
+{
+    "defaultComparison" : {
+        "json1": {
+            "hdr":  { "h1": "vineet@beehyv.com",      "h2": 10,           "h3": 5.456 },
+            "body": { "b1": "test123",   "b2": [ 1, 3, 3] }
+        },
+        "json2": {
+            "hdr":  { "h1": "vineet@beehyv.com",      "h2": 10,           "h3": 5.458 },
+            "body": { "b1": "test456",   "b2": [ 1, 2, 3] },
+            "b3":   { "a1": "a1v1",      "a2": 15 }
+        },
+        "rules": [],
+        "output" : {
+            "mt":"FuzzyMatch",
+            "matchmeta":"JsonDiff",
+            "setPaths" : [],
+            "diffs":[
+                {"op":"replace","path":"/hdr/h3","value":5.458,"fromValue":5.456,"resolution":"OK_Ignore"},
+                {"op":"replace","path":"/body/b2/1","value":2,"fromValue":3,"resolution":"OK_Ignore"},
+                {"op":"replace","path":"/body/b1","value":"test456","fromValue":"test123","resolution":"OK_Ignore"},
+                {"op":"add","path":"/b3","value":{"a1":"a1v1","a2":15},"resolution":"OK_Optional"}
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "strictEqualityComparisonNegative": {
+        "json1": {
+            "hdr":  { "h1": "vineet@beehyv.com",      "h2": 10,           "h3": 5.456 },
+            "body": { "b1": "test123",   "b2": [ 1, 3, 3] }
+        },
+        "json2": {
+            "hdr":  { "h1": "vineet@beehyv.com",      "h2": 10,           "h3": 5.458 },
+            "body": { "b1": "test456",   "b2": [ 1, 2, 3]  },
+            "b3":   { "a1": "a1v1",      "a2": 15 }
+        },
+        "rules": [
+            { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Equal", "customization": "" },
+            { "path": "/body/b2", "dataType": "RptArray",  "presenceType": "Required", "comparisonType": "Equal", "customization": "" }
+        ],
+        "output": {
+            "mt":           "NoMatch",
+            "matchmeta":    "JsonDiff",
+            "setPaths" : [],
+            "diffs": [
+                {"op":"replace","path":"/hdr/h3","value":5.458,"fromValue":5.456,"resolution":"ERR_ValMismatch"},
+                {"op":"replace","path":"/body/b2/1","value":2,"fromValue":3,"resolution":"ERR_ValMismatch"},
+                {"op":"replace","path":"/body/b1","value":"test456","fromValue":"test123","resolution":"ERR_ValMismatch"},
+                {"op":"add","path":"/b3","value":{"a1":"a1v1","a2":15},"resolution":"ERR_NewField"}
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "strictEqualityComparisonPositive": {
+        "json1": {
+            "hdr":  { "h1": "vineet@beehyv.com",      "h2": 10,           "h3": 5.456 },
+            "body": { "b1": "test123",   "b2": [ 1, 3, 3] }
+        },
+        "json2": {
+            "hdr":  { "h1": "vineet@beehyv.com",      "h2": 10,           "h3": 5.456 },
+            "body": { "b1": "test123",   "b2": [ 1, 3, 3] }
+        },
+        "rules": [
+            { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Equal", "customization": "" }
+        ],
+        "output": {
+            "mt":           "ExactMatch",
+            "matchmeta":    "JsonDiff",
+            "setPaths" : [],
+            "diffs": [],"lhs":null,"rhs":null
+        }
+    },
+
+    "equalOptionalComparison": {
+        "json1": {
+            "hdr":  { "h1": "vineet@beehyv.com",      "h2": 10,           "h3": 5.456 },
+            "body": { "b1": "test123",   "b2": [ 1, 3, 3] }
+        },
+        "json2": {
+            "hdr":  { "h1": "vineet@beehyv.com",      "h2": 10,           "h3": 5.458 },
+            "body": { "b1": "test456",   "b2": [ 1, 2, 3] },
+            "b3":   { "a1": "a1v1",      "a2": 15 }
+        },
+        "rules": [
+            { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional", "customization": "" },
+            { "path": "/body/b2", "dataType": "RptArray",  "presenceType": "Optional", "comparisonType": "Ignore", "customization": "" }
+        ],
+        "output": {
+            "mt":           "NoMatch",
+            "matchmeta":    "JsonDiff",
+            "setPaths" : [],
+            "diffs":[
+                {"op":"replace","path":"/hdr/h3","value":5.458,"fromValue":5.456,"resolution":"OK_OptionalMismatch"},
+                {"op":"replace","path":"/body/b2/1","value":2,"fromValue":3,"resolution":"OK_Ignore"},
+                {"op":"replace","path":"/body/b1","value":"test456","fromValue":"test123","resolution":"OK_OptionalMismatch"},
+                {"op":"add","path":"/b3","value":{"a1":"a1v1","a2":15},"resolution":"ERR_NewField"}
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "equalOptionalComparison2": {
+    "json1": {
+      "hdr":  { "h1": "vineet@beehyv.com",      "h2": 10,           "h3": 5.458 },
+      "body": { "b1": "test456",   "b2": [ 1, 2, 3] }
+    },
+    "json2": {
+      "hdr":  { "h1": "vineet@beehyv.com",      "h2": 10,           "h3": 5.458 },
+      "body": { "b1": "test456",   "b2": [ 1, 2, 3] },
+      "b3":   { "a1": "a1v1",      "a2": 15 }
+    },
+    "rules": [
+      { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional", "customization": "" }
+    ],
+    "output": {
+      "mt":           "NoMatch",
+      "matchmeta":    "JsonDiff",
+      "setPaths" : [],
+      "diffs":[
+        {"op": "add",       "path": "/b3",          "value": { "a1": "a1v1", "a2": 15},         "resolution":"ERR_NewField"   }
+      ],"lhs":null,"rhs":null
+    }
+  },
+
+    "customComparisonPositive": {
+        "json1": {
+            "email": "vineet@beehyv.com",
+            "round": 4.468,
+            "ceiling": 4.468,
+            "floor": 4.468
+        },
+        "json2": {
+            "email": "vineetks@yahoo.com",
+            "round": 4.469,
+            "ceiling": 4.469,
+            "floor": 4.469
+        },
+        "rules": [
+            { "path": "/email",     "dataType": "Str",    "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Regex" ,"customization": ".+\\@.+\\..+"},
+            { "path": "/round",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Round", "customization": "2"},
+            { "path": "/ceiling",   "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal",  "extractionMethod": "Ceil", "customization": "2"},
+            { "path": "/floor",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Floor", "customization": "2"}
+        ],
+        "output": {
+            "mt":           "FuzzyMatch",
+            "matchmeta":    "JsonDiff",
+            "setPaths" : [],
+            "diffs":[
+                { "op": "replace",  "path": "/ceiling", "value": 4.469,                 "fromValue": 4.468,                 "resolution": "OK_CustomMatch" },
+                { "op": "replace",  "path": "/round",   "value": 4.469,                 "fromValue": 4.468,                 "resolution": "OK_CustomMatch" },
+                { "op": "replace",  "path": "/floor",   "value": 4.469,                 "fromValue": 4.468,                 "resolution": "OK_CustomMatch" },
+                { "op": "replace",  "path": "/email",   "value": "vineetks@yahoo.com",  "fromValue": "vineet@beehyv.com",   "resolution": "OK_CustomMatch" }
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "customComparisonNegative": {
+        "json1": {
+            "email": "vineet@beehyv.com",
+            "round": 4.468,
+            "ceiling": 4.468,
+            "floor": 4.468
+        },
+        "json2": {
+            "email": "www.vineetks.in",
+            "round": 4.464,
+            "ceiling": 4.471,
+            "floor": 4.459
+        },
+        "rules": [
+            { "path": "/email",     "dataType": "Str",    "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Regex",  "customization": ".+\\@.+\\..+"},
+            { "path": "/round",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Round", "customization": "2"},
+            { "path": "/ceiling",   "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal",  "extractionMethod": "Ceil", "customization": "2"},
+            { "path": "/floor",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Floor", "customization": "2"}
+        ],
+        "output": {
+            "mt":           "NoMatch",
+            "matchmeta":    "JsonDiff",
+            "setPaths" : [],
+            "diffs":[
+                { "op": "replace",  "path": "/ceiling", "value": 4.471,                 "fromValue": 4.468,                 "resolution": "ERR_ValMismatch" },
+                { "op": "replace",  "path": "/round",   "value": 4.464,                 "fromValue": 4.468,                 "resolution": "ERR_ValMismatch" },
+                { "op": "replace",  "path": "/floor",   "value": 4.459,                 "fromValue": 4.468,                 "resolution": "ERR_ValMismatch" },
+                { "op": "replace",  "path": "/email",   "value": "www.vineetks.in",     "fromValue": "vineet@beehyv.com",   "resolution": "ERR_ValFormatMismatch" }
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "missingFieldDefault" : {
+        "json1": {
+            "hdr":  { "h1": "h1v1",      "h2": 10,           "h3": 5.456 },
+            "body": { "b1": "test123",   "b2": [ 1, 3, 3] }
+        },
+        "json2": {
+            "hdr":  { "h1": "h1v1",      "h2": 10,           "h3": 5.456 },
+            "body": { "b1": "test123" },
+            "b3":   { "a1": "a1v1",      "a2": 15 }
+        },
+        "rules": [],
+        "output" : {
+            "mt":           "FuzzyMatch",
+            "matchmeta":    "JsonDiff",
+            "setPaths" : [],
+            "diffs": [
+                {"op":"remove","path":"/body/b2","value":{"0":1,"1":3,"2":3},"resolution":"OK_Optional"},
+                {"op":"add","path":"/b3","value":{"a1":"a1v1","a2":15},"resolution":"OK_Optional"}
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "missingFieldOptional": {
+        "json1": {
+            "hdr":  { "h1": "h1v1",      "h2": 10,           "h3": 5.456 },
+            "body": { "b1": "test123",   "b2": [ 1, 3, 3] }
+        },
+        "json2": {
+            "hdr":  { "h1": "h1v1",      "h2": 10,           "h3": 5.456 },
+            "body": { "b1": "test123" }
+        },
+        "rules": [
+            { "path": "/body/b2",   "dataType": "RptArray", "presenceType": "Optional", "comparisonType": "Equal", "customization": "" }
+        ],
+        "output": {
+            "mt":           "FuzzyMatch",
+            "matchmeta":    "JsonDiff",
+            "setPaths" : [],
+            "diffs":[
+                {"op":"remove","path":"/body/b2","value":{"0":1,"1":3,"2":3},"resolution":"OK_Optional"}
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "missingFieldRequired": {
+        "json1": {
+            "hdr":  { "h1": "h1v1",      "h2": 10,           "h3": 5.456 },
+            "body": { "b1": "test123",   "b2": [ 1, 3, 3] }
+        },
+        "json2": {
+            "hdr":  { "h1": "h1v1",      "h2": 10,           "h3": 5.456 },
+            "body": { "b1": "test123" }
+        },
+        "rules": [
+            { "path": "/body/b2",   "dataType": "RptArray", "presenceType": "Required", "comparisonType": "Equal", "customization": "" }
+        ],
+        "output": {
+            "mt":           "NoMatch",
+            "matchmeta":    "JsonDiff",
+            "setPaths" : [],
+            "diffs": [
+                { "op": "remove",   "path": "/body/b2",  "value": {"0":1,"1":3,"2":3},   "resolution": "ERR_Required" }
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "missingLHS": {
+        "json1": {},
+        "json2": {
+            "int1": 1,
+            "int2": 1,
+            "int3": 1,
+            "int4": 1,
+            "int5": 1,
+            "str1": "Monica",
+            "str2": "Monica",
+            "str3": "Monica",
+            "str4": "Monica",
+            "str5": "Monica",
+            "str6": "Monica"
+        },
+        "rules": [
+            { "path": "/int1",  "dataType": "Str", "presenceType": "Required", "comparisonType": "Equal",           "customization": "" },
+            { "path": "/int2",  "dataType": "Int", "presenceType": "Required", "comparisonType": "Equal",           "customization": "" },
+            { "path": "/int3",  "dataType": "Int", "presenceType": "Optional", "comparisonType": "Equal",           "customization": "" },
+            { "path": "/int4",  "dataType": "Int", "presenceType": "Optional", "comparisonType": "Ignore",          "customization": "" },
+            { "path": "/int5",  "dataType": "Int", "presenceType": "Required", "comparisonType": "Equal",           "customization": "" },
+            { "path": "/str1",  "dataType": "Str", "presenceType": "Required", "comparisonType": "EqualOptional",   "customization": "" },
+            { "path": "/str2",  "dataType": "Str", "presenceType": "Required", "comparisonType": "Ignore",          "customization": "" },
+            { "path": "/str3",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "EqualOptional",         "customization": "" },
+            { "path": "/str4",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "Equal",           "customization": "" },
+            { "path": "/str5",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "EqualOptional",   "customization": "" },
+            { "path": "/str6",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "Ignore",          "customization": "" }
+        ],
+        "output": {
+            "mt":           "NoMatch",
+            "matchmeta":    "JsonDiff",
+            "setPaths" : [],
+            "diffs": [
+                { "op": "noop", "path": "/int1", "value": 1,         "resolution": "ERR_ValTypeMismatch" },
+                { "op": "add", "path": "/int1", "value": 1,         "resolution": "ERR_RequiredGolden" },
+                { "op": "add", "path": "/int2", "value": 1,         "resolution": "ERR_RequiredGolden"  },
+                { "op": "add", "path": "/int3", "value": 1,         "resolution": "OK_Optional"  },
+                { "op": "add", "path": "/int4", "value": 1,         "resolution": "OK_Optional"  },
+                { "op": "add", "path": "/int5", "value": 1,         "resolution": "ERR_RequiredGolden"  },
+                { "op": "add", "path": "/str1", "value": "Monica",  "resolution": "ERR_RequiredGolden"  },
+                { "op": "add", "path": "/str2", "value": "Monica",  "resolution": "ERR_RequiredGolden"           },
+                { "op": "add", "path": "/str3", "value": "Monica",  "resolution": "OK_Optional"                  },
+                { "op": "add", "path": "/str4", "value": "Monica",  "resolution": "OK_Optional"  },
+                { "op": "add", "path": "/str5", "value": "Monica",  "resolution": "OK_Optional"  },
+                { "op": "add", "path": "/str6", "value": "Monica",  "resolution": "OK_Optional"           }
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "validationNegative" : {
+        "json1": {
+            "string":   "5c80e878323659a64d123db4",
+            "int":      35,
+            "float":    41.280324,
+            "obj":      { "name": "Steele Dominguez" },
+            "rptArr":   [ "dolore", "irure" ],
+            "nrptArr":  [
+                { "id": 0 },
+                { "name": "Steele Dominguez"}
+            ]
+        },
+        "json2": {
+            "string":   123,
+            "int":      "35",
+            "float":    "not a float",
+            "obj":      "not an object",
+            "rptArr":   123,
+            "nrptArr":  [ "string", 123 ]
+        },
+        "rules": [
+            { "path": "",           "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/string",    "dataType": "Str",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/int",       "dataType": "Int",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/float",     "dataType": "Float",        "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/obj",       "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/rptArr",    "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/nrptArr",   "dataType": "NrptArray",    "presenceType": "Required", "comparisonType": "Ignore", "customization": "" }
+        ],
+        "output" : {
+            "mt":           "NoMatch",
+            "matchmeta":    "JsonDiff",
+            "setPaths" : [],
+            "diffs": [
+                { "op": "replace",  "path": "/string",      "value": 123,               "fromValue": "5c80e878323659a64d123db4",        "resolution":"ERR_ValTypeMismatch" },
+                { "op": "replace",  "path": "/int",         "value": "35",              "fromValue": 35,                                "resolution":"ERR_ValTypeMismatch" },
+                { "op": "replace",  "path": "/float",       "value": "not a float",     "fromValue": 41.280324,                         "resolution":"ERR_ValTypeMismatch" },
+                { "op": "replace",  "path": "/obj",         "value": "not an object",   "fromValue": { "name": "Steele Dominguez" },    "resolution":"ERR_ValTypeMismatch" },
+                { "op": "replace",  "path": "/rptArr",      "value": 123,               "fromValue": {"0" : "dolore","1" : "irure" },             "resolution":"ERR_ValTypeMismatch" },
+                { "op": "replace",  "path": "/nrptArr/0",   "value": "string",          "fromValue": { "id": 0 },                       "resolution":"OK_Ignore" },
+                { "op": "replace",  "path": "/nrptArr/1",   "value": 123,               "fromValue": { "name": "Steele Dominguez" },    "resolution":"OK_Ignore" }
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "validationPositive" : {
+        "json1": {
+            "string":   "5c80e878323659a64d123db4",
+            "int":      35,
+            "float":    41.280324,
+            "floatInt":    41,
+            "obj":      { "name": "Steele Dominguez" },
+            "rptArr":   [ "dolore", "irure" ],
+            "nrptArr":  [
+                { "id": 0 },
+                { "name": "Steele Dominguez"}
+            ]
+        },
+        "json2": {
+            "string":   "5c80e878323659a64d123db4",
+            "int":      35,
+            "float":    41.280324,
+            "floatInt":    41,
+            "obj":      { "name": "Steele Dominguez" },
+            "rptArr":   [ "dolore", "irure" ],
+            "nrptArr":  [
+                { "id": 0 },
+                { "name": "Steele Dominguez"}
+            ]
+        },
+        "rules": [
+            { "path": "",           "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/string",    "dataType": "Str",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/int",       "dataType": "Int",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/float",     "dataType": "Float",        "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/obj",       "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/rptArr",    "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/nrptArr",   "dataType": "NrptArray",    "presenceType": "Required", "comparisonType": "Ignore", "customization": "" }
+        ],
+        "output": {
+            "mt":           "ExactMatch",
+            "matchmeta":    "JsonDiff",
+            "setPaths" : [],
+            "diffs":[],"lhs":null,"rhs":null
+        }
+    },
+
+    "inheritance" : {
+        "json1": {
+            "string":   "cube",
+            "int":      35,
+            "float":    41.1,
+            "obj-1":      {
+                "string":   "cube",
+                "int":      35,
+                "float":    41.1,
+                "obj-2":      {
+                    "string":   "cube",
+                    "int":      35,
+                    "float":    41.1
+                }
+            }
+        },
+        "json2": {
+            "string":   "cube-root",
+            "int":      36,
+            "float":    41.2,
+            "obj-1":      {
+                "string":   "cubic",
+                "int":      37,
+                "float":    41.3,
+                "obj-2":      {
+                    "string":   "ice cube",
+                    "int":      34,
+                    "float":    41.4
+                }
+            }
+        },
+        "rules": [
+            { "path": "",               "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Equal",          "customization": "" },
+            { "path": "/obj-1",         "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/obj-1/obj-2",   "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Ignore",         "customization": "" }
+        ],
+        "output": {
+            "mt":           "NoMatch",
+            "matchmeta":    "JsonDiff",
+            "setPaths" : [],
+            "diffs": [
+                { "op": "replace",  "path": "/string",              "value": "cube-root",   "fromValue": "cube",    "resolution": "ERR_ValMismatch"     },
+                { "op": "replace",  "path": "/int",                 "value": 36,            "fromValue": 35,        "resolution": "ERR_ValMismatch"     },
+                { "op": "replace",  "path": "/float",               "value": 41.2,          "fromValue": 41.1,      "resolution": "ERR_ValMismatch"     },
+                { "op": "replace",  "path": "/obj-1/string",        "value": "cubic",       "fromValue": "cube",    "resolution": "OK_OptionalMismatch" },
+                { "op": "replace",  "path": "/obj-1/int",           "value": 37,            "fromValue": 35,        "resolution": "OK_OptionalMismatch" },
+                { "op": "replace",  "path": "/obj-1/float",         "value": 41.3,          "fromValue": 41.1,      "resolution": "OK_OptionalMismatch" },
+                { "op": "replace",  "path": "/obj-1/obj-2/string",  "value": "ice cube",    "fromValue": "cube",    "resolution": "OK_Ignore"           },
+                { "op": "replace",  "path": "/obj-1/obj-2/int",     "value": 34,            "fromValue": 35,        "resolution": "OK_Ignore"           },
+                { "op": "replace",  "path": "/obj-1/obj-2/float",   "value": 41.4,          "fromValue": 41.1,      "resolution": "OK_Ignore"           }
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "repeatingArray" : {
+        "json1": {
+            "rptArr0":   [ 4, 5, 6 ],
+            "rptArr1":   [ 1, 2, 3 ],
+            "rptArr2":   [ "Ross", "Chandler", "Joey"],
+            "rptArr3":   [ 2.5, 6.5, 5.4]
+        },
+        "json2": {
+            "rptArr0":   [ 4, 5, 6 ],
+            "rptArr1":   [ 1, 2, 4 ],
+            "rptArr2":   [ "Ross", "Chandler", 5],
+            "rptArr3":   [ 2.5, "Monica", 5.4]
+        },
+        "rules": [
+            { "path": "/rptArr0",   "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" },
+            { "path": "/rptArr1",   "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" },
+            { "path": "/rptArr2",   "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" },
+            { "path": "/rptArr3",   "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" },
+            { "path": "/rptArr0/*", "dataType": "Int",          "presenceType": "Required", "comparisonType": "Equal",   "customization": "" },
+            { "path": "/rptArr1/*", "dataType": "Int",          "presenceType": "Required", "comparisonType": "Equal",   "customization": "" },
+            { "path": "/rptArr2/*", "dataType": "Str",          "presenceType": "Required", "comparisonType": "Equal",   "customization": "" },
+            { "path": "/rptArr3/*", "dataType": "Float",        "presenceType": "Required", "comparisonType": "Equal",   "customization": "" }
+        ],
+        "output": {
+            "mt":           "NoMatch",
+            "matchmeta":    "JsonDiff",
+            "setPaths" : [],
+            "diffs": [
+                { "op": "replace",  "path": "/rptArr2/2",   "value": 5,         "fromValue":"Joey", "resolution": "ERR_ValTypeMismatch" },
+                { "op": "replace",  "path": "/rptArr1/2",   "value": 4,         "fromValue":3,      "resolution": "ERR_ValMismatch"     },
+                { "op": "replace",  "path": "/rptArr3/1",   "value": "Monica",  "fromValue":6.5,    "resolution": "ERR_ValTypeMismatch" }
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "arrayDiff" : {
+        "json1": {
+            "display_actors": [
+                "BERRY, KARL",
+                "WILSON, WILL",
+                "ZELLWEGER, MINNIE"
+            ]
+        },
+
+        "json2": {
+            "display_actors": [
+                "ZELLWEGER, MINNIE",
+                "WILSON, WILL",
+                "BERRY, KARL"
+            ]
+        },
+
+        "rules": [
+
+        ],
+        "output":
+        {
+            "mt":"FuzzyMatch",
+            "matchmeta":"JsonDiff",
+            "setPaths" : [],
+            "diffs":[
+                {"op":"replace","path":"/display_actors/0","value":"ZELLWEGER, MINNIE","fromValue":"BERRY, KARL","resolution":"OK_Ignore"},
+                {"op":"replace","path":"/display_actors/2","value":"BERRY, KARL","fromValue":"ZELLWEGER, MINNIE","resolution":"OK_Ignore"}
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "unorderedArrayDiff" : {
+        "json1" : {
+            "unordered" : [{"a" : "1" , "b" :  "2" , "c" :  "3"}
+            , {"a" : "4" , "b" :  "5" , "c" :  "6"} , {"a" : "7" , "b" :  "8" , "c" :  "9"}]
+        },
+
+        "json2" : {
+            "unordered" : [{"a" : "11" , "b" :  "8" , "c" :  "9"}
+            , {"a" : "1" , "b" :  "2" , "c" :  "4"} , {"a" : "4" , "b" :  "5" , "c" :  "6"}]
+        },
+
+        "rules" : [
+            { "path": "/unordered",   "dataType": "Set",     "presenceType": "Required",
+                "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath" :  "/a" }
+        ],
+
+        "output" :
+        {
+            "mt":"NoMatch",
+            "matchmeta":"JsonDiff",
+            "setPaths": ["/unordered"],
+            "diffs": [
+                {"op":"replace","path":"/unordered/\"1\"/c","value": "4","fromValue":"3","resolution":"ERR_ValMismatch"},
+                {"op":"remove","path":"/unordered/\"7\"","value":{"a":"7","b":"8","c":"9"},"resolution":"ERR_Required"},
+                {"op":"add","path":"/unordered/\"11\"","value":{"a":"11","b":"8","c":"9"},"resolution":"ERR_NewField"}
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "unorderedSetsNested" : {"json1": {"body": {"unordered": [{"a": "1", "b": "2", "c": [{"c1": "123", "c2": "456"}, {"c1": "135", "c2": "246"}]},
+        {"a": "4", "b": "5", "c": [{"c1": "123", "c2": "456"}, {"c1": "135", "c2": "246"}]},
+        {"a": "7", "b": "8", "c": [{"c1": "123", "c2": "456"}, {"c1": "135", "c2": "246"}]}]}},
+        "json2": {"body": {"unordered": [{"a": "11", "b": "8", "c": [{"c1": "135", "c2": "246"}, {"c1": "123", "c2": "456"}]},
+            {"a": "1", "b": "2", "c": [{"c1": "135", "c2": "246"}, {"c1": "123", "c2": "456"}]},
+            {"a": "4", "b": "5", "c": [{"c1": "135", "c2": "246"}, {"c1": "123", "c2": "456"}]}]}},
+
+        "rules" : [
+            { "path": "/body/unordered",   "dataType": "Set",     "presenceType": "Required",
+                "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath" :  "/a" },
+            { "path": "/body/unordered/0/c",   "dataType": "Set",     "presenceType": "RequiredIfInGolden",
+                "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath" :  null }
+        ],
+
+        "output" :
+        {
+            "mt":"NoMatch",
+            "matchmeta":"JsonDiff",
+            "setPaths" : ["/body/unordered/*/c", "/body/unordered"],
+            "diffs": [
+                {"op": "remove", "path": "/body/unordered/\"7\"", "value": {"a": "7", "b": "8", "c": {"{\"c1\":\"123\",\"c2\":\"456\"}": {"c1": "123", "c2": "456"}, "{\"c1\":\"135\",\"c2\":\"246\"}": {"c1": "135", "c2": "246"}}}, "resolution": "ERR_Required"},
+                {"op": "add", "path": "/body/unordered/\"11\"", "value": {"a": "11", "b": "8", "c": {"{\"c1\":\"135\",\"c2\":\"246\"}": {"c1": "135", "c2": "246"}, "{\"c1\":\"123\",\"c2\":\"456\"}": {"c1": "123", "c2": "456"}}}, "resolution": "ERR_NewField"}
+            ],"lhs":null,"rhs":null
+        }
+    },
+    "unorderedSetPrimitiveValues": {"json1": {"body": ["BERRY, KARL", "WILSON, WILL", "ZELLWEGER, MINNIE"]},
+        "json2": {"body": ["ZELLWEGER, MINNIE", "WILSON, BILL", "BERRY, KARL"]},
+
+        "rules": [
+            { "path": "/body",   "dataType": "Set",     "presenceType": "Required",
+                "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath" :  null }
+        ],
+        "output":
+        {
+            "mt":"NoMatch",
+            "matchmeta":"JsonDiff",
+            "setPaths" : ["/body"],
+            "diffs":[
+                {"op": "remove", "path": "/body/\"WILSON, WILL\"", "value": "WILSON, WILL", "resolution": "ERR_Required"},
+                {"op": "add", "path": "/body/\"WILSON, BILL\"", "value": "WILSON, BILL", "resolution": "ERR_NewField"}
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "unorderedMixedArrayObjectDiff" : {
+        "json1" : {
+            "unordered" : [{"a" : "1" , "b" :  ["b1" , "b2" , "b3"] , "c" :  "3"}
+            , {"a" : "4" , "b" :  ["b7" , "b8" , "b9"] , "c" :  "6"} , {"a" : "7" , "b" : ["b1" , "b2" , "b3"] , "c" :  "9"}]
+        },
+
+        "json2" : {
+            "unordered" : [{"a" : "11" , "b" :  ["b7" , "b8" , "b9"], "c" :  "9"}
+            , {"a" : "1" , "b" :  ["b2" , "b1" , "b3"] , "c" :  "4"} , {"a" : "4" , "b" : ["b4" , "b5" , "b7"] , "c" :  "6"}]
+        },
+
+        "rules" : [
+            { "path": "/unordered",   "dataType": "Set",     "presenceType": "Required",
+                "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath" :  "/a" } ,
+            { "path": "/unordered/*/b",   "dataType": "Set",     "presenceType": "Optional",
+                "comparisonType": "Equal",  "customization": ""}
+        ],
+
+        "output" :
+        {
+            "mt":"NoMatch",
+            "matchmeta":"JsonDiff",
+            "setPaths" : ["/unordered", "/unordered/*/b"],
+            "diffs": [
+                {"op": "replace", "path": "/unordered/\"1\"/c", "value": "4", "fromValue": "3", "resolution": "ERR_ValMismatch"},
+                {"op": "remove", "path": "/unordered/\"4\"/b/\"b8\"", "value": "b8", "resolution": "OK_Optional"},
+                {"op": "remove", "path": "/unordered/\"4\"/b/\"b9\"", "value": "b9", "resolution": "OK_Optional"},
+                {"op": "add", "path": "/unordered/\"4\"/b/\"b4\"", "value": "b4", "resolution": "OK_Optional"},
+                {"op": "add", "path": "/unordered/\"4\"/b/\"b5\"", "value": "b5", "resolution": "OK_Optional"},
+                {"op": "remove", "path": "/unordered/\"7\"", "value": {"a": "7", "b": {"\"b1\"": "b1", "\"b2\"": "b2", "\"b3\"": "b3"}, "c": "9"}, "resolution": "ERR_Required"},
+                {"op": "add", "path": "/unordered/\"11\"", "value": {"a": "11", "b": {"\"b7\"": "b7", "\"b8\"": "b8", "\"b9\"": "b9"}, "c": "9"}, "resolution": "ERR_NewField"}
+            ],
+            "lhs":null,
+            "rhs":null}
+    },
+
+
+    "unorderedArrayDiffElemMissing" : {
+        "json1" : {
+            "unordered" : [{"a" : "1" , "b" :  "2" , "c" :  "3"}
+            , {"a" : "4" , "b" :  "5" , "c" :  "6"} , {"a" : "7" , "b" :  "8" , "c" :  "9"}]
+        },
+
+        "json2" : {
+            "unordered1" :{"a" : "11" , "b" :  "8" , "c" :  "9"}
+        },
+
+        "rules" : [
+            { "path": "/unordered",   "dataType": "Set",     "presenceType": "Required",
+                "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath" :  "/a" }
+        ],
+
+        "output" :
+        {
+            "mt":"NoMatch",
+            "matchmeta":"JsonDiff",
+            "setPaths": ["/unordered"],
+            "diffs": [
+                {"op":"remove","path":"/unordered","value":{"\"1\"":{"a":"1","b":"2","c":"3"},
+                    "\"4\"":{"a":"4","b":"5","c":"6"},"\"7\"":{"a":"7","b":"8","c":"9"}},"resolution":"ERR_Required"},
+                {"op":"add","path":"/unordered1","value":{"a":"11","b":"8","c":"9"},"resolution":"OK_Optional"}
+            ],"lhs":null,"rhs":null
+        }
+    },
+
+    "unorderedArrayJumbledOrder" : {
+        "json1" : {
+            "unordered" : [ {"0" : "a" , "1" : "b"} ,  {"0" : "c" , "1" : "d"} ]
+        },
+
+        "json2" : {
+            "unordered" : [  {"1" : "d" , "0" : "c"} ,  {"1" : "b" , "0" : "a"} ]
+        },
+
+        "rules" : [
+            {"path" :  "/unordered" , "dataType" :  "Set" , "presenceType" :  "Required" ,
+                "comparisonType" : "Equal" , "customization" : "" }
+        ],
+
+        "output" : {
+            "mt" : "ExactMatch",
+            "matchmeta" : "JsonDiff",
+            "setPaths" : ["/unordered"],
+            "diffs" : [] ,
+            "lhs":null,
+            "rhs":null
+        }
+    },
+
+    "unorderedArrayJumbledOrder1" : {
+        "json1" : {
+            "unordered" : [ ["a" , "b"] ,  ["c" , "d"] ]
+        },
+
+        "json2" : {
+            "unordered" :  [ ["d" , "c"] ,  ["b" , "a"] ]
+        },
+
+        "rules" : [
+            {"path" :  "/unordered" , "dataType" :  "Set" , "presenceType" :  "Required" ,
+                "comparisonType" : "Equal" , "customization" : "" },
+            {"path" :  "/unordered/*" , "dataType" :  "Set" , "presenceType" :  "Required" ,
+                "comparisonType" : "Equal" , "customization" : "" }
+        ],
+
+        "output" : {
+            "mt" : "ExactMatch",
+            "matchmeta" : "JsonDiff",
+            "setPaths" : ["/unordered", "/unordered/*"],
+            "diffs" : [] ,
+            "lhs":null,
+            "rhs":null
+        }
+    }
+}
