@@ -169,7 +169,8 @@ public class Config {
         try {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
-            runMode = fromEnvOrProperties("run_mode" , "local");
+            // TODO: SET run_mode as "local" when moved to final repo
+            runMode = fromEnvOrProperties("run_mode" , "cloud");
             String solrBaseUrl = fromEnvOrProperties("solr_base_url" , "http://18.222.86.142:8983/solr/");
             String solrCore = fromEnvOrProperties("solr_core" , "cube");
             solrurl = Utils.appendUrlPath(solrBaseUrl , solrCore);

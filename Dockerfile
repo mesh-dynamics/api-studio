@@ -78,6 +78,7 @@ RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.13
     && unzip -o $PROTOC_ZIP -d /usr/local 'include/*' \
     && rm -f $PROTOC_ZIP
 
-ENV run_mode=local
+# TODO: SET run_mode as "local" when moved to final repo
+#ENV run_mode=local
 ENV data_dir=/var/lib/meshd/data/
 
