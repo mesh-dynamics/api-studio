@@ -200,7 +200,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
         Optional<QueryResponse> toReturn = Optional.empty();
         try {
 
-	        if(config.isRunModeLocal != null && config.isRunModeLocal) {
+	        if(config.isRunModeLocal) {
 	        	//In embedded Solr, the POST requests fail with an exception.
 		        //GET seems to work even for updates.
 		        //https://issues.apache.org/jira/browse/SOLR-12858

@@ -106,7 +106,7 @@ public class Config {
     public static final String RUN_MODE_LOCAL_PROP = "local";
 	public static final String RUN_MODE_CLOUD_PROP = "cloud";
 
-	public Boolean isRunModeLocal = null;
+	public Boolean isRunModeLocal = false;
 
 
 	public static class JedisConnResourceProvider {
@@ -184,7 +184,7 @@ public class Config {
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
             eta.printStackTrace();
         }
-        if (isRunModeLocal != null && !isRunModeLocal && solrurl != null) {
+        if (!isRunModeLocal && solrurl != null) {
             solr = new MDHttpSolrClient.Builder(solrurl).build();
             LOGGER.info(String.format("Using solrurl IP %s", solrurl));
 
