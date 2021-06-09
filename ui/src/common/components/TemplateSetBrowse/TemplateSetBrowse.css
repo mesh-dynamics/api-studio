@@ -1,0 +1,20 @@
+.tsBrowse-modal-body-table-container {
+  height: 300px;
+  overflow-y: auto;
+}
+
+.selected-row td{
+  background: #CCC6B0 !important;
+}
+
+.tsBrowse-spinner-root {
+  height: 300px;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+}
+  
+.tsBrowse-spinner-inner {
+  display: flex; 
+  align-items: center;
+}

@@ -1,0 +1,50 @@
+[
+    {
+        "clusterName": "Instance 1",
+        "status": "Idle",
+        "owner": null,
+        "startedAt": null,
+        "replayStatus": null,
+        "replayAnalysisStatus": null,
+        "recordStatus": null
+    },
+    {
+        "clusterName": "Instance 2",
+        "status": "Recording",
+        "owner": "demo@cubecorp.io",
+        "startedAt": 1590438284,
+        "replayStatus": null,
+        "replayAnalysisStatus": null,
+        "recordStatus": {
+            "id": "some_recording_id"
+        }
+    },
+    {
+        "clusterName": "Instance 3",
+        "status": "Replay",
+        "owner": "demo@cubecorp.io",
+        "startedAt": 1590438284,
+        "replayStatus": {
+            "replayId": "abcd-def-ghi-jkl",
+            "status": "Completed"
+        },
+        "replayAnalysisStatus": {
+            "id": "xyz-abc-def",
+            "replayId": "abcd-def-ghi-jkl",
+            "status": "Running"
+        },
+        "recordStatus": null
+    },
+    {
+        "clusterName": "Instance 4",
+        "status": "Replay",
+        "owner": "samuel@meshdynamics.io",
+        "startedAt": 1590438284,
+        "replayStatus": {
+            "replayId": "abcd-def-ghi",
+            "status": "Running"
+        },
+        "replayAnalysisStatus": null,
+        "recordStatus": null
+    }
+]
