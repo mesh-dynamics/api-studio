@@ -1,0 +1,15 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.cube.sampleapps</groupId>
+    <artifactId>root</artifactId>
+    <version>V1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>MIRest</module>
+        <module>MIClient</module>
+        <module>Utils</module>
+        <module>RestWrapJDBC</module>
+    </modules>
+
+</project>
