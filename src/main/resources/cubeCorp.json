@@ -1,0 +1,541 @@
+{
+  "customers": [
+    {
+      "name": "CubeCorp",
+      "emailId": "demo@cubecorp.io",
+      "domainUrls": ["cubecorp.io", "meshdynamics.io"],
+      "jiraCredentials": {
+        "userName": "siddhant.mutha@meshdynamics.io",
+        "apiKey": "fAODfwU3eTmrEDSdz7gM26C4",
+        "jiraBaseURL": "https://cubeio.atlassian.net"
+      },
+      "apps": [
+        {
+          "name": "MovieInfo",
+          "serviceGroups": [
+            {
+              "name": "GLOBAL",
+              "services": [
+                {
+                  "name": "Reviews",
+                  "prefixes": ["reviews"],
+                  "paths": [
+                    "/health",
+                    "/reviews/*"
+                  ]
+                },
+                {
+                  "name": "Ratings",
+                  "prefixes": ["ratings"],
+                  "paths": [
+                    "/health",
+                    "/ratings/*"
+                  ]
+                },
+                {
+                  "name": "Details",
+                  "prefixes": ["details"],
+                  "paths": [
+                    "/health",
+                    "/details/*"
+                  ]
+                },
+                {
+                  "name": "RestWrapJDBC",
+                  "prefixes": ["restsql"],
+                  "paths": [
+                    "/health",
+                    "/initialize",
+                    "/query",
+                    "/update"
+                  ]
+                },
+                {
+                  "name": "MovieInfo",
+                  "prefixes": ["minfo"],
+                  "paths": [
+                    "minfo/rentmovie",
+                    "minfo/returnmovie",
+                    "minfo/listmovies",
+                    "minfo/liststores",
+                    "minfo/login",
+                    "minfo/genre-group",
+                    "minfo/genre-groups",
+                    "minfo/delete-genre-group/*",
+                    "minfo/getMovieList",
+                    "minfo/categories",
+                    "minfo/deleteRental"
+                  ]
+                },
+                {
+                  "name": "Postgres",
+                  "prefixes": [],
+                  "paths": null
+                },
+                {
+                  "name": "Mysql",
+                  "prefixes": [],
+                  "paths": null
+                },
+                {
+                  "name": "MongoDB",
+                  "prefixes": [],
+                  "paths": null
+                },
+                {
+                  "name": "Google API",
+                  "prefixes": [],
+                  "paths": null
+                }
+              ]
+            }
+          ],
+          "testConfigs": [
+            {
+              "testConfigName": "MovieInfo-List",
+              "services": [
+                "MovieInfo"
+              ],
+              "paths": [
+                "minfo/rentmovie",
+                "minfo/returnmovie",
+                "minfo/listmovies",
+                "minfo/liststores",
+                "minfo/login",
+                "minfo/genre-group",
+                "minfo/genre-groups",
+                "minfo/delete-genre-group/*",
+                "minfo/getMovieList",
+                "minfo/categories",
+                "minfo/deleteRental"
+              ],
+              "test_virtualized_services": [
+                "RestWrapJDBC",
+                "Reviews",
+                "Ratings"
+              ],
+              "test_intermediate_services": []
+            }
+          ],
+          "serviceGraphs": [
+            {
+              "from": "MovieInfo",
+              "to": "RestWrapJDBC"
+            },
+            {
+              "from": "RestWrapJDBC",
+              "to": "Postgres"
+            },
+            {
+              "from": "MovieInfo",
+              "to": "Reviews"
+            },
+            {
+              "from": "MovieInfo",
+              "to": "Ratings"
+            },
+            {
+              "from": "MovieInfo",
+              "to": "Details"
+            },
+            {
+              "from": "Details",
+              "to": "Google API"
+            },
+            {
+              "from": "Ratings",
+              "to": "Mysql"
+            },
+            {
+              "from": "Ratings",
+              "to": "MongoDB"
+            }
+          ]
+        },
+        {
+          "name": "Cube",
+          "serviceGroups": [
+            {
+              "name": "GLOBAL",
+              "services": [
+                {
+                  "name": "Mock",
+                  "prefixes": ["ms"],
+                  "paths": [
+                    "/ms/health",
+                    "/ms/*"
+                  ]
+                },
+                {
+                  "name": "Record",
+                  "prefixes": ["cs"],
+                  "paths": [
+                    "/cs/health",
+                    "/cs/setdefault/*",
+                    "/cs/req",
+                    "/cs/res",
+                    "/cs/rr/*",
+                    "/cs/fr",
+                    "/cs/start/*",
+                    "/cs/status/*",
+                    "/cs/stop/*",
+                    "/cs/recordings",
+                    "/cs/currentcollection",
+                    "/cs/requests"
+                  ]
+                },
+                {
+                  "name": "Replay",
+                  "prefixes": ["rs"],
+                  "paths": [
+                    "/rs/transforms/*",
+                    "/rs/health",
+                    "/rs/init/*",
+                    "/rs/status/*",
+                    "/rs/forcecomplete/*",
+                    "/rs/forcestart/*",
+                    "/rs/start/*"
+                  ]
+                },
+                {
+                  "name": "Analyze",
+                  "prefixes": ["as"],
+                  "paths": [
+                    "/as/registerTemplateApp/*",
+                    "/as/registerTemplate/*",
+                    "/as/health",
+                    "/as/aggrresult/*",
+                    "/as/replayRes/*",
+                    "/as/analysisRes/*",
+                    "/as/timelineres/*",
+                    "/as/analysisResByPath/*",
+                    "/as/analysisResByReq/*",
+                    "/as/registerTemplateApp/*",
+                    "/as/registerTemplate/*",
+                    "/as/health"
+                  ]
+                },
+                {
+                  "name": "CubeUI-Backend",
+                  "prefixes": ["api"],
+                  "paths": null
+                },
+                {
+                  "name": "Solr",
+                  "prefixes": ["solr"],
+                  "paths": null
+                }
+              ]
+            }
+          ],
+          "testConfigs": [
+            {
+              "testConfigName": "Cube-Analyze",
+              "services": [
+                "Analyze"
+              ],
+              "paths": [
+                "/as/timelineres/*",
+                "/as/analysisResByPath/*"
+              ],
+              "test_virtualized_services": [
+                "Solr"
+              ],
+              "test_intermediate_services": []
+            }
+          ],
+          "serviceGraphs": [
+            {
+              "from": "Mock",
+              "to": "Solr"
+            },
+            {
+              "from": "Record",
+              "to": "Solr"
+            },
+            {
+              "from": "Replay",
+              "to": "Solr"
+            },
+            {
+              "from": "Analyze",
+              "to": "Solr"
+            },
+            {
+              "from": "CubeUI-Backend",
+              "to": "Record"
+            },
+            {
+              "from": "CubeUI-Backend",
+              "to": "Replay"
+            },
+            {
+              "from": "CubeUI-Backend",
+              "to": "Mock"
+            },
+            {
+              "from": "CubeUI-Backend",
+              "to": "Analyze"
+            }
+          ]
+        },
+        {
+          "name": "jersey_1_19_demo",
+          "serviceGroups": [
+            {
+              "name": "GLOBAL",
+              "services": [
+                {
+                  "name": "EmpService",
+                  "prefixes": ["emp"],
+                  "paths": [
+                    "/emp/emp/getEmp"
+                  ]
+                },
+                {
+                  "name": "Department",
+                  "prefixes": ["dept"],
+                  "paths": [
+                    "/dept/dept/getDept"
+                  ]
+                }
+              ]
+            }
+          ],
+          "testConfigs": [
+            {
+              "testConfigName": "Jersey 1.19 Demo",
+              "services": [
+                "EmpService"
+              ],
+              "paths": [],
+              "test_virtualized_services": [
+                "Department"
+              ],
+              "test_intermediate_services": []
+            }
+          ],
+          "serviceGraphs": [
+            {
+              "from": "EmpService",
+              "to": "Department"
+            }
+          ]
+        },
+        {
+          "name": "CourseApp",
+          "serviceGroups": [
+            {
+              "name": "GLOBAL",
+              "services": [
+                {
+                  "name": "course1",
+                  "prefixes": ["meshd/courses"],
+                  "paths": []
+                },
+                {
+                  "name": "Student",
+                  "prefixes": ["meshd/students"],
+                  "paths": []
+                }
+              ]
+            }
+          ],
+          "testConfigs": [
+            {
+              "testConfigName": "CourseApp",
+              "services": [
+                "course1"
+              ],
+              "paths": [],
+              "test_virtualized_services": [
+                "Student"
+              ],
+              "test_intermediate_services": []
+            }
+          ],
+          "serviceGraphs": [
+            {
+              "from": "course1",
+              "to": "Student"
+            }
+          ]
+        },
+        {
+          "name": "Jersy2xApp",
+          "serviceGroups": [
+            {
+              "name": "GLOBAL",
+              "services": [
+                {
+                  "name": "Reviews",
+                  "prefixes": ["reviews"],
+                  "paths": [
+                    "/health",
+                    "/reviews/*"
+                  ]
+                },
+                {
+                  "name": "Ratings",
+                  "prefixes": ["ratings"],
+                  "paths": [
+                    "/health",
+                    "/ratings/*"
+                  ]
+                },
+                {
+                  "name": "Details",
+                  "prefixes": ["details"],
+                  "paths": [
+                    "/health",
+                    "/details/*"
+                  ]
+                },
+                {
+                  "name": "RestWrapJDBC",
+                  "prefixes": ["restsql"],
+                  "paths": [
+                    "/health",
+                    "/initialize",
+                    "/query",
+                    "/update"
+                  ]
+                },
+                {
+                  "name": "Postgres",
+                  "prefixes": [],
+                  "paths": null
+                },
+                {
+                  "name": "Mysql",
+                  "prefixes": [],
+                  "paths": null
+                },
+                {
+                  "name": "MongoDB",
+                  "prefixes": [],
+                  "paths": null
+                },
+                {
+                  "name": "Google API",
+                  "prefixes": [],
+                  "paths": null
+                },
+                {
+                  "name": "MovieInfo",
+                  "prefixes": ["minfo"],
+                  "paths": [
+                    "/authenticate",
+                    "/health",
+                    "minfo/rentmovie",
+                    "minfo/returnmovie",
+                    "/overduerental",
+                    "minfo/listmovies",
+                    "minfo/liststores"
+                  ]
+                }
+              ]
+            }
+          ],
+          "testConfigs": [
+            {
+              "testConfigName": "MovieInfo-List",
+              "services": [
+                "MovieInfo"
+              ],
+              "paths": [
+                "minfo/listmovies",
+                "minfo/liststores"
+              ],
+              "test_virtualized_services": [
+                "RestWrapJDBC"
+              ],
+              "test_intermediate_services": []
+            }
+          ],
+          "serviceGraphs": [
+            {
+              "from": "MovieInfo",
+              "to": "RestWrapJDBC"
+            },
+            {
+              "from": "MovieInfo",
+              "to": "RestWrapJDBC"
+            },
+            {
+              "from": "MovieInfo",
+              "to": "RestWrapJDBC"
+            },
+            {
+              "from": "RestWrapJDBC",
+              "to": "Postgres"
+            },
+            {
+              "from": "MovieInfo",
+              "to": "Reviews"
+            },
+            {
+              "from": "MovieInfo",
+              "to": "Details"
+            },
+            {
+              "from": "Reviews",
+              "to": "Ratings"
+            },
+            {
+              "from": "Details",
+              "to": "Google API"
+            },
+            {
+              "from": "Ratings",
+              "to": "Mysql"
+            },
+            {
+              "from": "Ratings",
+              "to": "MongoDB"
+            }
+          ]
+        }
+      ],
+      "users": [
+        {
+          "name": "Demo",
+          "email": "demo@cubecorp.io",
+          "password": "password123",
+          "roles": [
+            "ROLE_USER"
+          ],
+          "activated": true
+        },
+        {
+          "name": "Administrator",
+          "email": "admin@cubecorp.io",
+          "password": "admin",
+          "roles": [
+            "ROLE_USER",
+            "ROLE_ADMIN"
+          ],
+          "activated": true
+        },
+        {
+          "name": "Demo",
+          "email": "flipkart@cubecorp.io",
+          "password": "password123",
+          "roles": [
+            "ROLE_USER"
+          ],
+          "activated": true
+        },
+        {
+          "name": "Demo",
+          "email": "narvar@cubecorp.io",
+          "password": "password123",
+          "roles": [
+            "ROLE_USER"
+          ],
+          "activated": true
+        }
+      ]
+    }
+  ]
+}
