@@ -1,0 +1,69 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`http - HTTP verbs DELETE: args 1`] = `
+Object {
+  "foo": "bar",
+}
+`;
+
+exports[`http - HTTP verbs DELETE: data 1`] = `""`;
+
+exports[`http - HTTP verbs GET: args 1`] = `
+Object {
+  "param": "param_value",
+}
+`;
+
+exports[`http - HTTP verbs GET: data 1`] = `undefined`;
+
+exports[`http - HTTP verbs PATCH: args 1`] = `Object {}`;
+
+exports[`http - HTTP verbs PATCH: data 1`] = `""`;
+
+exports[`http - HTTP verbs POST body and header: args 1`] = `Object {}`;
+
+exports[`http - HTTP verbs POST body and header: data 1`] = `
+"1
+"
+`;
+
+exports[`http - HTTP verbs PUT: args 1`] = `Object {}`;
+
+exports[`http - HTTP verbs PUT: data 1`] = `
+"1
+"
+`;
+
+exports[`https - HTTP verbs DELETE: args 1`] = `
+Object {
+  "foo": "bar",
+}
+`;
+
+exports[`https - HTTP verbs DELETE: data 1`] = `""`;
+
+exports[`https - HTTP verbs GET: args 1`] = `
+Object {
+  "param": "param_value",
+}
+`;
+
+exports[`https - HTTP verbs GET: data 1`] = `undefined`;
+
+exports[`https - HTTP verbs PATCH: args 1`] = `Object {}`;
+
+exports[`https - HTTP verbs PATCH: data 1`] = `""`;
+
+exports[`https - HTTP verbs POST body and header: args 1`] = `Object {}`;
+
+exports[`https - HTTP verbs POST body and header: data 1`] = `
+"1
+"
+`;
+
+exports[`https - HTTP verbs PUT: args 1`] = `Object {}`;
+
+exports[`https - HTTP verbs PUT: data 1`] = `
+"1
+"
+`;
