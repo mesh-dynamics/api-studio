@@ -1,0 +1,24 @@
+{
+    "sourceType": "unambiguous",
+    "sourceMaps": true,
+    "presets": [
+        [
+            "@babel/preset-env",
+            {
+                "corejs": "3.6.5",
+                "useBuiltIns": "entry",
+                "loose": true,
+            }
+        ],
+        [
+            "@babel/preset-react"
+        ],
+        [
+            "@babel/preset-typescript"
+        ]
+    ],
+    "plugins": [
+        "@babel/plugin-proposal-class-properties",
+        "@babel/plugin-proposal-export-default-from",
+    ]
+}

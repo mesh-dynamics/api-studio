@@ -1,0 +1,64 @@
+.diff-wrapper {
+    width: 100%;
+    padding: 0;
+}
+.removed {
+    text-decoration: line-through;
+    background: #ffbbbb;
+}
+.added {
+    background: #bbffbb;
+}
+.tabbed {
+    margin-left: 20px;
+    position: relative;
+    background: #f1f1f1;
+    margin-bottom: 5px;
+}
+/**
+* Important because this causes the style to be 
+* overriden by bootstrap pre in case of electron app.
+*/
+pre{
+    margin: 0 !important; 
+    padding: 0 !important;
+    border: none !important;
+    background-clip: content-box;
+    width: fit-content;
+}
+pre div{
+    width: fit-content;
+    background: transparent;
+}
+span.small {
+    position: absolute;
+    width: 180px;
+    text-align: center;
+    right:0;
+    color: #FFFFFF;
+    top: calc(50% - 9px);
+    display: inline-block;
+    padding: 1px 15px;
+}
+.orange-b {
+    background: #F2C94C;
+}
+.red-b {
+    background: #EB5757;
+}
+.green-b {
+    background: #6FCF97;
+}
+
+.diff-section-label {
+    font-size: 14px;
+    font-weight: 800;
+    color: #5B5B5B;
+}
+.shift-left-align {
+    margin-left: 18%;
+}
+
+.isDiffError{
+    color: red;
+}

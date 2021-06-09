@@ -1,0 +1,30 @@
+
+.dragging-placeholder{
+    border: 2px #7c7cea dashed;
+    background-color: #cfcff3;
+    height: 36px;
+    position: relative;
+    margin-left: 8px;
+    min-width: 64px; //setting actual width dynamically
+    border-radius: 10px 10px 0px 0px;
+    z-index: 10;
+}
+
+.current-tab-place{
+    height: 36px;
+    position: relative;
+    margin-left: 8px;
+    width: 0px;
+    .md-hc-tab{
+        height: 34px;
+    }
+    z-index: 100;
+}
+.dragable-tab{
+    position: absolute;
+    min-width: 64px;
+    z-index: 120 !important;
+    .RRT__removable-icon i{
+        display: none; //Some colored bar appears due to icon, we can hide when dragging
+    }
+}

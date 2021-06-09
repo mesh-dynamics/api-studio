@@ -1,0 +1,9 @@
+.btn-sm, .btn-sm:focus {
+    padding: 2px 10px;
+}
+.btn-md {
+    padding: 5px 10px;
+}
+.btn-lg {
+    padding: 2px 10px;
+}

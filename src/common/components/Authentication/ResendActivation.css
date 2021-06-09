@@ -1,0 +1,22 @@
+.activation-resend-button {
+    color: #fff;
+}
+
+.activation-resend-input-container {
+    padding: 20px 0px;
+}
+
+.activation-resend-description {
+    color: #858585;
+    font-size: 14px;
+}
+
+.activation-actions {
+    margin-top: 20px;
+}
+
+.activation-resend-message-container {
+    font-size: 14px;
+    color: #525252;
+    padding-bottom: 18px;
+}
