@@ -1,0 +1,15 @@
+kubectl
+istio/
+istio-1.0.3/
+workspace/
+/build/
+.settings
+.project
+.classpath
+sample_apps/MIRest/WebContent/META-INF/
+.idea
+*.iml
+server/cube.log
+target
+.DS_Store
+cube.log

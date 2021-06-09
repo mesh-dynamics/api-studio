@@ -1,0 +1,19 @@
+################
+####build####
+###############
+FROM maven:3.6.0-jdk-11-slim AS test
+ARG TOKEN
+COPY pom.xml ./pom.xml
+COPY src ./src
+COPY WebContent ./WebContent
+# Add settings.xml file for github auth
+RUN mkdir ~/.m2
+RUN echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
+RUN mvn package -DskipTests
+RUN rm ~/.m2/settings.xml
+
+###################################
+##Create base image with cache####
+##################################
+FROM maven:3.6.0-jdk-11-slim AS final
+COPY --from=test /root/.m2 /root/.m2
