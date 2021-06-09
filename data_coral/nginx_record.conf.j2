@@ -1,0 +1,145 @@
+# For more information on configuration, see:
+#   * Official English Documentation: http://nginx.org/en/docs/
+#   * Official Russian Documentation: http://nginx.org/ru/docs/
+
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /run/nginx.pid;
+
+# Load dynamic modules. See /usr/share/nginx/README.dynamic.
+include /usr/share/nginx/modules/*.conf;
+
+load_module modules/ngx_http_response_body_module.so;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+    proxy_http_version  1.1;
+    sendfile            on;
+    tcp_nopush          on;
+    tcp_nodelay         on;
+    keepalive_timeout   65;
+    types_hash_max_size 2048;
+
+    include             /etc/nginx/mime.types;
+    default_type        application/octet-stream;
+
+
+    log_format cube_main escape=json '{"meta" : [ {"type" : "request"} , {"c-request-id" : "$crequest_id" } , {"method" : "$request_method"} , {"timestamp" : "$time_local"} , {"runType" : "$run_type"} , {"customerid" : "$customer_id"} , {"app" : "$app_name" } , {"instanceid" : "$instance_id"} , {"service" : "$service"} ] , "body" : "$request_body" , "hdrs" : "$request_headers" , "path" : "$request_uri"}
+{"meta" : [ {"type" : "response"} , {"c-request-id" : "$crequest_id" } , {"x-request-id" : "$request_id"} , {"status" : "$status"} , {"timestamp" : "$time_local"} , {"runType" : "$run_type"} , {"customerid" : "$customer_id"} , {"app" : "$app_name" } , {"instanceid" : "$instance_id"} , {"service" : "$service"} ] , "body" : "$response_body" , "hdrs" : "$custom_response_headers" , "path" : "$request_uri"}';
+
+
+    map $status $cond {
+      500       1;
+      401       1;
+      403       1;
+      404       1;
+      default   1;
+    }
+
+    map $response_headers $custom_response_headers {
+	~\[\] '[{"content-type":"$sent_http_content_type"},{"content-length":"$sent_http_content_length"}]';
+	~\[(?P<existing>.+)\] '[$existing,{"content-type":"$sent_http_content_type"},{"content-length":"$sent_http_content_length"}]';
+    }
+
+
+    capture_response_body_buffer_size       1m;
+    capture_header_buffer_size            10k;
+    capture_response_body_if                $cond 1;
+    capture_response_body_if_latency_more   0s;
+
+    map $response_body $err {
+      ~\"error\":\"(?<e>.+)\" $e;
+      default "";
+    }
+
+    # Load modular configuration files from the /etc/nginx/conf.d directory.
+    # See http://nginx.org/en/docs/ngx_core_module.html#include
+    # for more information.
+    include /etc/nginx/conf.d/*.conf;
+
+    server {
+        listen       8080;
+        capture_response_body on;
+        access_log  /var/log/nginx/cube.http.access.log  cube_main;
+
+        location / {
+            	resolver 8.8.8.8;
+    	        set $x_b3_trace_id  '${request_id}';
+    	        set $service '${host}';
+    	        set $crequest_id  '${service}-${request_id}';
+          	set $customer_id '{{customer_id}}';
+          	set $instance_id '{{instance_id}}';
+          	set $app_name '{{app_name}}';
+          	set $run_type '{{run_type}}';
+    		proxy_pass http://$http_host$uri$is_args$args;
+        }
+
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+
+    server {
+	listen 443 ssl http2;
+
+	capture_response_body on;
+        access_log  /var/log/nginx/cube.https.access.log  cube_main;
+
+    	#server_name google.com;
+
+	ssl_certificate /etc/nginx/mitm/certchain.pem;
+    	ssl_certificate_key /etc/nginx/mitm/mycert.private.pem;
+
+	location / {
+		resolver 8.8.8.8;
+		set $x_b3_trace_id  '${request_id}';
+	        set $service '${host}';
+	        set $crequest_id  '${service}-${request_id}';
+          	set $customer_id '{{customer_id}}';
+          	set $instance_id '{{instance_id}}';
+          	set $app_name '{{app_name}}';
+          	set $run_type '{{run_type}}';
+		proxy_pass https://$http_host$uri$is_args$args;
+    	}
+    }
+# Settings for a TLS enabled server.
+#
+#    server {
+#        listen       443 ssl http2 default_server;
+#        listen       [::]:443 ssl http2 default_server;
+#        server_name  _;
+#        root         /usr/share/nginx/html;
+#
+#        ssl_certificate "/etc/pki/nginx/server.crt";
+#        ssl_certificate_key "/etc/pki/nginx/private/server.key";
+#        ssl_session_cache shared:SSL:1m;
+#        ssl_session_timeout  10m;
+#        ssl_ciphers HIGH:!aNULL:!MD5;
+#        ssl_prefer_server_ciphers on;
+#
+#        # Load configuration files for the default server block.
+#        include /etc/nginx/default.d/*.conf;
+#
+#        location / {
+#        }
+#
+#        error_page 404 /404.html;
+#            location = /40x.html {
+#        }
+#
+#        error_page 500 502 503 504 /50x.html;
+#            location = /50x.html {
+#        }
+#    }
+
+}
