@@ -104,7 +104,13 @@ public class Config {
 
     public final PubSubMgr pubSubMgr;
 
-    public static class JedisConnResourceProvider {
+    public static final String runModeLocal = "local";
+
+	public static final String runModeCloud = "cloud";
+	public String runMode;
+
+
+	public static class JedisConnResourceProvider {
     	public static final Duration PING_WAIT = Duration.ofMillis(1000);
 	    private final GenericObjectPoolConfig poolConfig;
 	    private final String redisHost;
@@ -161,7 +167,6 @@ public class Config {
 		properties = new java.util.Properties();
 		System.setProperty("io.md.intent" , "noop");
 		commonConfig = CommonConfig.getInstance();
-		String runMode = null;
 		String solrurl = null;
     int size = Integer.valueOf(fromEnvOrProperties("response_size", "1"));
     pathsToKeepLimit = Long.valueOf(fromEnvOrProperties("paths_to_keep_limit", "1000"));
@@ -170,7 +175,7 @@ public class Config {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
             // TODO: SET run_mode as "local" when moved to final repo
-            runMode = fromEnvOrProperties("run_mode" , "cloud");
+            runMode = fromEnvOrProperties("run_mode" , Config.runModeCloud);
             String solrBaseUrl = fromEnvOrProperties("solr_base_url" , "http://18.222.86.142:8983/solr/");
             String solrCore = fromEnvOrProperties("solr_core" , "cube");
             solrurl = Utils.appendUrlPath(solrBaseUrl , solrCore);
@@ -178,7 +183,7 @@ public class Config {
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
             eta.printStackTrace();
         }
-        if (runMode != null && !runMode.equals("local") && solrurl != null) {
+        if (runMode != null && !runMode.equals(Config.runModeLocal) && solrurl != null) {
             solr = new MDHttpSolrClient.Builder(solrurl).build();
             LOGGER.info(String.format("Using solrurl IP %s", solrurl));
 
