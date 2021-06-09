@@ -1,0 +1,35 @@
+.mov-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-column-gap: 20px;
+    grid-row-gap: 20px;
+}
+
+.grid-content{
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.grid-content:hover .g-head {
+    background: #343a40;
+    color: #FFFFFF;
+}
+
+.g-head {
+    padding: 10px;
+    font-weight: bold;
+    background: #999999;
+    border-bottom: 1px solid #555555;
+    color: #FFFFFF;
+    font-size: 1.2em;
+}
+
+.g-head.selected {
+    background: #FFBE00;
+}
+
+.g-body {
+    position: relative;
+    padding: 10px;
+    background: #efefef;
+}

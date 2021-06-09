@@ -1,0 +1,38 @@
+.categories-root {
+	padding: 20px 0;
+}
+
+.categories-item-container {
+	border-top: 1px solid rgb(0 0 0 / 13%) !important;
+}
+
+.categories-item-wrapper {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.categories-item-icon-wrapper {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 40px;
+	cursor: pointer;
+}
+
+.categories-create-button {
+	margin-top: 20px;
+}
+
+.categories-button-container {
+	display: flex;
+	justify-content: space-between;
+}
+
+.categories-genre-container {
+	margin-top: 10px;
+}
+
+.categories-create-message {
+	text-align: center;
+}
