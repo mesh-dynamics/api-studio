@@ -1,0 +1,64 @@
+apiVersion: v1
+data:
+  fluent.conf: |-
+    <source>
+      @type tail
+      @id in_tail_cube_envoy
+      path /var/log/containers/*staging-sm_istio-proxy*.log
+      pos_file /var/log/cube-fluentd-containers.log.pos
+      tag cube.envoy
+      read_from_head true
+      <parse>
+        @type json
+      </parse>
+    </source>
+    
+    # <source>
+    #   @type tail
+    #   @id in_tail_cube_var
+    #   path /var/cube/*.log
+    #   pos_file /var/cube/cube-var-log.pos
+    #   tag cube.var
+    #   read_from_head true
+    #   <parse>
+    #    @type regexp
+    #    expression \[cube\]\[(?<type>(record|replay))\](?<log>.*)
+    #   </parse>
+    # </source>
+    
+    <filter cube.envoy>
+      @type parser
+      key_name log
+      <parse>
+        @type regexp
+        expression script log: \[cube\](?<inner_json>.*)$
+      </parse>
+    </filter>
+ 
+    <filter cube.envoy>
+      @type parser
+      format json
+      key_name inner_json
+      reserve_data false
+      remove_key_name_field true
+    </filter>
+
+    <match cube.**>
+      @type http
+      endpoint http://cubews-record.staging-sm.svc:8080/cs/rrbatch
+      open_timeout 5
+      <format>
+        @type json
+      </format>
+      <buffer log>
+        @type memory
+        chunk_limit_records 10
+        flush_interval 10
+      </buffer>
+    </match>
+
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: cube-fluentd-conf
+  namespace: logging

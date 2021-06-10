@@ -1,0 +1,21 @@
+[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/volumeMounts/-",
+    "value" : {
+      "name" : "fluentd-jersy119-conf-{{namespace}}",
+      "mountPath": "/fluentd/etc/conf.d/fluent-jersy119-{{namespace}}.conf",
+      "subPath": "fluent-jersy119-{{namespace}}.conf"
+      }
+  },
+  {
+  "op": "add",
+  "path": "/spec/template/spec/volumes/-",
+  "value" : {
+    "name" : "fluentd-jersy119-conf-{{namespace}}",
+    "configMap" : {
+      "name" : "fluentd-jersy119-conf-{{namespace}}"
+      }
+    }
+  }
+]

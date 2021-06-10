@@ -1,0 +1,19 @@
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority: certs/ca_master.crt
+    server: https://api-cubeio-aakash-cluster-fdksm7-1812099752.us-east-2.elb.amazonaws.com
+  name: cubeio.aakash.cluster.k8s.local
+contexts:
+- context:
+    cluster: cubeio.aakash.cluster.k8s.local
+    user: drone
+  name: cubeio.aakash.cluster.k8s.local
+current-context: cubeio.aakash.cluster.k8s.local
+kind: Config
+preferences: {}
+users:
+- name: drone
+  user:
+    client-certificate: certs/drone.crt
+    client-key: certs/drone.key

@@ -1,0 +1,214 @@
+##################################################################################################
+# springboot order receiver replay services
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: receiver-replay
+  namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: receiver-replay
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    component: receiver-replay
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: receiver-replay
+  namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: receiver-replay
+spec:
+  selector:
+    matchLabels:
+      component: receiver-replay
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: springboot
+        component: receiver-replay
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: receiver
+        image: cubeiocorp/sample-order-receiver:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2048Mi"
+            cpu: "1000m"
+        ports:
+        - containerPort: 8080
+        env:
+          - name: io.md.service.endpoint
+            value: "https://{{cube_host}}/api/"
+          - name: spring.profiles.active
+            value: replay
+          - name: io.md.app
+            value: {{cube_application}}
+          - name: io.md.customer
+            value: {{customer}}
+          - name: io.md.instance
+            value: "{{cube_instance}}"
+          - name: io.md.servicename
+            value: "order"
+          - name: io.md.pollingconfig.fetchconfigapiuri
+            value: "https://{{cube_host}}/api/cs/fetchAgentConfig/"
+          - name: io.md.pollingconfig.ackconfigapiuri
+            value: "https://{{cube_host}}/api/cs/ackConfigApplication/"
+          - name: io.md.authtoken
+            value: "Bearer {{auth_token}}"
+
+##################################################################################################
+# springboot employee record services
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: receiver-record
+  namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: receiver-record
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    component: receiver-record
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: receiver-record
+  namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: receiver-record
+spec:
+  selector:
+    matchLabels:
+      component: receiver-record
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: springboot
+        component: receiver-record
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: receiver
+        image: cubeiocorp/sample-order-receiver:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2048Mi"
+            cpu: "1000m"
+        ports:
+        - containerPort: 8080
+        env:
+          - name: io.md.service.endpoint
+            value: "https://{{cube_host}}/api/"
+          - name: spring.profiles.active
+            value: replay
+          - name: io.md.app
+            value: {{cube_application}}
+          - name: io.md.customer
+            value: {{customer}}
+          - name: io.md.instance
+            value: "{{cube_instance}}"
+          - name: io.md.servicename
+            value: "order"
+          - name: io.md.pollingconfig.fetchconfigapiuri
+            value: "https://{{cube_host}}/api/cs/fetchAgentConfig/"
+          - name: io.md.pollingconfig.ackconfigapiuri
+            value: "https://{{cube_host}}/api/cs/ackConfigApplication/"
+          - name: io.md.authtoken
+            value: "Bearer {{auth_token}}"
+
+##################################################################################################
+# springboot order transformer services
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: transformer
+  namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: transformer
+spec:
+  ports:
+  - port: 8081
+    targetPort: 8081
+    name: http
+  selector:
+    component: transformer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transformer
+  namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: transformer
+spec:
+  selector:
+    matchLabels:
+      component: transformer
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: springboot
+        component: transformer
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: transformer
+        image: cubeiocorp/sample-order-transformer:test001
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1024Mi"
+            cpu: "1000m"
+        ports:
+        - containerPort: 8081

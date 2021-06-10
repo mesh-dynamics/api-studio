@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: {{namespace}}-gateway
+  namespace: {{namespace}}
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "{{namespace_host}}"
+  - port:
+      number: 8080
+      name: jersy119-record
+      protocol: HTTP
+    hosts:
+    - "{{namespace_host}}"

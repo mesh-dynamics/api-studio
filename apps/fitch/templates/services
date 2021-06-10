@@ -1,0 +1,4 @@
+services:
+  - employee
+  - department
+  - office
