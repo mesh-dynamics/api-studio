@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: grpc-gateway
+  namespace: grpc
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+    - port:
+        number: 8980
+        name: grpc
+        protocol: GRPC
+      hosts:
+        - grpc.dev.meshdynamics.io
+        - grpc-replay.dev.meshdynamics.io
