@@ -8,8 +8,8 @@ COPY ./ ./route-guider
 #RUN mkdir ~/.m2 && \
 #echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
 
-RUN cd ./route-guider && \
-mvn package
+#RUN cd ./route-guider && \
+#mvn package
 
 ##############
 #Package

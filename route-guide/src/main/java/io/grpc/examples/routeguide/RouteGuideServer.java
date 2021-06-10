@@ -30,7 +30,12 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptors;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.examples.routeguide.GuiderGrpc.GuiderBlockingStub;
+import io.grpc.examples.routeguide.GuiderGrpc.GuiderStub;
+import io.grpc.examples.routeguide.RouteGuideGrpc.RouteGuideStub;
+import io.grpc.netty.shaded.io.netty.handler.codec.http2.CleartextHttp2ServerUpgradeHandler;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
@@ -38,10 +43,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,9 +65,20 @@ public class RouteGuideServer {
 
 
 	static String BASE_URL = System.getenv("GUIDER_SERVICE_URL");
-	static String guiderServerTarget = BASE_URL != null ? BASE_URL : "localhost:9000/guider";
+	static String guiderServerTarget = BASE_URL != null ? BASE_URL : "localhost:8981/guider";
 	static ManagedChannel guiderServerChannel = ManagedChannelBuilder.forTarget(guiderServerTarget).usePlaintext().intercept().build();
 	static GuiderBlockingStub guiderServerBlockingStub = GuiderGrpc.newBlockingStub(guiderServerChannel);
+	static GuiderStub guiderServerAsyncStub = GuiderGrpc.newStub(guiderServerChannel);
+
+
+	private static void info(String msg, Object... params) {
+		logger.log(Level.INFO, msg, params);
+	}
+
+	private static void warning(String msg, Object... params) {
+		logger.log(Level.WARNING, msg, params);
+	}
+
 
 	public RouteGuideServer(int port) throws IOException {
 		this(port, RouteGuideUtil.getDefaultFeaturesFile());
@@ -201,6 +219,24 @@ public class RouteGuideServer {
 			responseObserver.onCompleted();
 		}
 
+		@Override
+		public void listFeaturesWithNote(Rectangle request,
+			StreamObserver<FeatureWithNote> responseObserver) {
+
+			Iterator<FeatureWithNote> featuresWithNotes;
+			try {
+				featuresWithNotes = guiderServerBlockingStub.listFeaturesWithNote(request);
+				for (int i = 1; featuresWithNotes.hasNext(); i++) {
+					FeatureWithNote featureWithNote = featuresWithNotes.next();
+					info("Result #" + i + ": {0}", featureWithNote);
+					responseObserver.onNext(featureWithNote);
+				}
+			} catch (StatusRuntimeException e) {
+				warning("RPC failed: {0}", e.getStatus());
+			}
+			responseObserver.onCompleted();
+		}
+
 		/**
 		 * Gets a stream of points, and responds with statistics about the "trip": number of points,
 		 * number of known features visited, total distance traveled, and total time spent.
@@ -248,6 +284,59 @@ public class RouteGuideServer {
 			};
 		}
 
+		@Override
+		public StreamObserver<Point> recordRouteWithNote(
+			StreamObserver<RouteSummaryWithNote> responseObserver) {
+			info("*** RecordRouteWithNote");
+			final CountDownLatch finishLatch = new CountDownLatch(1);
+			StreamObserver<RouteSummaryWithNote> guiderResponseObserver = new StreamObserver<RouteSummaryWithNote>() {
+				@Override
+				public void onNext(RouteSummaryWithNote summary) {
+					info("Finished trip with {0} points. Passed {1} features. "
+							+ "Travelled {2} meters. It took {3} seconds.", summary.getRouteSummary().getPointCount(),
+						summary.getRouteSummary().getFeatureCount(), summary.getRouteSummary().getDistance(), summary.getRouteSummary().getElapsedTime());
+					responseObserver.onNext(summary);
+				}
+
+				@Override
+				public void onError(Throwable t) {
+					warning("RecordRouteWithNote Failed: {0}", Status.fromThrowable(t));
+					finishLatch.countDown();
+				}
+
+				@Override
+				public void onCompleted() {
+					info("Finished RecordRouteWithNote");
+					finishLatch.countDown();
+					responseObserver.onCompleted();
+				}
+			};
+
+			StreamObserver<Point> guiderRequestObserver = guiderServerAsyncStub.recordRouteWithNote(guiderResponseObserver);
+
+			return new StreamObserver<Point>() {
+				@Override
+				public void onNext(Point point) {
+					guiderRequestObserver.onNext(point);
+					if (finishLatch.getCount() == 0) {
+						// RPC completed or errored before we finished sending.
+						// Sending further requests won't error, but they will just be thrown away.
+						return;
+					}
+				}
+
+				@Override
+				public void onError(Throwable t) {
+					logger.log(Level.WARNING, "recordRoute cancelled");
+				}
+
+				@Override
+				public void onCompleted() {
+					guiderRequestObserver.onCompleted();
+				}
+			};
+		}
+
 		/**
 		 * Receives a stream of message/location pairs, and responds with a stream of all previous
 		 * messages at each of those locations.
@@ -280,6 +369,53 @@ public class RouteGuideServer {
 				@Override
 				public void onCompleted() {
 					responseObserver.onCompleted();
+				}
+			};
+		}
+
+
+		@Override
+		public StreamObserver<RouteNote> routeChatWithNote(
+			StreamObserver<RouteNoteWithNote> responseObserver) {
+			final CountDownLatch finishLatch = new CountDownLatch(1);
+			StreamObserver<RouteNoteWithNote> guiderResponseObserver = new StreamObserver<RouteNoteWithNote>() {
+				@Override
+				public void onNext(RouteNoteWithNote note) {
+					info("Got message \"{0}\" at {1}, {2}", note.getRouteNote().getMessage(), note.getRouteNote().getLocation()
+						.getLatitude(), note.getRouteNote().getLocation().getLongitude());
+					responseObserver.onNext(note);
+				}
+
+				@Override
+				public void onError(Throwable t) {
+					warning("RouteChat Failed: {0}", Status.fromThrowable(t));
+					finishLatch.countDown();
+				}
+
+				@Override
+				public void onCompleted() {
+					info("Finished RouteChat");
+					finishLatch.countDown();
+					responseObserver.onCompleted();
+				}
+			};
+
+			StreamObserver<RouteNote> guiderRequestObserver = guiderServerAsyncStub.routeChatWithNote(guiderResponseObserver);
+
+			return new StreamObserver<RouteNote>() {
+				@Override
+				public void onNext(RouteNote routeNote) {
+					guiderRequestObserver.onNext(routeNote);
+				}
+
+				@Override
+				public void onError(Throwable t) {
+					logger.log(Level.WARNING, "routeChat cancelled");
+				}
+
+				@Override
+				public void onCompleted() {
+					guiderRequestObserver.onCompleted();
 				}
 			};
 		}

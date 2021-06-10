@@ -40,21 +40,34 @@ service RouteGuide {
   // huge number of features.
   rpc ListFeatures(Rectangle) returns (stream Feature) {}
 
+  rpc ListFeaturesWithNote(Rectangle) returns (stream FeatureWithNote) {}
+
   // A client-to-server streaming RPC.
   //
   // Accepts a stream of Points on a route being traversed, returning a
   // RouteSummary when traversal is completed.
   rpc RecordRoute(stream Point) returns (RouteSummary) {}
 
+  rpc RecordRouteWithNote(stream Point) returns (RouteSummaryWithNote) {}
+
   // A Bidirectional streaming RPC.
   //
   // Accepts a stream of RouteNotes sent while a route is being traversed,
   // while receiving other RouteNotes (e.g. from other users).
   rpc RouteChat(stream RouteNote) returns (stream RouteNote) {}
+
+  rpc RouteChatWithNote(stream RouteNote) returns (stream RouteNoteWithNote) {}
 }
 
 service Guider {
   rpc GetFeatureWithNote(Feature) returns (FeatureWithNote) {}
+
+  rpc ListFeaturesWithNote(Rectangle) returns (stream FeatureWithNote) {}
+
+  rpc RecordRouteWithNote(stream Point) returns (RouteSummaryWithNote) {}
+
+  rpc RouteChatWithNote(stream RouteNote) returns (stream RouteNoteWithNote) {}
+
 }
 
 // Points are represented as latitude-longitude pairs in the E7 representation
@@ -123,4 +136,15 @@ message RouteSummary {
 
   // The duration of the traversal in seconds.
   int32 elapsed_time = 4;
+}
+
+
+message RouteSummaryWithNote {
+  RouteSummary routeSummary = 1;
+  string randomNote = 2;
+}
+
+message RouteNoteWithNote {
+  RouteNote routeNote = 1;
+  string randomNote = 2;
 }
