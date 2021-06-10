@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: route-guide-service-replay
+  namespace: grpc
+  labels:
+    app: route-guide-replay
+    component: route-guide-service-replay
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8980
+      name: grpc
+      protocol: TCP
+  selector:
+    component: route-guide-service-replay
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: route-guider-service-mock
+  namespace: grpc
+  labels:
+    app: route-guider
+    component: route-guider-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8981
+      name: grpc
+      protocol: TCP
+  selector:
+    component: route-guider-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-deployment-replay
+  namespace: grpc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: route-guide-service-replay
+  template:
+    metadata:
+      labels:
+        app: route-guide-replay
+        component: route-guide-service-replay
+        namespace: grpc
+    spec:
+      containers:
+        - name: route-guide-replay
+          image: cubeiocorp/grpc-route-guide-server-pm:latest-dd
+          imagePullPolicy: Always
+          env:
+            - name: GUIDER_SERVICE_URL
+              value: "route-guider-service-mock:8981"
+          ports:
+            - containerPort: 8980

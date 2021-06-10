@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: route-guide-service
+  namespace: staging-pm
+  labels:
+    app: route-guide
+    component: route-guide-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8980
+      name: grpc
+      protocol: TCP
+  selector:
+    component: route-guide-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-deployment
+  namespace: staging-pm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: route-guide-service
+  template:
+    metadata:
+      labels:
+        app: route-guide
+        component: route-guide-service
+        namespace: staging-pm
+    spec:
+      containers:
+        - name: route-guide
+          image: cubeiocorp/grpc-route-guide-server-pm:latest-dev
+          imagePullPolicy: Always
+          env:
+            - name: GUIDER_SERVICE_URL
+              value: "route-guider-service:8981"
+          ports:
+            - containerPort: 8980

@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: route-guider-service
+  namespace: grpc
+  labels:
+    app: route-guider
+    component: route-guider-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8981
+      name: grpc
+      protocol: TCP
+  selector:
+    component: route-guider-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: route-guider-server-deployment
+  namespace: grpc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: route-guider-service
+  template:
+    metadata:
+      labels:
+        app: route-guider
+        component: route-guider-service
+        namespace: grpc
+    spec:
+      containers:
+        - name: route-guider
+          image: cubeiocorp/grpc-route-guider-server-pm:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8981

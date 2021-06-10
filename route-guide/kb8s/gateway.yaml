@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: staging-pm-gateway
+  namespace: staging-pm
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+    - port:
+        number: 8980
+        name: grpc
+        protocol: GRPC
+      hosts:
+        - staging-pm.dev.cubecorp.io
+        - staging-pm-replay.dev.cubecorp.io
