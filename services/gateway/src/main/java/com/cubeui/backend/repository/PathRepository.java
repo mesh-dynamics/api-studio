@@ -9,6 +9,7 @@ import java.util.Optional;
 
 @RepositoryRestResource(path = "paths", collectionResourceRel = "paths", itemResourceRel = "path")
 public interface PathRepository extends JpaRepository<Path, Long> {
+    Optional<List<Path>> findByPath(String path);
     Optional<Path> findByPathAndServiceId(String path, Long serviceId);
     Optional<List<Path>> findByServiceId(Long serviceId);
 }
