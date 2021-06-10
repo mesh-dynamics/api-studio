@@ -1,0 +1,36 @@
+spring:
+    datasource:
+        url: jdbc:postgresql://cubeuibackend.cxg1ykcvrpg9.us-east-2.rds.amazonaws.com:5432/cubeproddb?schema=qui
+        username: springboot
+        password: 2XPZxVqH9Fm%o$#
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+
+    jpa:
+        openInView: false
+        show_sql: false
+        generate-ddl: true
+        hibernate:
+            ddl-auto: none
+            dialect: org.hibernate.dialect.PostgreSQLDialect
+        properties:
+            # fixes Caused by: java.sql.SQLFeatureNotSupportedException: Method org.postgresql.jdbc.PgConnection.createClob() is not yet implemented.
+            hibernate.jdbc.lob.non_contextual_creation: true
+
+security:
+    jwt:
+        token:
+            secret-key: "prod-secret"
+            expire-length: 86400
+        refresh:
+            token:
+                secret-key: "refresh-prod-secret"
+                expire-length: 1209600
+logging:
+    level:
+        org.springframework.web: INFO
+        org.springframework.security: INFO
+        com.cubeio.logcollector: DEBUG
+    file: app.log
