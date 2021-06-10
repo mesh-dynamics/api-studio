@@ -1,0 +1,10 @@
+namespace = ""
+app = ""
+auth_token = ""
+customer = ""
+cube_application = ""
+cube_instanceid = ""
+run_type = "" #Recording/Replay
+recording_type = "" #Golden
+cube_host = ""
+service_file_provided = ""
