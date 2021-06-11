@@ -796,13 +796,13 @@ class ViewSelectedTestConfig extends React.Component {
         // Keep this line around. Unclear why this was added. Since local replay (mocked) is causing the replay to fail
         // commenting out the part where the gateway endpoint is forcefully encoded
         // const gatewayEndpointNoProtocol = encodeURIComponent(gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, '')); // drop the protocol
-        const gatewayEndpointNoProtocol = gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, '').replace(/\/+$/, ''); // drop the protocol
+        const gatewayEndpointNoProtocol = gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, '').replace(/\/$/, ''); // drop the protocol and remove trailing slash
         const otherInstanceId = `${username}_${gatewayEndpointNoProtocol}`
 
         const {selectedTemplateSetName, selectedTemplateSetLabel} = this.state;
         
         const searchParams = new URLSearchParams();
-        searchParams.set('endPoint', gatewayEndpoint.replace(/\/+$/, ''));
+        searchParams.set('endPoint', gatewayEndpoint.replace(/\/$/, '')); // remove trailing slash
         searchParams.set('instanceId', otherInstanceSelected ? otherInstanceId : selectedInstance);
         searchParams.set('templateSetVer', collectionTemplateVersion);
         searchParams.set('userId', username);
