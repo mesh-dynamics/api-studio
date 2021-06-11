@@ -15,7 +15,7 @@ In Native mode, the NGINX and the application are deployed natively in the host 
 
 In Native mode, to enable the data capture, the following LUA code should be placed in the given location of the OpenResty NGINX installation structure.
 
-# Catiner Mode
+# Container Mode
 
 To enable API traffic capture in an envrionment where NGINX is ruuning as container, follow the below steps
 
