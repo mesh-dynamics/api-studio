@@ -15,23 +15,25 @@ In Native mode, the NGINX and the application are deployed natively in the host 
 
 In Native mode, to enable the data capture, the following LUA code should be placed in the given location of the OpenResty NGINX installation structure.
 
-For example, in case of EC2 instance with Amazon linux where OpenResy NGINX is installed as reverse proxy to the applicaiton, the files should be placed in locations as given below
+For example, in case of EC2 instance with Amazon linux where OpenResy NGINX is installed as a reverse proxy to the applicaiton, the files should be placed in locations as given below
 
     1. http.lua - /usr/local/openresty/lualib/resty/ &  usr/local/openresty/lualib/ngx/
     2. http_headers.lua - /usr/local/openresty/lualib/resty/ & usr/local/openresty/lualib/ngx/
     3. request_logger.lua - /usr/local/openresty/nginx/
     4. nginx.conf - /usr/local/openresty/nginx/conf/
 
-Configure nginx.conf to forward the API Traffic. Refer the nginx.conf confiugration section for details
+Once the files are place, then nginx.conf should be configured appropriately to forward the API Traffic. Refer the nginx.conf confiugration section at the end for details
+
+Once all the above are done, reload/restart nginx server to enable traffic capture and then use UI/API to start recording and running test suite. Please refer the respective documentation on how to start recording and how to run test suite.
 
 # Container Mode
 
 To enable API traffic capture in an envrionment where NGINX is ruuning as container, follow the below steps
 
 1. Build the OpenResty Docker image using the Dockerfile in the repo (interceptors/nginx/openresty/Dockerfile) 
-2. Configure nginx.conf to forward the API Traffic. Refer the nginx.conf confiugration section for details
+2. Configure nginx.conf to forward the API Traffic. Refer the nginx.conf confiugration section at the end for details
 3. Reload/Restart nginx to enable the API traffic capture.
-4. Using UI/API, Recording and running Test suite can be done now. Please refer the respective documentation
+4. Using UI/API, Recording and running Test suite can be done now. Please refer the respective documentation on how to start recording and how to run test suite.
 
 # Configuring nginx.conf for traffic capture
 
