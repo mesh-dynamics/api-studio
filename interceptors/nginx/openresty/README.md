@@ -74,39 +74,24 @@ If the application does not have any specific prefix to filter API traffic then 
 Here is the eample config that captures everyting 
 
         location / {
-
                content_by_lua_file request_logger.lua;
-
         }
 
         location /custom_cube/ {
-
-                rewrite ^/custom_cube(.*)$ $1 break;
-
+               rewrite ^/custom_cube(.*)$ $1 break;
                proxy_pass http://localhost:8080;
-
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
-                proxy_set_header Host $host;
-
+               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+               proxy_set_header Host $host;
                proxy_set_header X-Forwarded-Port 443;
+               proxy_redirect off;
 
-                proxy_redirect off;
-
-                if (!-f $request_filename) {
-
+               if (!-f $request_filename) {
                         proxy_pass http://localhost:8080;
-
                         break;
-
                 }
-
-
- 
-
         }
         
 Here is the option to be selected during the recording start in the UI where the static contents can be filtered
-![Uploading image.png…]()
 
+<img width="609" alt="image" src="https://user-images.githubusercontent.com/13015877/121770899-c15d3000-cb89-11eb-9d9f-c4b7004e4dc8.png">
 
