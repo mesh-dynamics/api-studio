@@ -21,3 +21,23 @@ While making REST calls as a client, the place where the RestTemplate bean is re
 
 Please note that RestTemplateDataInterceptor() is to be registered only if the egress data capture is required. Otherwise this can be skipped.
 
+# JAXRS Interceptor
+
+## Adding the dependency in the pom.xml
+The following dependency to be added to the pom.xml of the target application.
+
+<img width="595" alt="image" src="https://user-images.githubusercontent.com/13015877/121777851-bddd9f00-cbb1-11eb-85b6-845ce5c97783.png">
+
+## Adding the Ingress/Egress Interceptor 
+
+Add the ingress/egress interceptor classesto the Jersey provider packagesin the web.xmlfor it to scan.
+
+<img width="677" alt="image" src="https://user-images.githubusercontent.com/13015877/121777909-04cb9480-cbb2-11eb-8a2e-d86c983e7cd4.png">
+
+## Registering the Egress Interceptor
+
+While making REST calls as a client, the place where the Jerseyclient is built using the ClientBuilder, register the egress interceptors as below:
+
+<img width="650" alt="image" src="https://user-images.githubusercontent.com/13015877/121777933-2298f980-cbb2-11eb-9c77-eb87cf84ea75.png">
+
+ClientLoggingFilter.classis to be registered only if the egress data capture is required, otherwise it can be skipped
