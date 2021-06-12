@@ -45,9 +45,9 @@ Refer the nginx.conf sample template configuration file and replace the place ho
 6. instanceId - Any meaningful name that can help identify the specific test envrionment where the applicaiton with this nginx instance is running
 
 
-To capture the API traffic, the traffic should be routed through the LUA module to enable the same. If all the API traffic to be captured is exposed under a specific context path prefix by the application, the routing can be configured only for the prefix path.The following example configuration show how to configure nginx.conf with sample context path prefix '/api'
+To capture the API traffic, the traffic should be routed through the LUA module. If all the API traffic to be captured is exposed under a specific context path prefix by the application then the routing can be configured only for the prefix path. The following example configuration shows how to configure nginx.conf with sample context path prefix '/api'
 
-Here all the API calls with /api prefix will be routed through the request_logger.lua LUA module and the data will be captured and then it will be routed to the target applicaiton which in this case is running on http://localhost:8080
+Here all the API calls with /api prefix will be routed through the request_logger.lua LUA module and the corresponding API traffic will be captured and while calls are routed to the target applicaiton which in this case is running on http://localhost:8080
 
 
     	location /api/ {
@@ -69,7 +69,7 @@ Here all the API calls with /api prefix will be routed through the request_logge
     	}
         
 
-If the application does not have any specific prefix to filter API traffic then all the traffic including API and static contents like html, js, image, fonts etc. and then use the filter option in the UI to filter out the static contents and keep only the API traffic to create the regresssion test suite
+If the application does not have any specific prefix to filter API traffic then capture all the traffic including API and static contents like html, js, image, fonts etc. and then use the filter option in the UI to filter out the static contents and keep only the API traffic to create the regresssion test suite
 
 Here is the eample config that captures everyting 
 
