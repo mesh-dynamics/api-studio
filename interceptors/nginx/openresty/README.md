@@ -69,4 +69,44 @@ Here all the API calls with /api prefix will be routed through the request_logge
     	}
         
 
-If the application 
+If the application does not have any specific prefix to filter API traffic then all the traffic including API and static contents like html, js, image, fonts etc. and then use the filter option in the UI to filter out the static contents and keep only the API traffic to create the regresssion test suite
+
+Here is the eample config that captures everyting 
+
+        location / {
+
+               content_by_lua_file request_logger.lua;
+
+        }
+
+        location /custom_cube/ {
+
+                rewrite ^/custom_cube(.*)$ $1 break;
+
+               proxy_pass http://localhost:8080;
+
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+                proxy_set_header Host $host;
+
+               proxy_set_header X-Forwarded-Port 443;
+
+                proxy_redirect off;
+
+                if (!-f $request_filename) {
+
+                        proxy_pass http://localhost:8080;
+
+                        break;
+
+                }
+
+
+ 
+
+        }
+        
+Here is the option to be selected during the recording start in the UI where the static contents can be filtered
+![Uploading image.png…]()
+
+
