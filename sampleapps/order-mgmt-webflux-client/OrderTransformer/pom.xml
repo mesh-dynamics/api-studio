@@ -6,7 +6,7 @@
 
 	<groupId>com.cube.examples</groupId>
 	<artifactId>OrderTransformer</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>${revision}</version>
 	<packaging>jar</packaging>
 
 	<name>OrderTransformer</name>
@@ -37,14 +37,14 @@
 			<version>4.2.2</version>
 		</dependency>
 		<dependency>
-			<groupId>com.cube.interceptor</groupId>
+			<groupId>io.meshdynamics</groupId>
 			<artifactId>md-spring-ingress-interceptor</artifactId>
-			<version>0.0.1</version>
+			<version>${revision}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.cube.interceptor</groupId>
+			<groupId>io.meshdynamics</groupId>
 			<artifactId>md-spring-egress-webclient-interceptor</artifactId>
-			<version>0.0.1</version>
+			<version>${revision}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

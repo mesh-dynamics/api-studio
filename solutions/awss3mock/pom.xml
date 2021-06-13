@@ -5,10 +5,10 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <groupId>com.example.myapp</groupId>
-  <artifactId>myapp</artifactId>
+  <artifactId>aws-s3-app</artifactId>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
-  <name>myapp</name>
+  <version>${revision}</version>
+  <name>aws-s3-app</name>
   <dependencyManagement>
     <dependencies>
       <dependency>

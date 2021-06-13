@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>cxf-jaxrs-student</artifactId>
     <name>student-service</name>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>${revision}</version>
     <groupId>com.meshd</groupId>
     
     <!--<parent>

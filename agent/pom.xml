@@ -3,22 +3,15 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-    <groupId>io.cube</groupId>
+    <groupId>io.meshdynamics</groupId>
     <artifactId>agent</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>${revision}</version>
     <properties>
         <version.java>8</version.java>
         <version.gson>2.8.5</version.gson>
-        <version.mdcommons>1.2.34.0</version.mdcommons>
         <version.jersey>2.27</version.jersey>
     </properties>
-    <distributionManagement>
-      <repository>
-        <id>github</id>
-        <name>GitHub CubeIO Apache Maven Packages</name>
-        <url>https://maven.pkg.github.com/cube-io-corp/agent</url>
-      </repository>
-    </distributionManagement>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -66,14 +59,6 @@
         </plugins>
     </build>
 
-  <repositories>
-    <repository>
-      <id>github</id>
-      <name>GitHub OWNER Apache Maven Packages</name>
-      <url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
-    </repository>
-  </repositories>
-
   <dependencies>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -119,9 +104,9 @@
       <version>1.1.0</version>
     </dependency>
     <dependency>
-      <groupId>io.cube</groupId>
+      <groupId>io.meshdynamics</groupId>
       <artifactId>commons</artifactId>
-      <version>${version.mdcommons}</version>
+      <version>${revision}</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.lmax/disruptor -->
     <dependency>

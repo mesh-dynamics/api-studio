@@ -11,22 +11,13 @@
 
     <groupId>com.cubeio</groupId>
     <artifactId>log-collector</artifactId>
-    <version>0.0.1</version>
+    <version>${revision}</version>
     <name>log-collector</name>
     <description>Central Log Collector</description>
 
     <properties>
         <java.version>11</java.version>
-        <version.mdcommons>1.1.70.0</version.mdcommons>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>github</id>
-            <name>GitHub OWNER Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
-        </repository>
-    </repositories>
 
 
     <dependencies>
@@ -92,9 +83,9 @@
             <version>0.8.17</version>
         </dependency>
         <dependency>
-            <groupId>io.cube</groupId>
+            <groupId>io.meshdynamics</groupId>
             <artifactId>commons</artifactId>
-            <version>${version.mdcommons}</version>
+            <version>${revision}</version>
         </dependency>
 
 

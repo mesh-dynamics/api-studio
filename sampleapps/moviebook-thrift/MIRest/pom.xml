@@ -7,7 +7,7 @@
   <name>MIThrift</name>
 
   <parent>
-    <groupId>io.cube.sampleapps</groupId>
+    <groupId>io.meshdynamics.sampleapps</groupId>
     <artifactId>root</artifactId>
     <version>1.0.0</version>
   </parent>
@@ -317,13 +317,13 @@
       <version>${version.jaeger}</version>
     </dependency>
     <dependency>
-      <groupId>io.cube.sampleapps</groupId>
+      <groupId>io.meshdynamics.sampleapps</groupId>
       <artifactId>Utils</artifactId>
       <version>1.0.0</version>
     </dependency>
 
     <dependency>
-      <groupId>io.cube.sampleapps</groupId>
+      <groupId>io.meshdynamics.sampleapps</groupId>
       <artifactId>ThriftWrapJDBC</artifactId>
       <version>1.0.0</version>
     </dependency>
@@ -336,7 +336,7 @@
     </dependency>
 
     <dependency>
-      <groupId>io.cube</groupId>
+      <groupId>io.meshdynamics</groupId>
       <artifactId>agent</artifactId>
       <version>1.0.1</version>
     </dependency>

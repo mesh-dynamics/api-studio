@@ -6,7 +6,7 @@
 
     <groupId>com.meshdynamics</groupId>
     <artifactId>pat-generator</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <build>
         <plugins>
             <plugin>

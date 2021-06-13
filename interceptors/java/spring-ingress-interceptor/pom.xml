@@ -4,9 +4,9 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.cube</groupId>
+  <groupId>io.meshdynamics</groupId>
   <artifactId>md-spring-ingress-interceptor</artifactId>
-  <version>1.2.16</version>
+  <version>${revision}</version>
   <packaging>jar</packaging>
 
   <name>spring-ingress-interceptor</name>
@@ -24,15 +24,6 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>8</java.version>
   </properties>
-
-
-  <repositories>
-    <repository>
-      <id>github</id>
-      <name>GitHub OWNER Apache Maven Packages</name>
-      <url>https://maven.pkg.github.com/cube-io-corp/agent</url>
-    </repository>
-  </repositories>
 
   <dependencies>
     <dependency>
@@ -76,9 +67,9 @@
     </dependency>
 
     <dependency>
-      <groupId>io.cube</groupId>
+      <groupId>io.meshdynamics</groupId>
       <artifactId>agent</artifactId>
-      <version>1.0.65</version>
+      <version>${revision}</version>
     </dependency>
 
     <dependency>

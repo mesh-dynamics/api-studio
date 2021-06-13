@@ -6,9 +6,9 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.md</groupId>
+    <groupId>io.meshdynamics</groupId>
     <artifactId>md-dropwizard-sample</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>jar</packaging>
 
     <name>MDDropWizardSample</name>
@@ -43,9 +43,9 @@
             <version>2.3.1</version>
         </dependency>
         <dependency>
-            <groupId>io.cube</groupId>
+            <groupId>io.meshdynamics</groupId>
             <artifactId>md-jaxrs-interceptor</artifactId>
-            <version>1.2.5</version>
+            <version>${revision}</version>
         </dependency>
     </dependencies>
 
