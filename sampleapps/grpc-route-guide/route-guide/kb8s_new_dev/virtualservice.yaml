@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: route-guide-virtualservice
+  namespace: grpc
+spec:
+  hosts:
+    - grpc.dev.meshdynamics.io
+  gateways:
+    - grpc-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: route-guide-service
+            port:
+              number: 8980

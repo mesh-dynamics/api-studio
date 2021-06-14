@@ -1,0 +1,38 @@
+version: '3.2'
+services:
+  details:
+    image:  cubeiocorp/details:V1-SNAPSHOT
+    container_name: details
+    #build: ./details
+    expose:
+      - 9080
+  ratings:
+    image: cubeiocorp/ratings:V1-SNAPSHOT
+    container_name: ratings
+    #build: ./ratings
+    expose:
+      - 9080
+  reviews:
+    image: cubeiocorp/reviews:V1-SNAPSHOT
+    container_name: reviews
+    #build: ./reviews/reviews-wlpcfg
+    expose:
+      - 9080
+  thriftwrapjdbc:
+    image: cubeiocorp/thrift-wrap-jdbc:V1-SNAPSHOT
+    container_name: thriftwrapjdbc
+    #build: ./RestWrapJDBC
+    expose:
+      - 9090
+  mithrift:
+    image: cubeiocorp/sample-apps-mithrift:V1-SNAPSHOT
+    container_name: mithrift
+    build: ./MIRest
+    #network_mode: "host"
+    expose:
+      - 9090
+    ports:
+      - target: 9090
+        published: 9090
+        protocol: tcp
+        mode: host
