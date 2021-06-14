@@ -4,9 +4,9 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>io.meshdynamics.examples</groupId>
+	<groupId>com.cube.examples</groupId>
 	<artifactId>OrderReceiver</artifactId>
-	<version>${revision}</version>
+	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>OrderReceiver</name>
@@ -23,6 +23,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>10</java.version>
+		<version.log4j>2.11.1</version.log4j>
 	</properties>
 
 	<dependencies>
@@ -44,9 +45,9 @@
 <!--			<version>5.2.1.RELEASE</version>-->
 <!--		</dependency>-->
 		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.17</version>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>${version.log4j}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.squareup.okhttp3</groupId>
@@ -96,9 +97,9 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>io.meshdynamics</groupId>
+			<groupId>com.cube.interceptor</groupId>
 			<artifactId>md-spring-ingress-interceptor</artifactId>
-			<version>${revision}</version>
+			<version>0.0.1</version>
 		</dependency>
 
 <!--		<dependency>-->

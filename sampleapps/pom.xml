@@ -38,7 +38,7 @@
 
                 <execution>
                   <id>moviebook-thrift</id>
-                  <phase>pre-integration-test</phase>
+                  <phase>package</phase>
                   <goals>
                     <goal>exec</goal>
                   </goals>
@@ -49,7 +49,7 @@
 
                 <execution>
                   <id>moviebook</id>
-                  <phase>pre-integration-test</phase>
+                  <phase>package</phase>
                   <goals>
                     <goal>exec</goal>
                   </goals>
@@ -87,8 +87,8 @@
 
   <modules>
     <module>grpc-route-guide</module>
-    <module>sampleapp-dropwizard</module>
     <module>order-mgmt-webflux-client</module>
+    <module>sampleapp-dropwizard</module>
   </modules>
 
 </project>

@@ -14,7 +14,7 @@
 	</properties>
 
 	<parent>
-		<groupId>io.meshdynamics.sampleapps</groupId>
+		<groupId>io.cube.sampleapps</groupId>
 		<artifactId>root</artifactId>
 		<version>1.0.0</version>
 	</parent>
@@ -277,7 +277,7 @@
 	 <dependency>
 		 <groupId>io.meshdynamics.sampleapps</groupId>
 		 <artifactId>Utils</artifactId>
-		 <version>1.0.0</version>
+		 <version>${revision}</version>
 	 </dependency>
 
     <dependency>
@@ -298,7 +298,7 @@
 	 <dependency>
 		 <groupId>io.meshdynamics</groupId>
 		 <artifactId>agent</artifactId>
-		 <version>1.0.1</version>
+		 <version>${revision}</version>
 	 </dependency>
 
 

@@ -6,8 +6,8 @@
     <packaging>pom</packaging>
 
     <modules>
-    <module>OrderTransformer</module>
+<!--    <module>OrderTransformer</module>-->
     <module>OrderProcessor</module>
-    <module>OrderReceiver</module>
+<!--    <module>OrderReceiver</module>-->
     </modules>
 </project>

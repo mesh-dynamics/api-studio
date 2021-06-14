@@ -2,8 +2,16 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>cxf-jaxrs-implementation</artifactId>
     <name>cxf-jaxrs-implementation</name>
-    <version>${revision}</version>
-    <groupId>io.meshdynamics</groupId>
+    <version>0.0.1-SNAPSHOT</version>
+    <groupId>com.cube</groupId>
+
+    <repositories>
+      <repository>
+        <id>github</id>
+        <name>GitHub OWNER Apache Maven Packages</name>
+        <url>https://maven.pkg.github.com/cube-io-corp/interceptor-framework</url>
+      </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -90,9 +98,9 @@
             <version>2.10.2.1</version>
         </dependency>
         <dependency>
-            <groupId>io.meshdynamics</groupId>
+            <groupId>io.cube</groupId>
             <artifactId>md-apache-cxf-interceptor</artifactId>
-            <version>${revision}</version>
+            <version>1.2.14</version>
         </dependency>
 
         

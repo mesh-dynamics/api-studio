@@ -13,7 +13,7 @@
 	</properties>
 
 	<parent>
-		<groupId>io.meshdynamics.sampleapps</groupId>
+		<groupId>io.cube.sampleapps</groupId>
 		<artifactId>root</artifactId>
 		<version>V1-SNAPSHOT</version>
 	</parent>

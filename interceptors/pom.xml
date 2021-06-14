@@ -17,6 +17,12 @@
   <!-- FIXME change it to the project's website -->
   
   <url>http://www.meshdynamics.io</url>
+
+  <parent>
+    <groupId>io.meshdynamics</groupId>
+    <artifactId>meshd-complete</artifactId>
+    <version>${revision}</version>
+  </parent>
   
   <properties>
     
@@ -138,6 +144,7 @@
   <modules>
     
     <module>java</module>
+<!--    <module>jdbc</module>-->
 <!--    <module>thrift</module>-->
     
   </modules>

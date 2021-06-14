@@ -13,6 +13,13 @@
         <version.jersey>2.27</version.jersey>
     </properties>
 
+    <parent>
+        <groupId>io.meshdynamics</groupId>
+        <artifactId>meshd-complete</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+
     <build>
         <plugins>
             <plugin>

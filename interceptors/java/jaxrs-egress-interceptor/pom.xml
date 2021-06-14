@@ -18,6 +18,13 @@
 		<version.jersey>2.27</version.jersey>
 	</properties>
 
+	<parent>
+		<groupId>io.meshdynamics.interceptor</groupId>
+		<artifactId>java-interceptors</artifactId>
+		<version>${revision}</version>
+	</parent>
+
+
 	<repositories>
 		<repository>
 			<id>github</id>

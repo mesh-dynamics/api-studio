@@ -7,7 +7,7 @@
   <name>MIThrift</name>
 
   <parent>
-    <groupId>io.meshdynamics.sampleapps</groupId>
+    <groupId>io.cube.sampleapps</groupId>
     <artifactId>root</artifactId>
     <version>1.0.0</version>
   </parent>
@@ -102,10 +102,6 @@
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <repository>cubeiocorp/sample-apps-mithrift</repository>
-          <tag>${docker.tag}</tag>
-        </configuration>
       </plugin>
 
       <plugin>
@@ -319,13 +315,13 @@
     <dependency>
       <groupId>io.meshdynamics.sampleapps</groupId>
       <artifactId>Utils</artifactId>
-      <version>1.0.0</version>
+      <version>{revision}</version>
     </dependency>
 
     <dependency>
       <groupId>io.meshdynamics.sampleapps</groupId>
       <artifactId>ThriftWrapJDBC</artifactId>
-      <version>1.0.0</version>
+      <version>${revision}</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.apache.thrift/libthrift -->
@@ -338,7 +334,7 @@
     <dependency>
       <groupId>io.meshdynamics</groupId>
       <artifactId>agent</artifactId>
-      <version>1.0.1</version>
+      <version>${revision}</version>
     </dependency>
 
     <dependency>

@@ -16,6 +16,13 @@
     <version.slf4j>1.7.30</version.slf4j>
     <version.commons-math>3.6.1</version.commons-math>
   </properties>
+
+  <parent>
+    <groupId>io.meshdynamics</groupId>
+    <artifactId>meshd-complete</artifactId>
+    <version>${revision}</version>
+  </parent>
+
   <dependencyManagement>
     <dependencies>
       <dependency>

@@ -18,6 +18,13 @@
     <version.java>8</version.java>
   </properties>
 
+  <parent>
+    <groupId>io.meshdynamics.interceptor</groupId>
+    <artifactId>java-interceptors</artifactId>
+    <version>${revision}</version>
+  </parent>
+
+
   <dependencies>
     <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
     <dependency>

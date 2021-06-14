@@ -13,6 +13,13 @@
         <version.java>8</version.java>
     </properties>
 
+    <parent>
+        <groupId>io.meshdynamics</groupId>
+        <artifactId>interceptors</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -140,7 +147,7 @@
         <dependency>
             <groupId>io.meshdynamics</groupId>
             <artifactId>agent</artifactId>
-            <version>1.0.27</version>
+            <version>${revision}</version>
         </dependency>
     </dependencies>
 

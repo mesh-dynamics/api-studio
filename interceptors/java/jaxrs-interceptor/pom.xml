@@ -7,6 +7,12 @@
   <version>${revision}</version>
   <packaging>jar</packaging>
 
+  <parent>
+    <groupId>io.meshdynamics.interceptor</groupId>
+    <artifactId>java-interceptors</artifactId>
+    <version>${revision}</version>
+  </parent>
+
   <dependencies>
     <dependency>
       <groupId>io.meshdynamics</groupId>
