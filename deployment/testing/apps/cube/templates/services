@@ -1,0 +1,4 @@
+services:
+  - cubews-record
+  - cubews-mock
+  - cubews-replay
