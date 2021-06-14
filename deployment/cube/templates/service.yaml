@@ -1,0 +1,567 @@
+##################################################################################################
+# Cube Web Services - Record
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubews-record
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: cube
+    component: cubews-record
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    component: cubews-record
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cubews-record-v1
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.cube.recordReplica }}
+  selector:
+    matchLabels:
+      component: cubews-record
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        component: cubews-record
+        app: cube
+        version: v1
+        namespace: {{ .Values.namespace }}
+    spec:
+      containers:
+      - name: cubews
+        image: cubeiocorp/cubews:{{ .Values.cube.cubewsImageTag }}
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "5Gi"
+            cpu: "1000m"
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /cs/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /cs/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        env:
+          - name: solr_base_url
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_BASE_URL
+          - name: solr_core
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_CORE
+          - name: redis_host
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: REDIS_HOST
+      imagePullSecrets:
+      - name: regcred
+
+##################################################################################################
+# Cube Web Services - Mock
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubews-mock
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: cube
+    component: cubews-mock
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    component: cubews-mock
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cubews-mock-v1
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      component: cubews-mock
+  replicas: {{ .Values.cube.mockReplica }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: cube
+        component: cubews-mock
+        version: v1
+        namespace: {{ .Values.namespace }}
+    spec:
+      containers:
+      - name: cubews
+        image: cubeiocorp/cubews:{{ .Values.cube.cubewsImageTag }}
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "5Gi"
+            cpu: "1000m"
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /ms/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /ms/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        env:
+          - name: solr_base_url
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_BASE_URL
+          - name: solr_core
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_CORE
+          - name: redis_host
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: REDIS_HOST
+      imagePullSecrets:
+      - name: regcred
+
+##################################################################################################
+# Cube Web Services - Replay
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubews-replay
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: cube
+    component: cubews-replay
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    component: cubews-replay
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cubews-replay-v1
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      component: cubews-replay
+  replicas: {{ .Values.cube.replayReplica }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: cube
+        component: cubews-replay
+        version: v1
+        namespace: {{ .Values.namespace }}
+    spec:
+      containers:
+      - name: cubews
+        image: cubeiocorp/cubews:{{ .Values.cube.cubewsImageTag }}
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "5Gi"
+            cpu: "1000m"
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /rs/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /rs/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        env:
+          - name: solr_base_url
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_BASE_URL
+          - name: solr_core
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_CORE
+          - name: redis_host
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: REDIS_HOST
+      imagePullSecrets:
+      - name: regcred
+##################################################################################################
+# Cube UI
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubeui
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: cube
+    component: cubeui
+spec:
+  ports:
+  - port: 80
+    name: http
+  selector:
+    component: cubeui
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cubeui-v1
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      component: cubeui
+  replicas: {{ .Values.cube.uiReplica }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: cube
+        component: cubeui
+        version: v1
+        namespace: {{ .Values.namespace }}
+    spec:
+      containers:
+      - name: cubeui
+        image: cubeiocorp/cubeui:{{ .Values.cube.cubeuiImageTag }}
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "200m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+      - name: regcred
+#################################################################################################
+# CubeUI backend
+#################################################################################################
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: cube
+    component: cubeui-backend
+  name: cubeui-backend-config
+  namespace: {{ .Values.namespace }}
+data:
+  webCorsAllowedOrigins.txt: |-
+    {{ .Values.cube.allowedURL }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubeui-backend
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: cube
+    component: cubeui-backend
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    component: cubeui-backend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cubeui-backend-v1
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      component: cubeui-backend
+  replicas: {{ .Values.cube.uibackendReplica }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: cube
+        component: cubeui-backend
+        version: v1
+        namespace: {{ .Values.namespace }}
+    spec:
+      containers:
+      - name: cubeui-backend
+        image: cubeiocorp/cubeuibackend:{{ .Values.cube.cubeuibackendImageTag }}
+        imagePullPolicy: Always
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "{{ .Values.cube.springbootProfile }}"
+        - name: spring.datasource.url
+          value: "{{ .Values.cube.springbootURL }}"
+        - name: spring.datasource.username
+          value: "{{ .Values.cube.springbootUsername }}"
+        - name: spring.datasource.password
+          value: "{{ .Values.cube.springbootpassword }}"
+        - name: allowed.origins.path
+          value: "/usr/local/tomcat/webCorsAllowedOrigins.txt"
+        resources:
+          requests:
+            memory: "640Mi"
+            cpu: "250m"
+          limits:
+            memory: "5Gi"
+            cpu: "1000m"
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: "/usr/local/tomcat/webCorsAllowedOrigins.txt"
+          name: cubeui-backend-config
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /api/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /api/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+      volumes:
+      - name: cubeui-backend-config
+        configMap:
+         name: cubeui-backend-config
+      imagePullSecrets:
+      - name: regcred
+
+#########
+#REDIS
+#########
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+  - port: 6379
+    name: peer
+  clusterIP: None
+  selector:
+    component: redis
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: cube
+    component: redis
+data:
+  init.sh: |
+    #!/bin/bash
+    if [[ ${HOSTNAME} == 'redis-0' ]]; then
+      redis-server /redis-config/master.conf
+    else
+      redis-server /redis-config/slave.conf
+    fi
+  master.conf: |
+    bind 0.0.0.0
+    port 6379
+
+    maxmemory 16777216
+    dir /redis-data
+  sentinel.conf: |
+    bind 0.0.0.0
+    port 26379
+
+    sentinel monitor redis redis-0.redis 6379 2
+    sentinel parallel-syncs redis 1
+    sentinel down-after-milliseconds redis 10000
+    sentinel failover-timeout redis 20000
+  sentinel.sh: |
+    #!/bin/bash
+    while ! ping -c 1 redis-0.redis; do
+        echo 'Waiting for server'
+        sleep 1
+    done
+
+    redis-sentinel /redis-sentinel-conf/sentinel.conf
+  slave.conf: |
+    bind 0.0.0.0
+    port 6379
+
+    dir .
+
+    slaveof redis-0.redis 6379
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: cube
+    component: redis
+spec:
+  selector:
+    matchLabels:
+      component: redis
+  replicas: {{ .Values.redis.replica }}
+  serviceName: redis
+  template:
+    metadata:
+      labels:
+        app: cube
+        component: redis
+    spec:
+      containers:
+      - command: [sh, -c, source /redis-config/init.sh ]
+        image: redis:5.0.5-alpine
+        name: redis
+        ports:
+        - containerPort: 6379
+          name: redis
+        volumeMounts:
+        - mountPath: /redis-config
+          name: config
+        - mountPath: /redis-data
+          name: data
+        resources:
+          requests:
+            memory: "64Mi"
+          limits:
+            cpu: "0.1"
+            memory: "128Mi"
+      - command: [sh, -c, cp /redis-config/sentinel.conf /redis-sentinel-conf/sentinel.conf  && source /redis-config/sentinel.sh]
+        image: redis:5.0.5-alpine
+        name: sentinel
+        volumeMounts:
+        - mountPath: /redis-config
+          name: config
+        - mountPath: /redis-sentinel-conf
+          name: redis-sentinel
+      volumes:
+      - configMap:
+          defaultMode: 0666
+          name: redis-config
+        name: config
+      - emptyDir:
+        name: data
+      - emptyDir:
+        name: redis-sentinel
