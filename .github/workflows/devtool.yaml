@@ -3,10 +3,9 @@ name: Build Devtool
 on:
   push:
     branches:
-      - develop
-      - master
-      - staging
+      - main
       - test
+      - cubeui/build-test
 
   release:
     types: [published]
