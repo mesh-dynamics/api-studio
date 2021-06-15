@@ -1,0 +1,76 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: backup
+  namespace: postgres
+spec:
+  schedule: "0 6 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: setup
+            image: postgres:10.6
+            command: [ "/etc/config/backup.sh" ]
+            volumeMounts:
+              - name: script
+                mountPath: /etc/config
+              - name: postgres-backup
+                mountPath: /backup
+            env:
+              - name: PGPORT
+                value: "5432"
+              - name: PGHOST
+                value: postgresql
+              - name: PGUSER
+                value: postgres
+              - name: PGPASSWORD
+                value: postgres
+          restartPolicy: OnFailure
+          volumes:
+            - name: postgres-backup
+              persistentVolumeClaim:
+                claimName: postgres-backup
+            - name: script
+              configMap:
+                defaultMode: 0755
+                name: backup-script
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-backup
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-script
+data:
+  backup.sh: |-
+    #!/usr/bin/env bash
+
+    FILENAME="$(date +%Y-%m-%d).gz"
+
+    echo "Taking backup.."
+    cd /backup
+
+    pg_dump cubedb | gzip > "${FILENAME}"
+
+    if [ $? -ne 0 ]; then
+      rm $DUMP_FILE_NAME
+      echo "Back up not created, check db connection settings"
+      exit 1
+    fi
+    echo 'Successfully Backed Up'
+    echo 'deleting backups older than 10days..'
+    ls -t | tail -n +10 | xargs rm -rf
+    exit 0
