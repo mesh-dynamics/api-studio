@@ -1,3 +1,16 @@
+/*
+ * Copyright 2021 MeshDynamics.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React, { Fragment } from 'react';
 import {Link, withRouter} from "react-router-dom";
 import {connect} from "react-redux";
@@ -796,13 +809,13 @@ class ViewSelectedTestConfig extends React.Component {
         // Keep this line around. Unclear why this was added. Since local replay (mocked) is causing the replay to fail
         // commenting out the part where the gateway endpoint is forcefully encoded
         // const gatewayEndpointNoProtocol = encodeURIComponent(gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, '')); // drop the protocol
-        const gatewayEndpointNoProtocol = gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, '').replace(/\/+$/, ''); // drop the protocol
+        const gatewayEndpointNoProtocol = gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, '').replace(/\/$/, ''); // drop the protocol and remove trailing slash
         const otherInstanceId = `${username}_${gatewayEndpointNoProtocol}`
 
         const {selectedTemplateSetName, selectedTemplateSetLabel} = this.state;
         
         const searchParams = new URLSearchParams();
-        searchParams.set('endPoint', gatewayEndpoint.replace(/\/+$/, ''));
+        searchParams.set('endPoint', gatewayEndpoint.replace(/\/$/, '')); // remove trailing slash
         searchParams.set('instanceId', otherInstanceSelected ? otherInstanceId : selectedInstance);
         searchParams.set('templateSetVer', collectionTemplateVersion);
         searchParams.set('userId', username);

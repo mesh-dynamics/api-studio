@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: route-guide-virtualservice-mock
+  namespace: grpc
+spec:
+  hosts:
+    - route-guider-service-mock
+  http:
+    - match:
+        - uri:
+            prefix: /
+      rewrite:
+        uri: /ms/CubeCorp/grpc/replay/route-guider-service/POST/
+      route:
+        - destination:
+            host: cubews-mock.cube.svc.cluster.local
+            port:
+              number: 8081

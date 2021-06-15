@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cubews
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: cube
+data:
+  REDIS_HOST: "redis"
+  SOLR_CORE: {{ quote .Values.cube.solrCore }}
+  SOLR_BASE_URL: {{ quote .Values.cube.solrURL }}

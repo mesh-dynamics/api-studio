@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: route-guide-virtualservice-replay
+  namespace: grpc
+spec:
+  hosts:
+    - grpc-replay.prod.v2.cubecorp.io
+  gateways:
+    - grpc-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: route-guide-service-replay
+            port:
+              number: 8980
