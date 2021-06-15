@@ -3,7 +3,7 @@ Define here the types from API Response data.
 It can be changed based on type of response changing from backend
 */
 
-import { IEventData, ITimelineData, ICollectionDetails, IApiTrace, IPayloadData, IDiffCompOperation } from "./reducers/state.types";
+import { IEventData, ITimelineData, ICollectionDetails, IApiTrace, IPayloadData, IDiffCompOperation, IAppInfo } from "./reducers/state.types";
 
 export interface IGetEventsApiResponse{
     numResults: number;
@@ -59,3 +59,23 @@ export interface IGetApiTraceResponse {
  export interface IReqRespMatchResultResponse {
     res:IReqRespMatchResultResponseRes
  }
+
+ export interface IServiceGroup{
+   app: IAppInfo,
+   createdAt: string,
+   updatedAt: string,
+   id: number,
+   name: string,
+ }
+ export interface IService{
+   app: IAppInfo,
+   createdAt: string,
+   updatedAt: string,
+   id: number,
+   name: string,
+   serviceGroups:IServiceGroup
+ }
+export interface IServiceListResponse{
+   service: IService,
+   prefixes:any[]
+}
