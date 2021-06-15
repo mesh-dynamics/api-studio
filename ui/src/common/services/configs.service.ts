@@ -2,7 +2,7 @@ import config from "../config";
 import api from "../api";
 import { AxiosRequestConfig } from "axios";
 import { ITestConfigDetails } from "../reducers/state.types";
-import { IServiceListResponse } from "../apiResponse.types";
+import { IPathListResponse, IServiceListResponse } from "../apiResponse.types";
 // import _ from 'lodash';
 
 export interface IDownloadRuleArgs {
@@ -231,7 +231,7 @@ const getPathsList = async(appId: string) => {
   let apiEventURL = `${config.apiBaseUrl}/app/${appId}/services/paths`;
 
   try {
-    return api.get(apiEventURL);
+    return await api.get(apiEventURL) as IPathListResponse[];
   } catch (e) {
     console.error("Error fetching API Event data");
     throw e;

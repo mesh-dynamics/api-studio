@@ -6,6 +6,7 @@ import { IStoreState, ITestConfigDetails } from '../../../reducers/state.types';
 import { configsService } from '../../../services/configs.service';
 import { v4 as uuid } from 'uuid';
 import { MultiLineInputComponent } from './MultiLineInputComponent';
+import { IPathListResponse } from 'src/src/common/apiResponse.types';
 
 interface IEditTestConfigProps {
     testConfigId: number,
@@ -51,13 +52,17 @@ function EditTestConfig(props: IEditTestConfigProps) {
     useEffect(() => {
         if (props.appId) {
             configsService.getPathsList(props.appId).then((data) => {
-                console.log("Paths", data);
+                let paths: string[] = [];
+                data.forEach((currentValue: IPathListResponse) => {
+                    paths.push(...currentValue.paths);
+                }, []);
+                paths = paths.filter((item, index) => !!item && !(paths.indexOf(item) < index));
+                setPathListInApp(paths);
             }).catch(error => {
                 console.error(error);
             })
 
             configsService.getServicesList(props.appId).then((data) => {
-                console.log("Services", data);
                 setServiceListInApp(data.map(service => service.service.name));
             }).catch(error => {
                 console.error(error);
@@ -82,7 +87,6 @@ function EditTestConfig(props: IEditTestConfigProps) {
                 testConfig.id = props.testConfigId;
             }
             configsService.createOrUpdateTestConfig(props.customerName, props.appName, testConfig).then(data => {
-                console.log("Created or updated", data);
                 props.onClose(true);
             }).catch(error => {
                 alert(error.message)
@@ -103,7 +107,7 @@ function EditTestConfig(props: IEditTestConfigProps) {
                         :
                         </Col>
                     <Col sm={12} md={7} lg={8}>
-                        <FormControl as="input" name="name" id="name" value={name} onChange={onNameChange} />
+                        <FormControl as="input" name="name" id="name" value={name} onChange={onNameChange} disabled={!!props.testConfigId} />
                     </Col>
                 </Row>
                 <Row className="margin-top-10">

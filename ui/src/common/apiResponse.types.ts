@@ -79,3 +79,8 @@ export interface IServiceListResponse{
    service: IService,
    prefixes:any[]
 }
+
+export interface IPathListResponse{
+   service: IService,
+   paths: string[]
+}

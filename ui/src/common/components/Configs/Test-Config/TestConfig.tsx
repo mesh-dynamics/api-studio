@@ -86,6 +86,13 @@ class TestConfig extends Component<ITestConfigProps, ITestConfigState> {
                             <strong>{item.criteria}</strong>
                         </div>
 
+                        {item.testServices && item.testServices.length > 0 && <div className="margin-bottom-10">
+                            <span className="t-name">
+                                Test Service(s):&nbsp;
+                            </span>
+                            <strong>{item.testServices && item.testServices.length > 0 ? item.testServices.join(', ') : ""}</strong>
+                        </div>}
+
                         <div className="margin-bottom-10">
                             <span className="t-name">
                                 MOCK(s):&nbsp;
@@ -118,9 +125,8 @@ class TestConfig extends Component<ITestConfigProps, ITestConfigState> {
         this.setState({ inEditMode: false });
         const appId = this.props.cube.selectedAppObj?.app.id;
         if (refresh && appId) {
-            //Get the test-configs again
+            this.props.dispatch(cubeActions.getTestConfigByAppId(appId));
         }
-        this.props.dispatch(cubeActions.getTestConfigByAppId(appId)); //TODO move up
     }
 
     confirmDelete = () => {
