@@ -18,6 +18,12 @@
     grid-column-gap: 20px;
     grid-row-gap: 20px;
 }
+.tc-grid .grid-content span>i{
+    visibility:hidden;
+}
+.tc-grid .grid-content:hover span>i{
+    visibility:visible;
+}
 
 .tc-grid .grid-content{
     box-sizing: border-box;
@@ -47,8 +53,26 @@
     position: relative;
     padding: 10px;
     background: #EAEAEA;
+    min-height: calc(200px - 43px);
 }
 
 .t-name {
     font-weight: 300;
+}
+
+.add-grid{
+    border: gray 2px dashed;
+    background-color: #eaeaea;
+    text-align: center;
+    font-size: 22px;
+    padding-top: 26%;
+    border-radius: 10px;
+}
+.inline-action input{
+    width: calc(100% - 27px);
+    margin-right: 10px;
+    display: inline;
+}
+.grid-content {
+    min-height: 200px;
 }
