@@ -36,7 +36,9 @@ jobs:
         env:
           APPLE_ID: ${{ secrets.AC_USERNAME }}
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          appleId: ${{ secrets.AC_USERNAME }}
+          appleIdPassword: ${{ secrets.AC_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
           version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
@@ -59,7 +61,9 @@ jobs:
         env:
           APPLE_ID: ${{ secrets.AC_USERNAME }}
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          appleId: ${{ secrets.AC_USERNAME }}
+          appleIdPassword: ${{ secrets.AC_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
           echo $version
@@ -76,7 +80,9 @@ jobs:
         env:
           APPLE_ID: ${{ secrets.AC_USERNAME }}
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          appleId: ${{ secrets.AC_USERNAME }}
+          appleIdPassword: ${{ secrets.AC_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           version=${{ github.event.inputs.version }}
           echo $version
@@ -144,6 +150,7 @@ jobs:
         env:
           WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
         run: |
           choco install yq --version 3.4.1 -y
