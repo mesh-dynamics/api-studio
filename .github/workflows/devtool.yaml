@@ -25,11 +25,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - run: git fetch --prune --unshallow --tags
-      - name: Import Code-Signing Certificates
-        uses: Apple-Actions/import-codesign-certs@v1
-        with:
-          p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE }}
-          p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+      # - name: Import Code-Signing Certificates
+      #   uses: Apple-Actions/import-codesign-certs@v1
+      #   with:
+      #     p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE }}
+      #     p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
       - name: Build for macOS
         if: ${{ github.event_name == 'push'}}
         working-directory: ./ui
