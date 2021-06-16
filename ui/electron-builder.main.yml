@@ -1,8 +1,8 @@
-appId: com.meshdynamics.cubeui.master
+appId: com.meshdynamics.cubeui
 
 extends: null
 
-productName: Mesh Dynamics - Master
+productName: Mesh Dynamics - Main
 
 asar: true
 
@@ -15,14 +15,20 @@ protocols:
 extraMetadata:
   main: "dist/electron/electron-main.js"
 
-afterSign: "scripts/notarize.js"
+# afterSign: "scripts/notarize.js" #UnComment it
+
+# publish:
+#   provider: s3
+#   bucket: meshdynamics-devtool
+#   channel: latest
+#   path: /master
+#   acl: private
+
 
 publish:
-  provider: s3
-  bucket: meshdynamics-devtool
-  channel: latest
-  path: /master
-  acl: private
+  provider: github
+  repo: meshd-complete
+  releaseType: release
 
 # files:
 #   - "build/"
