@@ -31,8 +31,8 @@ jobs:
           p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE }}
           p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
       - name: Build for macOS
-        if: ${{ github.event_name == 'push'}}
         working-directory: ./ui
+        if: ${{ github.event_name == 'push'}}
         env:
           APPLE_ID: ${{ secrets.AC_USERNAME }}
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
@@ -54,8 +54,8 @@ jobs:
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.main.yml --publish always
       - name: Build for macOS(release)
-        if: ${{ github.event_name == 'release'}}
         working-directory: ./ui
+        if: ${{ github.event_name == 'release'}}
         env:
           APPLE_ID: ${{ secrets.AC_USERNAME }}
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
@@ -71,8 +71,8 @@ jobs:
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.yml --publish always
       - name: Build for macOS(manual)
-        if: ${{ github.event_name == 'workflow_dispatch'}}
         working-directory: ./ui
+        if: ${{ github.event_name == 'workflow_dispatch'}}
         env:
           APPLE_ID: ${{ secrets.AC_USERNAME }}
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
