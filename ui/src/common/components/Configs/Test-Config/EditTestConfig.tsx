@@ -51,7 +51,7 @@ function EditTestConfig(props: IEditTestConfigProps) {
                     uniqueId: uuid()
                 }
             }));
-            setMockList(props.testConfigToEdit.mocks.map(item => {
+            setMockList((props.testConfigToEdit.testServices || []).map(item => {
                 return {
                     value: item,
                     uniqueId: uuid()
@@ -124,7 +124,7 @@ function EditTestConfig(props: IEditTestConfigProps) {
                 </Row>
                 <Row className="margin-top-10">
                     <Col sm={10} md={3} lg={3}>
-                        Mock Services
+                        Test Services
                         </Col>
                     <Col sm={2} md={2} lg={1}>
                         :
