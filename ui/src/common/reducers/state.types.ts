@@ -177,7 +177,7 @@ export interface ITestConfigDetails {
   testIntermediateServices: any[]; //2
   testMockServices: string[];
   testPaths: string[];
-  testServices: any; //2
+  testServices: string[];
   updatedAt: number[]; // 3
   gatewayService: ITestConfigGatewayService;
   criteria: string;

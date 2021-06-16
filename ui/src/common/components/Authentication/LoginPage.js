@@ -23,6 +23,7 @@ import ResendActivation from "./ResendActivation";
 import "./Login.css";
 import MDCircleLogo from "../../../../public/assets/images/md-circle-logo.png";
 import authActions from "../../actions/auth.actions";
+import config from '../../config';
 
 const LoginPage = function (props) {
   const {
