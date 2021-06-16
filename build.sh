@@ -26,7 +26,7 @@ case $i in
     ;;
     -r=*|--release=*)
     RELEASE="${i#*=}"
-    shift # past argument=value
+    shift
     ;;
     *)
     echo "Invalid Option"
@@ -38,7 +38,7 @@ done
 cp $STANDALONE_GATEWAY_JAR_PATH $UI_BIN_PATH
 cp $STANDALONE_CORE_JAR_PATH $UI_BIN_PATH
 if [ "$DEPLOY" = true ] ; then
-    mvn package -Drevision=$RELEASE -DskipTests
-else mvn deploy -Drevision=$RELEASE -DskipTests
+    mvn deploy -Drevision=$RELEASE -DskipTests
+else mvn package -Drevision=$RELEASE -DskipTests
 fi
 

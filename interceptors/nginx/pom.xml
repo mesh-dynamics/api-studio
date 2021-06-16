@@ -3,28 +3,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   
   <modelVersion>4.0.0</modelVersion>
-  
   <groupId>io.meshdynamics</groupId>
-  <artifactId>interceptors</artifactId>
+  <artifactId>nginx</artifactId>
   <version>${revision}</version>
   <packaging>pom</packaging>
-  <name>interceptors</name>
+  <name>nginx</name>
+
   <url>http://www.meshdynamics.io</url>
 
   <parent>
     <groupId>io.meshdynamics</groupId>
     <artifactId>shared</artifactId>
     <version>${revision}</version>
-    <relativePath>../shared</relativePath>
+    <relativePath>../../shared</relativePath>
   </parent>
   
   <modules>
-    
-    <module>java</module>
-    <module>nginx</module>
-<!--    <module>jdbc</module>-->
-<!--    <module>thrift</module>-->
-    
+    <module>openresty</module>
   </modules>
 
 </project>
