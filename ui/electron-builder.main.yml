@@ -17,12 +17,18 @@ extraMetadata:
 
 afterSign: "scripts/notarize.js"
 
+# publish:
+#   provider: s3
+#   bucket: meshdynamics-devtool
+#   channel: latest
+#   path: /master
+#   acl: private
+
+
 publish:
-  provider: s3
-  bucket: meshdynamics-devtool
-  channel: latest
-  path: /master
-  acl: private
+  provider: github
+  repo: meshd-complete
+  releaseType: release
 
 # files:
 #   - "build/"
