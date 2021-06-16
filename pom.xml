@@ -27,7 +27,7 @@
     <module>commons</module>
     <module>agent</module>
     <module>interceptors</module>
-<!--    <module>services</module>-->
+    <module>services</module>
 
   </modules>
 

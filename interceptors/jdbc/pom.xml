@@ -30,7 +30,7 @@
         <groupId>io.meshdynamics</groupId>
         <artifactId>shared</artifactId>
         <version>${revision}</version>
-        <relativePath>../../../shared</relativePath>
+        <relativePath>../../shared</relativePath>
     </parent>
 
 
