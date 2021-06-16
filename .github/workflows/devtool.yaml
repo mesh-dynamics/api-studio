@@ -103,6 +103,8 @@ jobs:
       - run: git fetch --prune --unshallow --tags
       - name: Build for linux
         working-directory: ./ui
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: ${{ github.event_name == 'push'}}
         run: |
           sudo wget https://github.com/mikefarah/yq/releases/download/v4.6.0/yq_linux_386 -O /usr/bin/yq
@@ -124,6 +126,8 @@ jobs:
 
       - name: Build for linux(release)
         working-directory: ./ui
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: ${{ github.event_name == 'release'}}
         run: |
           sudo wget https://github.com/mikefarah/yq/releases/download/v4.6.0/yq_linux_386 -O /usr/bin/yq
@@ -183,6 +187,8 @@ jobs:
 
       - name: Build for windows(release)
         working-directory: .\ui
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: ${{ github.event_name == 'release'}}
         run: |
           choco install yq --version 3.4.1 -y
