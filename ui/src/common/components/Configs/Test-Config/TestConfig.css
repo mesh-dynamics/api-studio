@@ -1,9 +1,28 @@
+/*
+ * Copyright 2021 MeshDynamics.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 .tc-grid {
     margin-top: 20px;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     grid-column-gap: 20px;
     grid-row-gap: 20px;
+}
+.tc-grid .grid-content span>i{
+    visibility:hidden;
+}
+.tc-grid .grid-content:hover span>i{
+    visibility:visible;
 }
 
 .tc-grid .grid-content{
@@ -34,8 +53,26 @@
     position: relative;
     padding: 10px;
     background: #EAEAEA;
+    min-height: calc(200px - 43px);
 }
 
 .t-name {
     font-weight: 300;
+}
+
+.add-grid{
+    border: gray 2px dashed;
+    background-color: #eaeaea;
+    text-align: center;
+    font-size: 22px;
+    padding-top: 26%;
+    border-radius: 10px;
+}
+.inline-action input{
+    width: calc(100% - 27px);
+    margin-right: 10px;
+    display: inline;
+}
+.grid-content {
+    min-height: 200px;
 }

@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cubews
+  namespace: {{namespace}}
+  labels:
+    app: cube
+data:
+  APP_DOGFOOD: "{{cube_application}}"
+  INSTANCE_DOGFOOD: "{{cube_instance}}"
+  SERVICE_DOGFOOD: "{{cube_application}}"
+  CUSTOMER_DOGFOOD: "{{customer}}"
+  CUBE_RECORD_SERVICE: "{{record_host}}"
+  REDIS_HOST: "redis.cache.svc.cluster.local"
+  JAVA_OPTS: "-javaagent:/usr/local/tomcat/newrelic/newrelic.jar"
+  NEW_RELIC_LOG: "STDOUT"
+  SOLR_CORE: "{{solr_core}}"
+  SOLR_BASE_URL: "{{solr_url}}"
+  CUBE_APP: cube
+
+---
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: cubeui-backend-config
+    namespace: {{namespace}}
+    labels:
+      app: cube
+      component: cubeui-backend
+  data:
+    webCorsAllowedOrigins.txt: |-
+      http://localhost:3006
+      http://demo.dev.cubecorp.io
+      http://demo.prod.cubecorp.io
+      http://demo.prod.v2.cubecorp.io
+      https://demo.dev.cubecorp.io
+      https://demo.prod.cubecorp.io
+      https://demo.prod.v2.cubecorp.io
+      https://app.meshdynamics.io
+      https://medallia.meshdynamics.io
+      https://safensound.meshdynamics.io
+      https://staging-mn.dev.cubecorp.io
+      https://pronto.meshdynamics.io
+      https://onera.meshdynamics.io

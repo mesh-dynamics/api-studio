@@ -1,0 +1,13 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: increasebufferlimit
+spec:
+  configPatches:
+  - applyTo: LISTENER
+    ListenerMatch: 0.0.0.0_8080
+    patch:
+      operation: MERGE
+      value:
+        per_connection_buffer_limit_bytes: 100000000 #100MB

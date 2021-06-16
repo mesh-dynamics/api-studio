@@ -1,0 +1,6 @@
+---
+
+dependencies:
+  - name: solr
+    version: 1.0.0
+    repository: "https://github.com/cube-io-corp/deploy_solr"

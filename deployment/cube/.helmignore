@@ -1,0 +1,4 @@
+.git
+*.sh
+recordingid.tmp
+deploy.cfg
