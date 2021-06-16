@@ -40,8 +40,6 @@ jobs:
           appleIdPassword: ${{ secrets.AC_PASSWORD }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo ${{ secrets.AC_USERNAME }} 
-          echo ${{ secrets.AC_PASSWORD }}
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
           version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           TIMESTAMP=$(date "+%Y%m%d%H%M%S")
