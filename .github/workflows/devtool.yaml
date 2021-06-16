@@ -25,19 +25,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - run: git fetch --prune --unshallow --tags
-      # - name: Import Code-Signing Certificates
-      #   uses: Apple-Actions/import-codesign-certs@v1
-      #   with:
-      #     p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE }}
-      #     p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+      - name: Import Code-Signing Certificates
+        uses: Apple-Actions/import-codesign-certs@v1
+        with:
+          p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE }}
+          p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
       - name: Build for macOS
         if: ${{ github.event_name == 'push'}}
         working-directory: ./ui
         env:
           APPLE_ID: ${{ secrets.AC_USERNAME }}
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
-          appleId: ${{ secrets.AC_USERNAME }}
-          appleIdPassword: ${{ secrets.AC_PASSWORD }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
@@ -61,8 +59,6 @@ jobs:
         env:
           APPLE_ID: ${{ secrets.AC_USERNAME }}
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
-          appleId: ${{ secrets.AC_USERNAME }}
-          appleIdPassword: ${{ secrets.AC_PASSWORD }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
@@ -80,8 +76,6 @@ jobs:
         env:
           APPLE_ID: ${{ secrets.AC_USERNAME }}
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
-          appleId: ${{ secrets.AC_USERNAME }}
-          appleIdPassword: ${{ secrets.AC_PASSWORD }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           version=${{ github.event.inputs.version }}
@@ -203,7 +197,7 @@ jobs:
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
           $Env:RELEASE_TYPE = "customer"
-          yq w .\electron-builder.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip"> ebtmp.txt
+          # yq w .\electron-builder.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip"> ebtmp.txt
           $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
           echo $BUILDER_CONTENT
           Remove-Item -path .\electron-builder.yml
