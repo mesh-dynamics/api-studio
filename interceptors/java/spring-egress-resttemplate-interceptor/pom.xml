@@ -13,9 +13,10 @@
   <description>Spring Egress Rest Template Interceptor for HTTP Requests</description>
 
   <parent>
-    <groupId>io.meshdynamics.interceptor</groupId>
-    <artifactId>java-interceptors</artifactId>
+    <groupId>io.meshdynamics</groupId>
+    <artifactId>shared</artifactId>
     <version>${revision}</version>
+    <relativePath>../../../shared</relativePath>
   </parent>
 
 
@@ -23,6 +24,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>8</java.version>
+    <maven.deploy.skip>false</maven.deploy.skip>
   </properties>
 
   <dependencyManagement>

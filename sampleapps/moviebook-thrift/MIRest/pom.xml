@@ -313,15 +313,15 @@
       <version>${version.jaeger}</version>
     </dependency>
     <dependency>
-      <groupId>io.meshdynamics.sampleapps</groupId>
+      <groupId>io.cube.sampleapps</groupId>
       <artifactId>Utils</artifactId>
-      <version>{revision}</version>
+      <version>1.0.0</version>
     </dependency>
 
     <dependency>
-      <groupId>io.meshdynamics.sampleapps</groupId>
+      <groupId>io.cube.sampleapps</groupId>
       <artifactId>ThriftWrapJDBC</artifactId>
-      <version>${revision}</version>
+      <version>1.0.0</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.apache.thrift/libthrift -->
@@ -332,9 +332,9 @@
     </dependency>
 
     <dependency>
-      <groupId>io.meshdynamics</groupId>
+      <groupId>io.cube</groupId>
       <artifactId>agent</artifactId>
-      <version>${revision}</version>
+      <version>1.0.1</version>
     </dependency>
 
     <dependency>

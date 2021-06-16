@@ -13,6 +13,14 @@
 
     <name>MDDropWizardSample</name>
 
+    <parent>
+        <groupId>io.meshdynamics.sampleapps</groupId>
+        <artifactId>shared</artifactId>
+        <version>${revision}</version>
+        <relativePath>../shared</relativePath>
+    </parent>
+
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

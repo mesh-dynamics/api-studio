@@ -15,12 +15,14 @@
     <version.flipkart-jsonpath>0.4.7</version.flipkart-jsonpath>
     <version.slf4j>1.7.30</version.slf4j>
     <version.commons-math>3.6.1</version.commons-math>
+    <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
 
   <parent>
     <groupId>io.meshdynamics</groupId>
-    <artifactId>meshd-complete</artifactId>
+    <artifactId>shared</artifactId>
     <version>${revision}</version>
+    <relativePath>../shared</relativePath>
   </parent>
 
   <dependencyManagement>

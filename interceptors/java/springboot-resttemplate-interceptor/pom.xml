@@ -8,10 +8,15 @@
   <packaging>jar</packaging>
 
   <parent>
-    <groupId>io.meshdynamics.interceptor</groupId>
-    <artifactId>java-interceptors</artifactId>
+    <groupId>io.meshdynamics</groupId>
+    <artifactId>shared</artifactId>
     <version>${revision}</version>
+    <relativePath>../../../shared</relativePath>
   </parent>
+
+  <properties>
+    <maven.deploy.skip>false</maven.deploy.skip>
+  </properties>
 
   <dependencies>
     <dependency>

@@ -6,11 +6,15 @@
   <artifactId>md-df-jaxrs-interceptor</artifactId>
   <version>${revision}</version>
   <packaging>jar</packaging>
+  <properties>
+    <maven.deploy.skip>false</maven.deploy.skip>
+  </properties>
 
   <parent>
-    <groupId>io.meshdynamics.interceptor</groupId>
-    <artifactId>java-interceptors</artifactId>
+    <groupId>io.meshdynamics</groupId>
+    <artifactId>shared</artifactId>
     <version>${revision}</version>
+    <relativePath>../../../shared</relativePath>
   </parent>
 
   <dependencies>

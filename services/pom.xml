@@ -20,8 +20,9 @@
 
   <parent>
     <groupId>io.meshdynamics</groupId>
-    <artifactId>meshd-complete</artifactId>
+    <artifactId>shared</artifactId>
     <version>${revision}</version>
+    <relativePath>../shared</relativePath>
   </parent>
 
   <dependencies>

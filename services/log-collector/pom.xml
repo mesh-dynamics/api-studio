@@ -11,8 +11,9 @@
 
     <parent>
         <groupId>io.meshdynamics</groupId>
-        <artifactId>services</artifactId>
+        <artifactId>shared</artifactId>
         <version>${revision}</version>
+        <relativePath>../../shared</relativePath>
     </parent>
 
 

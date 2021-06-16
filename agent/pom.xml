@@ -11,12 +11,14 @@
     <version.java>8</version.java>
     <version.gson>2.8.5</version.gson>
     <version.jersey>2.27</version.jersey>
+    <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
 
   <parent>
     <groupId>io.meshdynamics</groupId>
-    <artifactId>meshd-complete</artifactId>
+    <artifactId>shared</artifactId>
     <version>${revision}</version>
+    <relativePath>../shared</relativePath>
   </parent>
 
   <dependencyManagement>

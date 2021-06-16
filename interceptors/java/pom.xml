@@ -7,8 +7,9 @@
 
     <parent>
         <groupId>io.meshdynamics</groupId>
-        <artifactId>interceptors</artifactId>
+        <artifactId>shared</artifactId>
         <version>${revision}</version>
+        <relativePath>../../shared</relativePath>
     </parent>
 
     <modules>

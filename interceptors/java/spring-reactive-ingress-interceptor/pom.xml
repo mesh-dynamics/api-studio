@@ -12,9 +12,10 @@
 	<description>Spring Reactive Ingress Interceptor for HTTP Requests</description>
 
 	<parent>
-		<groupId>io.meshdynamics.interceptor</groupId>
-		<artifactId>java-interceptors</artifactId>
+		<groupId>io.meshdynamics</groupId>
+		<artifactId>shared</artifactId>
 		<version>${revision}</version>
+		<relativePath>../../../shared</relativePath>
 	</parent>
 
 
@@ -23,6 +24,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>10</java.version>
 		<version.jersey>2.27</version.jersey>
+		<maven.deploy.skip>false</maven.deploy.skip>
 	</properties>
 
 	<dependencyManagement>

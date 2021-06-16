@@ -1,0 +1,62 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<modelVersion>4.0.0</modelVersion>
+  <groupId>io.meshdynamics</groupId>
+  <artifactId>ui</artifactId>
+  <version>${revision}</version>
+  <packaging>pom</packaging>
+
+  <parent>
+    <groupId>io.meshdynamics</groupId>
+    <artifactId>shared</artifactId>
+    <version>${revision}</version>
+    <relativePath>../shared</relativePath>
+  </parent>
+
+  <build>
+    <defaultGoal>spring-boot:run</defaultGoal>
+    <plugins>
+      <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <version>1.4</version>
+        <executions>
+          <execution>
+            <id>install node and npm</id>
+            <goals>
+              <goal>install-node-and-npm</goal>
+            </goals>
+            <configuration>
+              <nodeVersion>v14.17.0</nodeVersion>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>npm install</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>install</arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>dockerfile-maven-plugin</artifactId>
+        <configuration>
+          <repository>${project.groupId}/${project.artifactId}</repository>
+          <tag>${project.version}</tag>
+          <buildArgs>
+            <JAR_FILE>${project.build.finalName}</JAR_FILE>
+          </buildArgs>
+        </configuration>
+      </plugin>
+
+    </plugins>
+
+  </build>
+</project>

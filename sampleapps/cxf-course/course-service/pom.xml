@@ -4,6 +4,15 @@
     <name>cxf-jaxrs-implementation</name>
     <version>0.0.1-SNAPSHOT</version>
     <groupId>com.cube</groupId>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>io.meshdynamics.sampleapps</groupId>
+        <artifactId>shared</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../shared</relativePath>
+    </parent>
+
 
     <repositories>
       <repository>
