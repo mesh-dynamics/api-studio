@@ -15,7 +15,7 @@ protocols:
 extraMetadata:
   main: "dist/electron/electron-main.js"
 
-afterSign: "scripts/notarize.js"
+# afterSign: "scripts/notarize.js"
 
 # publish:
 #   provider: s3
