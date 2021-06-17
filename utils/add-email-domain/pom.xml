@@ -19,7 +19,7 @@
   <groupId>com.cubeui.personalEmailDomains</groupId>
   <packaging>jar</packaging>
   <artifactId>cubeui-backend-personalEmailDomains</artifactId>
-  <version>1.0</version>
+  <version>${revision}</version>
   <properties>
     <version.java>8</version.java>
     <org.projectlombok.version>1.18.10</org.projectlombok.version>

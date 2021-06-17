@@ -15,31 +15,40 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.3.5.RELEASE</version>
-        <relativePath/>
+        <groupId>io.meshdynamics</groupId>
+        <artifactId>shared</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../shared</relativePath>
     </parent>
+
 
     <groupId>com.cubeio</groupId>
     <artifactId>log-collector</artifactId>
-    <version>0.0.1</version>
+    <version>${revision}</version>
     <name>log-collector</name>
     <description>Central Log Collector</description>
+    <packaging>jar</packaging>
 
     <properties>
         <java.version>11</java.version>
-        <version.mdcommons>1.1.70.0</version.mdcommons>
     </properties>
 
-    <repositories>
-        <repository>
-            <id>github</id>
-            <name>GitHub OWNER Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
-        </repository>
-    </repositories>
+    <dependencyManagement>
+        <!-- From https://stackoverflow.com/questions/21317006/spring-boot-parent-pom-when-you-already-have-a-parent-pom-->
+        <dependencies>
+            <dependency>
+                <!-- Import dependency management from Spring Boot -->
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-parent</artifactId>
+                <version>2.3.5.RELEASE</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
 
 
     <dependencies>
@@ -105,9 +114,9 @@
             <version>0.8.17</version>
         </dependency>
         <dependency>
-            <groupId>io.cube</groupId>
+            <groupId>io.meshdynamics</groupId>
             <artifactId>commons</artifactId>
-            <version>${version.mdcommons}</version>
+            <version>${revision}</version>
         </dependency>
 
 
@@ -132,7 +141,24 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>dockerfile-maven-plugin</artifactId>
+            </plugin>
+
         </plugins>
+
+
+
     </build>
     <!--
     <profiles>

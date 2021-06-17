@@ -1,0 +1,20 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.meshdynamics.sampleapps</groupId>
+    <artifactId>order-mgmt-webflux-client</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+
+    <parent>
+        <groupId>io.meshdynamics.sampleapps</groupId>
+        <artifactId>shared</artifactId>
+        <version>${revision}</version>
+        <relativePath>../shared</relativePath>
+    </parent>
+
+    <modules>
+<!--    <module>OrderTransformer</module>-->
+    <module>OrderProcessor</module>
+<!--    <module>OrderReceiver</module>-->
+    </modules>
+</project>

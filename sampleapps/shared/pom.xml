@@ -1,0 +1,43 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.meshdynamics.sampleapps</groupId>
+  <artifactId>shared</artifactId>
+  <version>${revision}</version>
+  <packaging>pom</packaging>
+  <properties>
+    <dockerfile-maven-version>1.4.13</dockerfile-maven-version>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>github</id>
+      <name>Cubeio Maven Github</name>
+      <url>https://maven.pkg.github.com/cube-io-corp/interceptor-framework</url>
+    </repository>
+  </repositories>
+
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>com.spotify</groupId>
+          <artifactId>dockerfile-maven-plugin</artifactId>
+          <version>${dockerfile-maven-version}</version>
+          <executions>
+            <execution>
+              <id>default</id>
+              <goals>
+                <goal>build</goal>
+                <goal>push</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+</project>

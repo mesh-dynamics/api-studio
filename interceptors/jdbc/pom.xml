@@ -17,29 +17,22 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.cube</groupId>
+    <groupId>io.meshdynamics</groupId>
     <artifactId>md-jdbcwrapper</artifactId>
     <packaging>jar</packaging>
-    <version>1.2.4</version>
+    <version>${revision}</version>
     <properties>
         <version.log4j>2.11.1</version.log4j>
         <version.java>8</version.java>
     </properties>
-    <distributionManagement>
-        <repository>
-            <id>github</id>
-            <name>GitHub CubeIO Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/cube-io-corp/jdbc-wrapper</url>
-        </repository>
-    </distributionManagement>
 
-    <repositories>
-        <repository>
-            <id>github</id>
-            <name>GitHub OWNER Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/cube-io-corp/agent</url>
-        </repository>
-    </repositories>
+    <parent>
+        <groupId>io.meshdynamics</groupId>
+        <artifactId>shared</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../shared</relativePath>
+    </parent>
+
 
     <dependencyManagement>
         <dependencies>
@@ -166,9 +159,9 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>io.cube</groupId>
+            <groupId>io.meshdynamics</groupId>
             <artifactId>agent</artifactId>
-            <version>1.0.27</version>
+            <version>${revision}</version>
         </dependency>
     </dependencies>
 
