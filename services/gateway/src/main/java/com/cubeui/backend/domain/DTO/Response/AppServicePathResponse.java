@@ -11,18 +11,20 @@
  * limitations under the License.
  */
 
-package com.cubeui.backend.repository;
+package com.cubeui.backend.domain.DTO.Response;
 
-import com.cubeui.backend.domain.Path;
 import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
-import java.util.Optional;
+import com.cubeui.backend.domain.Service;
 
-@RepositoryRestResource(path = "paths", collectionResourceRel = "paths", itemResourceRel = "path")
-public interface PathRepository extends JpaRepository<Path, Long> {
-    Optional<List<Path>> findByPath(String path);
-    Optional<Path> findByPathAndServiceId(String path, Long serviceId);
-    Optional<List<Path>> findByServiceId(Long serviceId);
+import lombok.Getter;
+
+@Getter
+public class AppServicePathResponse {
+  final Service service;
+  final List<String> paths;
+  public AppServicePathResponse(Service service, List<String> paths) {
+    this.service = service;
+    this.paths = paths;
+  }
 }
