@@ -92,22 +92,24 @@ public class DataInitializer implements CommandLineRunner {
         if(customer.isEmpty()) {
             CustomerDTO customerDTO = new CustomerDTO();
             customerDTO.setName("Admin");
-            customerDTO.setEmail("admin@meshdynamics.io");
+            customerDTO.setEmail("admin");
             customerDTO.setDomainURLs(Set.of("admin.io"));
             customer = Optional.of(this.customerService.save(httpServletRequest, customerDTO));
        }
 
-        Optional<User> user = userRepository.findByUsernameIgnoreCase("admin@meshdynamics.io");
+        Optional<User> user = userRepository.findByUsernameIgnoreCase("admin");
         if (user.isEmpty()) {
             UserDTO userDTOAdmin = new UserDTO();
             //userDTO.setId(3L);
             userDTOAdmin.setName("Administrator");
-            userDTOAdmin.setEmail("admin@meshdynamics.io");
+            userDTOAdmin.setEmail("admin");
             userDTOAdmin.setPassword("admin");
             userDTOAdmin.setCustomerId(customer.get().getId());
             userDTOAdmin.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
             userDTOAdmin.setActivated(true);
-            this.userService.save(userDTOAdmin, true, false);
+            User saved = this.userService.save(userDTOAdmin, true, false);
+            userService.createHistoryForEachApp(httpServletRequest, saved);
+
             log.info("User with username '{}' created", userDTOAdmin.getEmail());
         }
 

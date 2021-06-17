@@ -8,7 +8,7 @@ function usage() {
     echo "USAGE: $0 <OPTIONS>"
     echo "OPTIONS:"
     echo "-h|--help             Usage help"
-    echo "--deploy              Push built artifacts to github"
+    echo "--deploy              Push built artifacts to github (DEFAULT package)"
     echo "-r|release=<version>  Version of the release (DEFAULT 1.0)"
     exit 1
 }
@@ -35,10 +35,12 @@ case $i in
 esac
 done
 
-cp $STANDALONE_GATEWAY_JAR_PATH $UI_BIN_PATH
-cp $STANDALONE_CORE_JAR_PATH $UI_BIN_PATH
 if [ "$DEPLOY" = true ] ; then
     mvn deploy -Drevision=$RELEASE -DskipTests
 else mvn package -Drevision=$RELEASE -DskipTests
 fi
+
+cp $STANDALONE_GATEWAY_JAR_PATH $UI_BIN_PATH
+cp $STANDALONE_CORE_JAR_PATH $UI_BIN_PATH
+
 
