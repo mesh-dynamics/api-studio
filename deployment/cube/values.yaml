@@ -1,0 +1,25 @@
+# Default values for cube.
+
+namespace: cube
+
+cube:
+  cubeDockerSecret: SOMESTRONGSECRET
+  cubewsImageTag: f0cf6811dfcb98412e462ba53a464d8f1a3a4171-master
+  cubeuiImageTag: 1debb7e7da032586d06d1e35e489bf0d118d4414-master
+  cubeuibackendImageTag: e5700c85db561c5a815bd5fb835d37ddd5caa7a7-master
+  uibackendReplica: 1
+  replayReplica: 1
+  recordReplica: 1
+  mockReplica: 1
+  uiReplica: 1
+  host: "*"
+  solrCore: cube
+  solrURL: http://solr-svc.solr.svc.cluster.local:8983/solr/
+  springbootProfile: azure
+  springbootURL: jdbc:postgresql://postgresql.postgres.svc.cluster.local:5432/cubedb?schema=qui
+  springbootUsername: springboot
+  springbootpassword: PASSWORD_FOR_DB_USER
+  allowedURL: https://demo.dev.cubecorp.io
+
+redis:
+  replica: 1
