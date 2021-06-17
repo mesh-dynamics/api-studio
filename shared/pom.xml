@@ -14,14 +14,14 @@
   <properties>
     <maven.deploy.skip>true</maven.deploy.skip>
     <dockerfile-maven-version>1.4.13</dockerfile-maven-version>
-    <docker-registry>docker.pkg.github.com/cube-io-corp</docker-registry>
+    <docker-registry>docker.pkg.github.com/cube-io-corp/meshd-complete</docker-registry>
   </properties>
 
   <distributionManagement>
     <repository>
       <id>github</id>
       <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/cube-io-corp/</url>
+      <url>https://maven.pkg.github.com/cube-io-corp/meshd-complete</url>
     </repository>
   </distributionManagement>
 
@@ -79,6 +79,7 @@
           <configuration>
             <repository>${docker-registry}/${project.artifactId}</repository>
             <tag>${project.version}</tag>
+            <useMavenSettingsForAuth>true</useMavenSettingsForAuth>
             <buildArgs>
               <JAR_FILE>${project.build.finalName}.${project.packaging}</JAR_FILE>
             </buildArgs>
