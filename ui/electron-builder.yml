@@ -61,7 +61,7 @@ win:
     - "nsis"
     # - "appx"
   publisherName: "Mesh Dynamics"
-  signAndEditExecutable: true
+  signAndEditExecutable: false #uncomment it
   rfc3161TimeStampServer: http://timestamp.digicert.com
 
 nsis:
