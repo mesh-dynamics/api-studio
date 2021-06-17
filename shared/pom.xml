@@ -80,7 +80,7 @@
             <repository>${docker-registry}/${project.artifactId}</repository>
             <tag>${project.version}</tag>
             <buildArgs>
-              <JAR_FILE>${project.build.finalName}</JAR_FILE>
+              <JAR_FILE>${project.build.finalName}.${project.packaging}</JAR_FILE>
             </buildArgs>
           </configuration>
         </plugin>

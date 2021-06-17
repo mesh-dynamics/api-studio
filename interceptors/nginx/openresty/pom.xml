@@ -21,11 +21,6 @@
       <plugin>
         <groupId>com.spotify</groupId>
         <artifactId>dockerfile-maven-plugin</artifactId>
-        <inherited>false</inherited>
-        <configuration>
-          <repository>${project.groupId}/${project.artifactId}</repository>
-          <tag>${project.version}</tag>
-        </configuration>
       </plugin>
     </plugins>
   </build>
