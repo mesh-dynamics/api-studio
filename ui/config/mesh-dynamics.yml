@@ -3,4 +3,4 @@ proxyPort: 9000
 gRPCProxyPort: 9001
 httpsProxyPort: 9002
 generateCertificate: false
-replayDriverPort: 9992
+replayDriverPort: 8080
