@@ -102,10 +102,6 @@
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <repository>cubeiocorp/sample-apps-mithrift</repository>
-          <tag>${docker.tag}</tag>
-        </configuration>
       </plugin>
 
       <plugin>

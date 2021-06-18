@@ -5,6 +5,38 @@
     <version>V1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <parent>
+        <groupId>io.meshdynamics.sampleapps</groupId>
+        <artifactId>shared</artifactId>
+        <version>${revision}</version>
+        <relativePath>../shared</relativePath>
+    </parent>
+
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>moviebook</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>./build.sh</executable>
+                        </configuration>
+                    </execution>
+                </executions>
+
+            </plugin>
+        </plugins>
+    </build>
+
     <modules>
         <module>MIRest</module>
         <module>MIClient</module>

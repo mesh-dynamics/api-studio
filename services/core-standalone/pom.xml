@@ -1,0 +1,381 @@
+<!--
+  ~ Copyright 2021 MeshDynamics.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>core</artifactId>
+  <version>${revision}</version>
+  <packaging>war</packaging>
+  <properties>
+	  <version.jersey>2.27</version.jersey>
+	  <version.log4j>2.11.1</version.log4j>
+	  <version.dockerfile-maven>1.4.9</version.dockerfile-maven>
+	  <version.java>11</version.java>
+	  <version.jaxb>2.3.2</version.jaxb>
+	  <version.jaeger>1.1.0</version.jaeger>
+	  <version.gson>2.8.5</version.gson>
+		<maven.deploy.skip>false</maven.deploy.skip>
+  </properties>
+
+	<parent>
+		<groupId>io.meshdynamics</groupId>
+		<artifactId>shared</artifactId>
+		<version>${revision}</version>
+		<relativePath>../../shared</relativePath>
+	</parent>
+
+
+	<!--  this is for having consistent jackson versions -->
+  <dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>com.fasterxml.jackson</groupId>
+            <artifactId>jackson-bom</artifactId>
+            <version>2.9.0</version>
+            <scope>import</scope>
+            <type>pom</type>
+        </dependency>
+		<!-- needed since some jaxb-api not found exceptions were being thrown for CORS preflight requests -->
+		<!-- https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis -->
+		<!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-bom -->
+		<dependency>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>jaxb-bom</artifactId>
+			<version>${version.jaxb}</version>
+			<type>pom</type>
+		</dependency>
+	</dependencies>
+  </dependencyManagement>
+  <build>
+		<sourceDirectory>../core</sourceDirectory>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.0</version>
+        <configuration>
+          <source>${version.java}</source>
+          <target>${version.java}</target>
+        </configuration>
+      </plugin>
+
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-war-plugin</artifactId>
+			<version>3.2.1</version>
+			<configuration>
+				<warSourceDirectory>WebContent</warSourceDirectory>
+			</configuration>
+		</plugin>
+
+		<!--  needed for unit and integration testing  -->
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.22.0</version>
+      </plugin>
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>2.22.0</version>
+      </plugin>
+		<plugin>
+        <!--
+            for mvn upload to tomcat to work, add the following to the mvn settings.xml, either
+            in MAVEN_HOME/conf/settings.xml or ~/.m2/settings.xml, under <servers>
+            <server>
+                <id>TomcatServer</id>
+                <username>adminscript</username>
+                <password>tomcat4cube$</password>
+            </server>
+            Alternatively you can uncomment the username, password elements below
+            The user needs to be setup with manager-script role on the tomcat server
+            Also, see https://tomcat.apache.org/tomcat-7.0-doc/manager-howto.html
+         -->
+		    <groupId>org.apache.tomcat.maven</groupId>
+		    <artifactId>tomcat7-maven-plugin</artifactId>
+		    <version>2.2</version>
+		    <configuration>
+		        <url>http://18.191.135.125:8080/manager/text</url>
+		        <server>TomcatServer</server>
+		        <path>/cubews</path>
+		        <update>true</update>
+		        <username>admin</username>
+                <password>tomcat4cube$</password>
+		    </configuration>
+		</plugin>
+
+		<plugin>
+				<groupId>com.spotify</groupId>
+				<artifactId>dockerfile-maven-plugin</artifactId>
+
+		</plugin>
+
+    </plugins>
+  </build>
+
+  <dependencies>
+
+
+	<!--  For junit testing -->
+	<!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine -->
+	<dependency>
+	    <groupId>org.junit.jupiter</groupId>
+	    <artifactId>junit-jupiter-engine</artifactId>
+	    <version>5.4.0</version>
+	    <scope>test</scope>
+	</dependency>
+	<!--  for json comparisons in junit tests -->
+	<!-- https://mvnrepository.com/artifact/org.skyscreamer/jsonassert -->
+	<dependency>
+	    <groupId>org.skyscreamer</groupId>
+	    <artifactId>jsonassert</artifactId>
+	    <version>1.5.0</version>
+	    <scope>test</scope>
+	</dependency>
+  	<dependency>
+       	<groupId>javax.servlet</groupId>
+        <artifactId>javax.servlet-api</artifactId>
+        <version>4.0.1</version>
+    </dependency>
+  	<dependency>
+  		<groupId>org.glassfish.jersey.core</groupId>
+  		<artifactId>jersey-common</artifactId>
+  		<version>${version.jersey}</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.json</groupId>
+  		<artifactId>json</artifactId>
+  		<version>20180813</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.glassfish.jersey.core</groupId>
+  		<artifactId>jersey-server</artifactId>
+  		<version>${version.jersey}</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.glassfish.jersey.containers</groupId>
+  		<artifactId>jersey-container-servlet</artifactId>
+  		<version>${version.jersey}</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.glassfish.jersey.inject</groupId>
+  		<artifactId>jersey-hk2</artifactId>
+  		<version>${version.jersey}</version>
+  	</dependency>
+  	<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jdk8 -->
+  	<!--  json support for jdk 8 types such as Optional -->
+	<dependency>
+	    <groupId>com.fasterxml.jackson.datatype</groupId>
+	    <artifactId>jackson-datatype-jdk8</artifactId>
+	</dependency>
+  	<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
+	<dependency>
+	    <groupId>org.glassfish.jersey.media</groupId>
+	    <artifactId>jersey-media-json-jackson</artifactId>
+	    <version>${version.jersey}</version>
+	</dependency>
+	<dependency>
+		<groupId>org.glassfish.jersey.media</groupId>
+		<artifactId>jersey-media-multipart</artifactId>
+		<version>${version.jersey}</version>
+	</dependency>
+  	<!-- https://mvnrepository.com/artifact/org.apache.solr/solr-solrj -->
+	<dependency>
+    	<groupId>org.apache.solr</groupId>
+    	<artifactId>solr-solrj</artifactId>
+    	<version>7.5.0</version>
+	</dependency>
+	<dependency>
+    	<groupId>org.apache.solr</groupId>
+    	<artifactId>solr-core</artifactId>
+    	<version>7.5.0</version>
+	</dependency>
+	<dependency>
+	    <groupId>org.apache.logging.log4j</groupId>
+	    <artifactId>log4j-core</artifactId>
+	    <version>${version.log4j}</version>
+	</dependency>
+		<dependency>
+			    <groupId>org.apache.logging.log4j</groupId>
+			    <artifactId>log4j-slf4j-impl</artifactId>
+			    <version>${version.log4j}</version>
+			</dependency>
+<!--	<dependency>-->
+<!--	    <groupId>org.apache.logging.log4j</groupId>-->
+<!--	    <artifactId>log4j-core</artifactId>-->
+<!--	    <version>${version.log4j}</version>-->
+<!--	    </dependency>-->
+	<!-- jaxb was removed from java 9 onwards, so need to explicitly add -->
+	<!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
+	<dependency>
+	    <groupId>javax.xml.bind</groupId>
+	    <artifactId>jaxb-api</artifactId>
+	    <version>2.3.1</version>
+	</dependency>
+	<!--  for string escape utils -->
+	<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-text -->
+	<dependency>
+	    <groupId>org.apache.commons</groupId>
+	    <artifactId>commons-text</artifactId>
+	    <version>1.8</version>
+	</dependency>
+	<dependency>
+        <groupId>javax.activation</groupId>
+        <artifactId>activation</artifactId>
+        <version>1.1.1</version>
+    </dependency>
+    <!--  library for json diff -->
+    <!-- https://mvnrepository.com/artifact/com.flipkart.zjsonpatch/zjsonpatch -->
+	<dependency>
+	    <groupId>com.flipkart.zjsonpatch</groupId>
+	    <artifactId>zjsonpatch</artifactId>
+	    <version>0.4.7</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/commons-httpclient/commons-httpclient -->
+	 <!-- For building a small client to test out cube io service-->
+	  <dependency>
+		<groupId>commons-httpclient</groupId>
+		<artifactId>commons-httpclient</artifactId>
+		<version>3.1</version>
+	</dependency>
+	  <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
+	  <dependency>
+		  <groupId>com.google.guava</groupId>
+		  <artifactId>guava</artifactId>
+		  <version>27.1-jre</version>
+	  </dependency>
+    <dependency>
+          <groupId>com.vaadin.external.google</groupId>
+          <artifactId>android-json</artifactId>
+          <version>0.0.20131108.vaadin1</version>
+          <scope>test</scope>
+    </dependency>
+	  <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
+	  <!-- these modules are needed for correct handling of time objects by jackson -->
+	  <dependency>
+		  <groupId>com.fasterxml.jackson.module</groupId>
+		  <artifactId>jackson-module-parameter-names</artifactId>
+	  </dependency>
+	  <dependency>
+		  <groupId>com.fasterxml.jackson.datatype</groupId>
+		  <artifactId>jackson-datatype-jsr310</artifactId>
+		  <version>2.9.8</version>
+	  </dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-csv</artifactId>
+			<version>2.9.9</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-core</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+	  <!-- related to jaxb-bom above -->
+	  <!-- https://mvnrepository.com/artifact/com.sun.xml.bind/jaxb-impl -->
+	  <dependency>
+		  <groupId>com.sun.xml.bind</groupId>
+		  <artifactId>jaxb-impl</artifactId>
+		  <version>${version.jaxb}</version>
+	  </dependency>
+	  <dependency>
+		  <groupId>com.sun.xml.bind</groupId>
+		  <artifactId>jaxb-core</artifactId>
+		  <version>2.3.0.1</version>
+	  </dependency>
+	  <dependency>
+		  <groupId>io.jaegertracing</groupId>
+		  <artifactId>jaeger-client</artifactId>
+		  <version>${version.jaeger}</version>
+	  </dependency>
+	  <dependency>
+		  <groupId>com.google.code.gson</groupId>
+		  <artifactId>gson</artifactId>
+		  <version>${version.gson}</version>
+	  </dependency>
+	  <!--  To deal with java 8 optional and time objects in gson -->
+	  <dependency>
+		  <groupId>net.dongliu</groupId>
+		  <artifactId>gson-java8-datatype</artifactId>
+		  <version>1.1.0</version>
+	  </dependency>
+	  <dependency>
+		  <groupId>redis.clients</groupId>
+		  <artifactId>jedis</artifactId>
+		  <version>2.8.1</version>
+	  </dependency>
+
+<!--	  <dependency>
+		  <groupId>com.jayway.jsonpath</groupId>
+		  <artifactId>json-path</artifactId>
+		  <version>2.4.0</version>
+    	  </dependency>
+-->
+	  <dependency>
+		  <groupId>com.fasterxml.jackson.core</groupId>
+		  <artifactId>jackson-databind</artifactId>
+		  <version>2.9.6</version>
+	  </dependency>
+	  <!-- https://mvnrepository.com/artifact/org.msgpack/msgpack-core -->
+	  <dependency>
+		  <groupId>org.msgpack</groupId>
+		  <artifactId>msgpack-core</artifactId>
+		  <version>0.8.17</version>
+	  </dependency>
+
+	  <!-- https://mvnrepository.com/artifact/org.msgpack/jackson-dataformat-msgpack -->
+	  <dependency>
+		  <groupId>org.msgpack</groupId>
+		  <artifactId>jackson-dataformat-msgpack</artifactId>
+		  <version>0.8.17</version>
+	  </dependency>
+
+	  <dependency>
+		  <groupId>org.apache.httpcomponents</groupId>
+		  <artifactId>httpclient</artifactId>
+		  <version>4.5.9</version>
+	  </dependency>
+
+		<dependency>
+			<groupId>io.meshdynamics</groupId>
+			<artifactId>agent</artifactId>
+			<version>${revision}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.meshdynamics</groupId>
+			<artifactId>commons</artifactId>
+			<version>${revision}</version>
+<!--			<version>1.1-SNAPSHOT</version>-->
+		</dependency>
+
+		<dependency>
+			<groupId>io.meshdynamics</groupId>
+			<artifactId>commons-server</artifactId>
+			<version>${revision}</version>
+<!--			<version>1.1-SNAPSHOT</version>-->
+		</dependency>
+		<dependency>
+			<groupId>io.meshdynamics</groupId>
+			<artifactId>md-df-jaxrs-interceptor</artifactId>
+			<version>${revision}</version>
+		</dependency>
+		<dependency>
+			<groupId>it.ozimov</groupId>
+			<artifactId>embedded-redis</artifactId>
+			<version>0.7.3</version>
+		</dependency>
+	</dependencies>
+  <groupId>io.meshdynamics</groupId>
+</project>

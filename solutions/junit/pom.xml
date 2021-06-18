@@ -19,7 +19,7 @@
 
   <groupId>io.meshd</groupId>
   <artifactId>meshd-junit</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>${revision}</version>
   <build>
     <plugins>
       <plugin>

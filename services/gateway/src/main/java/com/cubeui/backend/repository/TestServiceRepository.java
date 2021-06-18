@@ -18,9 +18,12 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+import org.springframework.transaction.annotation.Transactional;
 
+@Transactional
 @RepositoryRestResource(path = "test_services", collectionResourceRel = "test_services", itemResourceRel = "test_service")
 public interface TestServiceRepository extends JpaRepository<TestService, Long> {
   Optional<List<TestService>> findByTestConfigId(Long testConfigId);
   Optional<TestService> findByTestConfigIdAndServiceId(Long testId, Long ServiceId);
+  void deleteTestServiceById(Long testServiceId);
 }

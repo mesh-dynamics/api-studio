@@ -19,18 +19,18 @@
   <groupId>com.cube.utils</groupId>
   <packaging>jar</packaging>
   <artifactId>cubeui-backend-utils</artifactId>
-  <version>1.5</version>
+  <version>${revision}</version>
   <properties>
     <version.java>8</version.java>
     <org.projectlombok.version>1.18.10</org.projectlombok.version>
   </properties>
-  <distributionManagement>
-    <repository>
-      <id>github</id>
-      <name>GitHub CubeIO Apache Maven Packages</name>
-      <url>https://maven.pkg.github.com/cube-io-corp/cubeui-backend-utils</url>
-    </repository>
-  </distributionManagement>
+<!--  <distributionManagement>-->
+<!--    <repository>-->
+<!--      <id>github</id>-->
+<!--      <name>GitHub CubeIO Apache Maven Packages</name>-->
+<!--      <url>https://maven.pkg.github.com/cube-io-corp/cubeui-backend-utils</url>-->
+<!--    </repository>-->
+<!--  </distributionManagement>-->
   <build>
     <plugins>
       <plugin>

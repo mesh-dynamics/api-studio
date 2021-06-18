@@ -17,9 +17,9 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.cube</groupId>
+  <groupId>io.meshdynamics</groupId>
   <artifactId>md-apache-cxf-ingress-interceptor</artifactId>
-  <version>1.2.19</version>
+  <version>${revision}</version>
   <packaging>jar</packaging>
 
   <name>apache-cxf-ingress-interceptor</name>
@@ -29,16 +29,16 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <version.java>8</version.java>
+    <maven.deploy.skip>false</maven.deploy.skip>
   </properties>
 
+  <parent>
+    <groupId>io.meshdynamics</groupId>
+    <artifactId>shared</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../../shared</relativePath>
+  </parent>
 
-  <repositories>
-    <repository>
-      <id>github</id>
-      <name>GitHub OWNER Apache Maven Packages</name>
-      <url>https://maven.pkg.github.com/cube-io-corp/agent</url>
-    </repository>
-  </repositories>
 
   <dependencies>
     <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
@@ -49,9 +49,9 @@
     </dependency>
 
     <dependency>
-      <groupId>io.cube</groupId>
+      <groupId>io.meshdynamics</groupId>
       <artifactId>agent</artifactId>
-      <version>1.2.1.0</version>
+      <version>${revision}</version>
     </dependency>
 
     <dependency>
