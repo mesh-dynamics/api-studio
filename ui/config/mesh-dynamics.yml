@@ -2,5 +2,6 @@ domain: "http://localhost:8081"
 proxyPort: 9000
 gRPCProxyPort: 9001
 httpsProxyPort: 9002
+cubeUIBackendPort: 9003
+replayDriverPort: 9004
 generateCertificate: false
-replayDriverPort: 8080
