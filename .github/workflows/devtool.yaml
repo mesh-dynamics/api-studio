@@ -33,8 +33,6 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: Set up Docker
-        uses: docker-practice/actions-setup-docker@master
       - name: Build with Maven(on PR)
         if: ${{ github.event_name == 'pull_request'}}
         env:
@@ -140,7 +138,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./build.sh
+          ./build.sh --buildDocker
       - name: Build with Maven(release)
         if: ${{ github.event_name == 'release'}}
         env:
@@ -148,7 +146,7 @@ jobs:
         run: |
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
           echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server><server><id>docker.pkg.github.com</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$(version)
+          ./build.sh -r=$(version) --buildDocker
       - name: Build with Maven(publish internal)
         if: ${{ github.event_name == 'push'}}
         env:
@@ -158,7 +156,7 @@ jobs:
           IFS=$'\n'
           NEXTVERSION=$(echo "${version[*]}" | sort -Vr | head -n1 | awk -F. -v OFS=. '{$(NF-1)++;$(NF)=0;print}')
           echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$NEXTVERSION
+          ./build.sh -r=$NEXTVERSION --buildDocker
       - name: Build for linux
         working-directory: ./ui
         env:
@@ -209,8 +207,6 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: Set up Docker
-        uses: docker-practice/actions-setup-docker@master
       - name: Build with Maven(on PR)
         shell: bash
         if: ${{ github.event_name == 'pull_request'}}

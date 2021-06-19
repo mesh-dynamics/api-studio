@@ -29,7 +29,7 @@
     <repository>
       <id>github</id>
       <name>Cubeio Maven Github</name>
-      <url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
+      <url>https://maven.pkg.github.com/cube-io-corp/meshd-complete</url>
       <releases>
         <enabled>true</enabled>
         <updatePolicy>never</updatePolicy>
