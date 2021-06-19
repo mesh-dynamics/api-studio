@@ -44,19 +44,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(git describe --tags `git rev-list --tags --max-count=1`)
-          echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server><server><id>docker.pkg.github.com</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$(version)
+          ./build.sh
       - name: Build with Maven(publish internal)
         if: ${{ github.event_name == 'push'}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(git tag --list)
-          IFS=$'\n'
-          NEXTVERSION=$(echo "${version[*]}" | sort -Vr | head -n1 | awk -F. -v OFS=. '{$(NF-1)++;$(NF)=0;print}')
-          echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$NEXTVERSION
+          ./build.sh
       - name: Import Code-Signing Certificates
         uses: Apple-Actions/import-codesign-certs@v1
         with:
@@ -220,20 +214,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(git describe --tags `git rev-list --tags --max-count=1`)
-          echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server><server><id>docker.pkg.github.com</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$(version)
+          ./build.sh
       - name: Build with Maven(publish internal)
         shell: bash
         if: ${{ github.event_name == 'push'}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(git tag --list)
-          IFS=$'\n'
-          NEXTVERSION=$(echo "${version[*]}" | sort -Vr | head -n1 | awk -F. -v OFS=. '{$(NF-1)++;$(NF)=0;print}')
-          echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$NEXTVERSION
+          ./build.sh
       - name: Build for windows
         shell: pwsh
         working-directory: .\ui
