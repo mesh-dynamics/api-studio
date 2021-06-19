@@ -1,6 +1,6 @@
 RELEASE=1.0
 PHASE=package
-BUILD_DOCKER="-Ddockerfile.skip=true"
+BUILD_DOCKER=-Ddockerfile.skip=true
 
 function usage() {
     echo "USAGE: $0 <OPTIONS>"
@@ -44,7 +44,7 @@ STANDALONE_GATEWAY_TARGET_JAR_PATH=ui/bin/gateway-standalone.jar
 STANDALONE_CORE_SOURCE_JAR_PATH=services/core/target/core-$RELEASE.war
 STANDALONE_CORE_TARGET_JAR_PATH=ui/bin/core-standalone.jar
 
-mvn $PHASE -Drevision="$RELEASE" -DskipTests "$BUILD_DOCKER"
+mvn $PHASE -Drevision=$RELEASE -DskipTests $BUILD_DOCKER
 
 cp $STANDALONE_GATEWAY_SOURCE_JAR_PATH $STANDALONE_GATEWAY_TARGET_JAR_PATH
 cp $STANDALONE_CORE_SOURCE_JAR_PATH $STANDALONE_CORE_TARGET_JAR_PATH
