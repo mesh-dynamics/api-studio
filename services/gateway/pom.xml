@@ -170,6 +170,11 @@
             <artifactId>sendgrid-java</artifactId>
             <version>4.0.1</version>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.meshdynamics</groupId>-->
+<!--            <artifactId>commons</artifactId>-->
+<!--            <version>${revision}</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>io.meshdynamics</groupId>
             <artifactId>commons</artifactId>
@@ -202,9 +207,15 @@
         <defaultGoal>spring-boot:run</defaultGoal>
         <plugins>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

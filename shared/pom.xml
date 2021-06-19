@@ -25,6 +25,18 @@
     </repository>
   </distributionManagement>
 
+  <repositories>
+    <repository>
+      <id>github</id>
+      <name>Cubeio Maven Github</name>
+      <url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
+      <releases>
+        <enabled>true</enabled>
+        <updatePolicy>never</updatePolicy>
+      </releases>
+    </repository>
+  </repositories>
+
   <build>
 
     <pluginManagement>
@@ -37,8 +49,19 @@
 <!--          </configuration>-->
         </plugin>
 
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.8.0</version>
+        </plugin>
 
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>3.2.2</version>
+        </plugin>
+
+        <plugin>
+
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>flatten-maven-plugin</artifactId>
           <version>1.0.0</version>
@@ -48,7 +71,7 @@
           <executions>
             <execution>
               <id>flatten</id>
-              <phase>process-resources</phase>
+              <phase>package</phase>
               <goals>
                 <goal>flatten</goal>
               </goals>
@@ -87,9 +110,14 @@
         </plugin>
       </plugins>
 
-
-
     </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
 
   </build>
 

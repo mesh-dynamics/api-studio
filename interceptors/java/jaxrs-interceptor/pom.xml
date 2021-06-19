@@ -45,6 +45,7 @@
   </dependencies>
   <build>
     <plugins>
+
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.0</version>
@@ -142,6 +143,13 @@
           </execution>
         </executions>
       </plugin>
+<!--  Note: Maintain order of shade plugin -> flatten-plugin.-->
+<!--  Ref: https://stackoverflow.com/questions/52552329/use-maven-flatten-plugin-and-maven-shade-plugin-at-the-same-time-->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+      </plugin>
+
 
     </plugins>
   </build>

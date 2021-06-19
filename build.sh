@@ -1,7 +1,10 @@
 RELEASE=1.0
-STANDALONE_GATEWAY_JAR_PATH=services/gateway-standalone/target/gateway-standalone-$RELEASE.jar
-STANDALONE_CORE_JAR_PATH=services/core-standalone/target/core-standalone-$RELEASE.jar
-UI_BIN_PATH=ui/bin
+STANDALONE_GATEWAY_SOURCE_JAR_PATH=services/gateway-standalone/target/gateway-standalone-$RELEASE.jar
+STANDALONE_GATEWAY_TARGET_JAR_PATH=ui/bin/gateway-standalone.jar
+
+STANDALONE_CORE_SOURCE_JAR_PATH=services/core-standalone/target/core-standalone-$RELEASE.jar
+STANDALONE_CORE_TARGET_JAR_PATH=ui/bin/core-standalone.jar
+
 DEPLOY=false
 
 function usage() {
@@ -40,7 +43,7 @@ if [ "$DEPLOY" = true ] ; then
 else mvn package -Drevision=$RELEASE -DskipTests
 fi
 
-cp $STANDALONE_GATEWAY_JAR_PATH $UI_BIN_PATH
-cp $STANDALONE_CORE_JAR_PATH $UI_BIN_PATH
+cp $STANDALONE_GATEWAY_SOURCE_JAR_PATH $STANDALONE_GATEWAY_TARGET_JAR_PATH
+cp $STANDALONE_CORE_SOURCE_JAR_PATH $STANDALONE_CORE_TARGET_JAR_PATH
 
 
