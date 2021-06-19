@@ -4,7 +4,8 @@ on:
   push:
     branches:
       - main
-      - flatten-pom-and-build-trigger
+      - test
+      - cubeui/build-test
 
   release:
     types: [published]
@@ -12,7 +13,6 @@ on:
   pull_request:
     branches:
       - main
-      - flatten-pom-and-build-trigger
 
   workflow_dispatch:
     inputs:

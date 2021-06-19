@@ -31,7 +31,7 @@
 
   <modules>
 
-<!--    <module>ui</module>-->
+    <module>ui</module>
     <module>commons-server</module>
     <module>commons</module>
     <module>agent</module>
