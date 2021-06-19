@@ -1,8 +1,8 @@
 RELEASE=1.0
-STANDALONE_GATEWAY_SOURCE_JAR_PATH=services/gateway-standalone/target/gateway-standalone-$RELEASE.jar
+STANDALONE_GATEWAY_SOURCE_JAR_PATH=services/gateway/target/gateway-standalone-$RELEASE.war
 STANDALONE_GATEWAY_TARGET_JAR_PATH=ui/bin/gateway-standalone.jar
 
-STANDALONE_CORE_SOURCE_JAR_PATH=services/core-standalone/target/core-standalone-$RELEASE.jar
+STANDALONE_CORE_SOURCE_JAR_PATH=services/core/target/core-standalone-$RELEASE.war
 STANDALONE_CORE_TARGET_JAR_PATH=ui/bin/core-standalone.jar
 
 DEPLOY=false

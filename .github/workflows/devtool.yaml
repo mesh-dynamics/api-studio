@@ -56,9 +56,9 @@ jobs:
           IFS=$'\n'
           NEXTVERSION=$(echo "${version[*]}" | sort -Vr | head -n1 | awk -F. -v OFS=. '{$(NF-1)++;$(NF)=0;print}')
           echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$(NEXTVERSION)
-          git tag $NEXTVERSION
-          git push --tags
+          ./build.sh -r=$NEXTVERSION
+#          git tag $NEXTVERSION
+#          git push --tags
       - name: Import Code-Signing Certificates
         uses: Apple-Actions/import-codesign-certs@v1
         with:
@@ -156,7 +156,7 @@ jobs:
           IFS=$'\n'
           NEXTVERSION=$(echo "${version[*]}" | sort -Vr | head -n1 | awk -F. -v OFS=. '{$(NF-1)++;$(NF)=0;print}')
           echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$(NEXTVERSION)
+          ./build.sh -r=$NEXTVERSION
       - name: Build for linux
         working-directory: ./ui
         env:
@@ -233,7 +233,7 @@ jobs:
           IFS=$'\n'
           NEXTVERSION=$(echo "${version[*]}" | sort -Vr | head -n1 | awk -F. -v OFS=. '{$(NF-1)++;$(NF)=0;print}')
           echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$(NEXTVERSION)
+          ./build.sh -r=$NEXTVERSION
       - name: Build for windows
         shell: pwsh
         working-directory: .\ui
