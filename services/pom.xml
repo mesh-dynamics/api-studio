@@ -25,14 +25,21 @@
     <relativePath>../shared</relativePath>
   </parent>
   
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
   <modules>
 
     <module>core</module>
     <module>gateway</module>
     <module>proxy-replay</module>
     <module>log-collector</module>
-
-
 
   </modules>
 
