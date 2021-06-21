@@ -147,10 +147,11 @@ jobs:
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
           IFS=$'\n'
           NEXTVERSION=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
-          echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server><server><id>docker.pkg.github.com</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$NEXTVERSION --buildDocker --deploy
           git tag $NEXTVERSION
           git push --tags
+          echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server><server><id>docker.pkg.github.com</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
+          ./build.sh -r=$NEXTVERSION --buildDocker --deploy
+          
       - name: Build for linux
         working-directory: ./ui
         env:
