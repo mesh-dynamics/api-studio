@@ -75,7 +75,7 @@ jobs:
           npm install
           brew install yq
           jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
-          yq eval '.extraResources += ["./bin/jdk-14.0.2+12-jre.tar.gz"]' -i electron-builder.main.yml
+          yq eval '.extraResources += ["./bin/jdk-14.0.2+12-jre.tar.gz", "./bin/core-standalone.jar", "./bin/gateway-standalone.jar"]' -i electron-builder.main.yml
           cat electron-builder.main.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.main.yml --publish always
@@ -93,7 +93,7 @@ jobs:
           export RELEASE_TYPE=customer
           brew install yq
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
-          yq eval '.extraResources += ["./bin/jdk-14.0.2+12-jre.tar.gz"]' -i electron-builder.yml
+          yq eval '.extraResources += ["./bin/jdk-14.0.2+12-jre.tar.gz", "./bin/core-standalone.jar", "./bin/gateway-standalone.jar"]' -i electron-builder.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.yml --publish always
       - name: Build for macOS(manual)
@@ -110,7 +110,7 @@ jobs:
           export RELEASE_TYPE=customer
           brew install yq
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
-          yq eval '.extraResources += ["./bin/jdk-14.0.2+12-jre.tar.gz"]' -i electron-builder.yml
+          yq eval '.extraResources += ["./bin/jdk-14.0.2+12-jre.tar.gz", "./bin/core-standalone.jar", "./bin/gateway-standalone.jar"]' -i electron-builder.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.customer-fitch.yml --publish always
 
@@ -170,7 +170,7 @@ jobs:
           sudo apt-get install wine64 -y
           npm install
           jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
-          /usr/bin/yq eval '.extraResources += ["./bin/OpenJDK14U-jre_x64_linux_openj9_14.0.2_12_openj9-0.21.0.tar.gz"]' -i electron-builder.main.yml
+          /usr/bin/yq eval '.extraResources += ["./bin/OpenJDK14U-jre_x64_linux_openj9_14.0.2_12_openj9-0.21.0.tar.gz", "./bin/core-standalone.jar", "./bin/gateway-standalone.jar"]' -i electron-builder.main.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -l --config electron-builder.main.yml --publish always
 
@@ -186,7 +186,7 @@ jobs:
           npm install
           export RELEASE_TYPE=customer
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
-          /usr/bin/yq eval '.extraResources += ["./bin/OpenJDK14U-jre_x64_linux_openj9_14.0.2_12_openj9-0.21.0.tar.gz"]' -i electron-builder.yml
+          /usr/bin/yq eval '.extraResources += ["./bin/OpenJDK14U-jre_x64_linux_openj9_14.0.2_12_openj9-0.21.0.tar.gz", "./bin/core-standalone.jar", "./bin/gateway-standalone.jar"]' -i electron-builder.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -l --config electron-builder.yml --publish always
 
@@ -251,9 +251,13 @@ jobs:
           jq --arg version $NEXT_VERSION '.version = $version' package.json > .\tmp.txt
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
+          Dir -Recurse .\ui\bin | get-childitem | format-list > ppp.txt
+          $BUILDER_CONTENT1 = Get-Content -Path .\ebtmp.txt
+          echo "files under ui"
+          echo $BUILDER_CONTENT1
           Add-Content -Path .\package.json -Value $CONTENT
           # yq w .\electron-builder.main.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
-          yq w .\electron-builder.main.yml extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
+          yq w .\electron-builder.main.yml extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" | yq w - extraResources[4] "./bin/core-standalone.jar" | yq w - extraResources[3] "./bin/gateway-standalone.jar" > ebtmp.txt
           $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
           echo $BUILDER_CONTENT
           Remove-Item -path .\electron-builder.main.yml
@@ -279,8 +283,13 @@ jobs:
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
           $Env:RELEASE_TYPE = "customer"
+          Dir -Recurse .\ui\bin | get-childitem | format-list > ppp.txt
+          $BUILDER_CONTENT1 = Get-Content -Path .\ebtmp.txt
+          echo "files under ui"
+          echo $BUILDER_CONTENT1
+
           # yq w .\electron-builder.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip"> .\ebtmp.txt
-          yq w .\electron-builder.main.yml extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
+          yq w .\electron-builder.main.yml extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" | yq w - extraResources[4] "./bin/core-standalone.jar" | yq w - extraResources[3] "./bin/gateway-standalone.jar" > ebtmp.txt
           $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
           echo $BUILDER_CONTENT
           Remove-Item -path .\electron-builder.yml
