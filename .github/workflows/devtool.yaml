@@ -252,7 +252,7 @@ jobs:
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
           Dir -Recurse .\bin | get-childitem | format-list > ppp.txt
-          $BUILDER_CONTENT1 = Get-Content -Path .\ebtmp.txt
+          $BUILDER_CONTENT1 = Get-Content -Path ppp.txt
           echo "files under ui"
           echo $BUILDER_CONTENT1
           Add-Content -Path .\package.json -Value $CONTENT
@@ -284,7 +284,7 @@ jobs:
           Add-Content -Path .\package.json -Value $CONTENT
           $Env:RELEASE_TYPE = "customer"
           Dir -Recurse .\bin | get-childitem | format-list > ppp.txt
-          $BUILDER_CONTENT1 = Get-Content -Path .\ebtmp.txt
+          $BUILDER_CONTENT1 = Get-Content -Path ppp.txt
           echo "files under ui"
           echo $BUILDER_CONTENT1
 
