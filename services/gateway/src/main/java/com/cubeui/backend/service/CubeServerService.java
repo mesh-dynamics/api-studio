@@ -84,6 +84,13 @@ public class CubeServerService {
     @Value("${cube.server.baseUrl.record}")
     private String cubeServerBaseUrlRecord = CUBE_SERVER_HREF;
 
+    @Value("${cube.server.port:}")
+    private String cubeServerPort = "";
+
+    public String getUrls(){
+        return String.format("%s-%s",cubeServerBaseUrlReplay , cubeServerPort );
+    }
+
     @Autowired
     @Qualifier("appRestClient")
     private RestTemplate restTemplate;
@@ -103,6 +110,14 @@ public class CubeServerService {
         //Read timeout
         clientHttpRequestFactory.setReadTimeout(600000);
         restTemplate.setRequestFactory(clientHttpRequestFactory);
+
+        if(cubeServerPort!=null && !cubeServerPort.equals("null") && !cubeServerPort.equals("")){
+            //If a specific cubeio port is provided , replace the port in all urls
+            cubeServerBaseUrlReplay = cubeServerBaseUrlReplay.replaceFirst(":\\d+" , ":"+cubeServerPort);
+            cubeServerBaseUrlMock = cubeServerBaseUrlMock.replaceFirst(":\\d+" , ":"+cubeServerPort);
+            cubeServerBaseUrlRecord = cubeServerBaseUrlRecord.replaceFirst(":\\d+" , ":"+cubeServerPort);
+
+        }
     }
 
     public ResponseEntity fetchGetResponse(String path, String query){

@@ -46,6 +46,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
                 .authorizeRequests()
+                .antMatchers("/h2-console/**").permitAll()
                 .antMatchers("/api/health").permitAll()
                 .antMatchers("/api/login").permitAll()
                 .antMatchers("/api/mst/**").permitAll()
@@ -64,6 +65,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .apply(new JwtConfigurer(jwtTokenValidator));
         //@formatter:on
         http.cors();
+        //For h2 console
+        http.headers().frameOptions().disable();
     }
 
 

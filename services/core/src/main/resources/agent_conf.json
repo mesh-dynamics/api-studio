@@ -1,6 +1,8 @@
 {
 	"io": {
 		"md": {
+			"recorder": "dddd",
+			"externalIdField": "GK",
 			"customer": "customer",
 			"app": "Cube",
 			"instance": "prod",
