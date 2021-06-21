@@ -39,6 +39,8 @@ extraResources:
   - "./bin/cubews-replay-V1-SNAPSHOT-jar-with-dependencies.jar"
   - "./config/mesh-dynamics.yml"
   - "./public/assets/**"
+  - "./bin/gateway-standalone.jar"
+  - "./bin/core-standalone.jar"
 
 # Mac OS configuration
 mac:
