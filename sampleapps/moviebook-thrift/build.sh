@@ -3,9 +3,6 @@ set -o errexit
 VERSION="demo-1.0"
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-# to build and tag restwrapjdbc and sample_apps-mirest
-mvn package
-
 pushd "$SCRIPTDIR/details"
   #plain build -- no calling external book service to fetch topics
   docker build -t "istio/examples-bookinfo-details-v1:${VERSION}"  --build-arg service_version=v1 .

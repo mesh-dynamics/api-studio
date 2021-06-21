@@ -13,8 +13,8 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>cubews</artifactId>
-  <version>V1-SNAPSHOT</version>
+  <artifactId>core</artifactId>
+  <version>${revision}</version>
   <packaging>war</packaging>
   <properties>
 	  <version.jersey>2.27</version.jersey>
@@ -24,36 +24,26 @@
 	  <version.jaxb>2.3.2</version.jaxb>
 	  <version.jaeger>1.1.0</version.jaeger>
 	  <version.gson>2.8.5</version.gson>
+		<maven.deploy.skip>false</maven.deploy.skip>
   </properties>
 
+	<parent>
+		<groupId>io.meshdynamics</groupId>
+		<artifactId>shared</artifactId>
+		<version>${revision}</version>
+		<relativePath>../../shared</relativePath>
+	</parent>
+
 	<repositories>
-		<!-- <repository>
-			<id>project.local</id>
-			<name>maven-repository</name>
-			<url>file:///${project.basedir}/repo</url>
-		</repository> -->
-    		<repository>
-          		<id>github-agent</id>
-          		<name>GitHub OWNER Apache Maven Packages</name>
-          		<url>https://maven.pkg.github.com/cube-io-corp/agent</url>
-    		</repository>
 		<repository>
-			<id>github</id>
-			<name>GitHub OWNER Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
-		</repository>
-		<repository>
-			<id>github-md-commons-server</id>
-			<name>GitHub OWNER Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/cube-io-corp/md-commons-server</url>
-		</repository>
-		<repository>
-			<id>github-interceptor</id>
-			<name>GitHub CubeIO Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/cube-io-corp/interceptor-framework</url>
+			<id>maven-restlet</id>
+			<name>Public online Restlet repository</name>
+			<url>https://maven.restlet.com</url>
 		</repository>
 	</repositories>
-  <!--  this is for having consistent jackson versions -->
+
+
+	<!--  this is for having consistent jackson versions -->
   <dependencyManagement>
     <dependencies>
         <dependency>
@@ -76,7 +66,12 @@
   </dependencyManagement>
   <build>
     <plugins>
-      <plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+			</plugin>
+
+			<plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.0</version>
         <configuration>
@@ -84,6 +79,7 @@
           <target>${version.java}</target>
         </configuration>
       </plugin>
+
 		<plugin>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-war-plugin</artifactId>
@@ -129,6 +125,12 @@
                 <password>tomcat4cube$</password>
 		    </configuration>
 		</plugin>
+
+		<plugin>
+				<groupId>com.spotify</groupId>
+				<artifactId>dockerfile-maven-plugin</artifactId>
+		</plugin>
+
     </plugins>
   </build>
 
@@ -357,28 +359,28 @@
 	  </dependency>
 
 		<dependency>
-			<groupId>io.cube</groupId>
+			<groupId>io.meshdynamics</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.2.6.0</version>
+			<version>${revision}</version>
 		</dependency>
 
 		<dependency>
-			<groupId>io.cube</groupId>
+			<groupId>io.meshdynamics</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.2.55.0</version>
+			<version>${revision}</version>
 <!--			<version>1.1-SNAPSHOT</version>-->
 		</dependency>
 
 		<dependency>
-			<groupId>io.cube</groupId>
+			<groupId>io.meshdynamics</groupId>
 			<artifactId>commons-server</artifactId>
-			<version>1.0.69.0</version>
+			<version>${revision}</version>
 <!--			<version>1.1-SNAPSHOT</version>-->
 		</dependency>
 		<dependency>
-			<groupId>io.cube</groupId>
+			<groupId>io.meshdynamics</groupId>
 			<artifactId>md-df-jaxrs-interceptor</artifactId>
-			<version>1.2.8</version>
+			<version>${revision}</version>
 		</dependency>
 		<dependency>
 			<groupId>it.ozimov</groupId>
@@ -386,5 +388,5 @@
 			<version>0.7.3</version>
 		</dependency>
 	</dependencies>
-  <groupId>com.cube</groupId>
+  <groupId>io.meshdynamics</groupId>
 </project>

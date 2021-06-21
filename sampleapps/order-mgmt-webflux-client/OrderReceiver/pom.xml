@@ -26,16 +26,31 @@
 	<description>Example show cases cube's REST Interceptor</description>
 
 	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.1.5.RELEASE</version>
-		<relativePath />
+		<groupId>io.meshdynamics.sampleapps</groupId>
+		<artifactId>order-mgmt-webflux-client</artifactId>
+		<version>${revision}</version>
 	</parent>
+
+
+	<dependencyManagement>
+		<!-- From https://stackoverflow.com/questions/21317006/spring-boot-parent-pom-when-you-already-have-a-parent-pom-->
+		<dependencies>
+			<dependency>
+				<!-- Import dependency management from Spring Boot -->
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-parent</artifactId>
+				<version>2.1.4.RELEASE</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>10</java.version>
+		<version.log4j>2.11.1</version.log4j>
 	</properties>
 
 	<dependencies>
@@ -56,6 +71,11 @@
 <!--			<artifactId>spring-core</artifactId>-->
 <!--			<version>5.2.1.RELEASE</version>-->
 <!--		</dependency>-->
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>${version.log4j}</version>
+		</dependency>
 		<dependency>
 			<groupId>com.squareup.okhttp3</groupId>
 			<artifactId>okhttp</artifactId>

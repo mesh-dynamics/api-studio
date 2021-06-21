@@ -4,11 +4,11 @@
 FROM maven:3.6.0-jdk-11-slim AS build
 COPY course-service ./course-service
 #Add settings.xml file for github auth
-ARG TOKEN
-RUN mkdir ~/.m2 && \
-echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-RUN cd ./course-service && \
-mvn package
+#ARG TOKEN
+#RUN mkdir ~/.m2 && \
+#echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
+#RUN cd ./course-service && \
+#mvn package
 
 ##############
 #Package
