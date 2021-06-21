@@ -150,7 +150,7 @@ jobs:
           git tag $NEXTVERSION
           git push --tags
           echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server><server><id>docker.pkg.github.com</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$NEXTVERSION --buildDocker --deploy
+          ./build.sh -r=$NEXTVERSION
           
       - name: Build for linux
         working-directory: ./ui
