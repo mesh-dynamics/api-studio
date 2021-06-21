@@ -78,7 +78,7 @@ jobs:
           yq eval '.extraResources += ["./bin/jdk-14.0.2+12-jre.tar.gz"]' -i electron-builder.main.yml
           cat electron-builder.main.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
-          npx electron-builder build -m --config electron-builder.main.yml --publish always
+          npx electron-builder build -m --config electron-builder.main.yml
       - name: Build for macOS(release)
         working-directory: ./ui
         if: ${{ github.event_name == 'release'}}
@@ -172,7 +172,7 @@ jobs:
           jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           /usr/bin/yq eval '.extraResources += ["./bin/OpenJDK14U-jre_x64_linux_openj9_14.0.2_12_openj9-0.21.0.tar.gz"]' -i electron-builder.main.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
-          npx electron-builder build -l --config electron-builder.main.yml --publish always
+          npx electron-builder build -l --config electron-builder.main.yml
 
       - name: Build for linux(release)
         working-directory: ./ui
@@ -259,7 +259,7 @@ jobs:
           Remove-Item -path .\electron-builder.main.yml
           Add-Content -Path .\electron-builder.main.yml -Value $BUILDER_CONTENT
           npx webpack --mode production --display minimal --config webpack.electron.config.js
-          npx electron-builder build -w --config electron-builder.main.yml --publish always
+          npx electron-builder build -w --config electron-builder.main.yml
 
       - name: Build for windows(release)
         working-directory: .\ui
