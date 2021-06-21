@@ -31,10 +31,8 @@ const setupLocalCubeBackend = async() => {
     const cubeUIBackendPort = store.get("cubeUIBackendPort"); //Default 9003
     const gatewayCommand = `"${javaBinaryPath}" -Dspring.profiles.active=local -Dspring.datasource.url="jdbc:h2:file:${localCubeUIBackendDataPath}"  -jar -Dcube.server.port=${replayDriverPort} -Dserver.port=${cubeUIBackendPort} "${gatewayBinaryPath}"`
     const coreCommand = `"${javaBinaryPath}" -jar -Ddata_dir="${localCubeIOBackendDataPath}" -DPORT=${replayDriverPort}  "${coreJarPath}"`;
-    logger.log("Running gateway command", gatewayCommand);
-    logger.log("Running core command", coreCommand);
-    console.log("Running gateway command", gatewayCommand);
-    console.log("Running core command", coreCommand);
+    logger.info("Running gateway command", gatewayCommand);
+    logger.info("Running core command", coreCommand);
     const gatewayChild = childProcess.exec(gatewayCommand, (error, stdout, stderr) => {
         
         if (error) {
