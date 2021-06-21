@@ -25,10 +25,10 @@ extraMetadata:
 #   acl: private
 
 
-publish:
-  provider: github
-  repo: meshd-complete
-  releaseType: release
+# publish:
+#   provider: github
+#   repo: meshd-complete
+#   releaseType: release
 
 # files:
 #   - "build/"
