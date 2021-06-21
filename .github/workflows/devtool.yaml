@@ -251,13 +251,13 @@ jobs:
           jq --arg version $NEXT_VERSION '.version = $version' package.json > .\tmp.txt
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
-          Dir -Recurse .\ui\bin | get-childitem | format-list > ppp.txt
+          Dir -Recurse .\bin | get-childitem | format-list > ppp.txt
           $BUILDER_CONTENT1 = Get-Content -Path .\ebtmp.txt
           echo "files under ui"
           echo $BUILDER_CONTENT1
           Add-Content -Path .\package.json -Value $CONTENT
           # yq w .\electron-builder.main.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
-          yq w .\electron-builder.main.yml extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" | yq w - extraResources[4] "./bin/core-standalone.jar" | yq w - extraResources[3] "./bin/gateway-standalone.jar" > ebtmp.txt
+          yq w .\electron-builder.main.yml extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" | yq w - extraResources[4] "./bin/core-standalone.jar" | yq w - extraResources[5] "./bin/gateway-standalone.jar" > ebtmp.txt
           $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
           echo $BUILDER_CONTENT
           Remove-Item -path .\electron-builder.main.yml
@@ -283,13 +283,13 @@ jobs:
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
           $Env:RELEASE_TYPE = "customer"
-          Dir -Recurse .\ui\bin | get-childitem | format-list > ppp.txt
+          Dir -Recurse .\bin | get-childitem | format-list > ppp.txt
           $BUILDER_CONTENT1 = Get-Content -Path .\ebtmp.txt
           echo "files under ui"
           echo $BUILDER_CONTENT1
 
           # yq w .\electron-builder.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip"> .\ebtmp.txt
-          yq w .\electron-builder.main.yml extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" | yq w - extraResources[4] "./bin/core-standalone.jar" | yq w - extraResources[3] "./bin/gateway-standalone.jar" > ebtmp.txt
+          yq w .\electron-builder.main.yml extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" | yq w - extraResources[4] "./bin/core-standalone.jar" | yq w - extraResources[5] "./bin/gateway-standalone.jar" > ebtmp.txt
           $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
           echo $BUILDER_CONTENT
           Remove-Item -path .\electron-builder.yml
