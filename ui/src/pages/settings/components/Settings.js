@@ -110,10 +110,15 @@ class Settings extends Component {
   };
 
   handleMockSettingsChange = (name, value) => {
+    const stateChange = {};
+    if(name == "cubeUIBackendPort"){
+      stateChange.domain = `http://localhost:${value}`;
+    }
     this.setState({
       config: {
         ...this.state.config,
         [name]: value,
+        ...stateChange
       },
     });
   };

@@ -16,10 +16,11 @@ const logger = require('electron-log');
 // const { ipcMain } = require('electron');
 const { executeJar } = require('./driver-utils/bin-exec');
 const { setupJavaBinaries, setupDriverExecutable } = require('./driver-utils/setup');
+const { store } = require('./fs-utils');
 
 
 const setupReplayDriver = async (replayContext) => {
-    const REPLAY_DRIVER_PORT = 9992;
+    const REPLAY_DRIVER_PORT = store.get("replayDriverPort") || 9992;
     logger.info('Initializing replay driver...');
 
     try {

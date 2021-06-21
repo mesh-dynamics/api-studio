@@ -113,7 +113,35 @@ const setupDriverExecutable = () => {
 };
 
 
+const setupCoreExecutable = () => {
+    logger.info('Setting up driver executable');
+
+    const jarPath = path.join(resourceRootPath, 'bin', 'core-standalone.jar');
+
+    if(fs.existsSync(jarPath)) {
+        return jarPath;
+    } else {
+        throw new Error('Executable Jar not found at location.')
+    }
+};
+
+
+const setupGatewayExecutable = () => {
+    logger.info('Setting up driver executable');
+
+    const jarPath = path.join(resourceRootPath, 'bin', 'gateway-standalone.jar');
+
+    if(fs.existsSync(jarPath)) {
+        return jarPath;
+    } else {
+        throw new Error('Executable Jar not found at location.')
+    }
+};
+
+
 module.exports = {
     setupJavaBinaries,
-    setupDriverExecutable
+    setupDriverExecutable,
+    setupCoreExecutable,
+    setupGatewayExecutable
 };
