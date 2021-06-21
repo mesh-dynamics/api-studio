@@ -1,8 +1,8 @@
 {
 	"io": {
 		"md": {
-			"recorder": "dddd",
-			"externalIdField": "GK",
+			"recorder": "ProxyBatchRecorder",
+			"externalIdField": "WM_QOS.CORRELATION_ID",
 			"customer": "customer",
 			"app": "Cube",
 			"instance": "prod",
