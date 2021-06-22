@@ -107,7 +107,7 @@ public class DataInitializer implements CommandLineRunner {
             userDTOAdmin.setCustomerId(customer.get().getId());
             userDTOAdmin.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
             userDTOAdmin.setActivated(true);
-            User saved = this.userService.save(userDTOAdmin, true, false);
+            User saved = this.userService.save(userDTOAdmin, true, true);
             //userService.createHistoryForEachApp(httpServletRequest, saved);
 
             log.info("User with username '{}' created", userDTOAdmin.getEmail());
