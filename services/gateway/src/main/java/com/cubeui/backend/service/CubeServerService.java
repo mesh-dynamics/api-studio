@@ -111,7 +111,8 @@ public class CubeServerService {
         clientHttpRequestFactory.setReadTimeout(600000);
         restTemplate.setRequestFactory(clientHttpRequestFactory);
 
-        if(cubeServerPort!=null && !cubeServerPort.equals("null") && !cubeServerPort.equals("")){
+        Optional<Integer>  cubeport =  io.md.utils.Utils.strToInt(cubeServerPort);
+        if(cubeport.isPresent()){
             //If a specific cubeio port is provided , replace the port in all urls
             cubeServerBaseUrlReplay = cubeServerBaseUrlReplay.replaceFirst(":\\d+" , ":"+cubeServerPort);
             cubeServerBaseUrlMock = cubeServerBaseUrlMock.replaceFirst(":\\d+" , ":"+cubeServerPort);

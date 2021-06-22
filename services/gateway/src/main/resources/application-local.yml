@@ -1,6 +1,6 @@
 spring:
   datasource:
-    #url: jdbc:h2:file:/Users/gauravkulshreshtha/work/repos/cubeui-backend/gkdata2/backend
+    #url: jdbc:h2:file:/var/lib/meshd/data
     username: cube
     password: cubeio
     cachePrepStmts: true
