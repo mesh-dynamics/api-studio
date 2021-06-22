@@ -179,6 +179,11 @@
 		<plugin>
 				<groupId>com.spotify</groupId>
 				<artifactId>dockerfile-maven-plugin</artifactId>
+				<configuration>
+					<buildArgs>
+						<JAR_FILE>${project.build.finalName}.war</JAR_FILE>
+					</buildArgs>
+				</configuration>
 		</plugin>
 
 		</plugins>
