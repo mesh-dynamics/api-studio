@@ -139,10 +139,12 @@ const killProcessByPort = async function (port){
 }
 
 const stopChangedPorts = async function(config){
-    const { proxyPort, cubeUIBackendPort, replayDriverPort } = config;
+    const { proxyPort, cubeUIBackendPort, replayDriverPort,  gRPCProxyPort, httpsProxyPort } = config;
     const oldReplayDriverPort = store.get("replayDriverPort");
     const oldCubeUIBackendPort = store.get("cubeUIBackendPort");
     const oldProxyPort = store.get("proxyPort");
+    const oldHttpsProxyPort = store.get("httpsProxyPort");
+    const oldgRPCProxyPort = store.get("gRPCProxyPort");
 
     if(oldProxyPort && oldProxyPort.toString() != proxyPort.toString()){
         await killProcessByPort(oldProxyPort);
@@ -152,6 +154,12 @@ const stopChangedPorts = async function(config){
     }
     if(oldReplayDriverPort && oldReplayDriverPort.toString() != replayDriverPort.toString()){
         await killProcessByPort(oldReplayDriverPort);
+    }
+    if(oldHttpsProxyPort && oldHttpsProxyPort.toString() != httpsProxyPort.toString()){
+        await killProcessByPort(oldHttpsProxyPort);
+    }
+    if(oldgRPCProxyPort && oldgRPCProxyPort.toString() != gRPCProxyPort.toString()){
+        await killProcessByPort(oldgRPCProxyPort);
     }
 }
 
@@ -202,12 +210,14 @@ const setupListeners = (mockContext, user, replayContext) => {
     app.on('window-all-closed', async function () {
          
         try {
-            const { proxyPort, cubeUIBackendPort, replayDriverPort } = config;
+            const { proxyPort, cubeUIBackendPort, replayDriverPort,  gRPCProxyPort, httpsProxyPort } = config;
             const REPLAY_DRIVER_PORT = replayDriverPort || 9992;
             
             killProcessByPort(REPLAY_DRIVER_PORT);
             killProcessByPort(proxyPort);
             killProcessByPort(cubeUIBackendPort);
+            killProcessByPort(gRPCProxyPort);
+            killProcessByPort(httpsProxyPort);
     
             if (process.platform !== 'darwin') {
                 app.quit();
