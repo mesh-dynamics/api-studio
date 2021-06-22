@@ -38,10 +38,10 @@ case $i in
 esac
 done
 
-STANDALONE_GATEWAY_SOURCE_JAR_PATH=services/gateway/target/gateway-$RELEASE.war
+STANDALONE_GATEWAY_SOURCE_JAR_PATH=services/gateway/target/gateway-$RELEASE.jar
 STANDALONE_GATEWAY_TARGET_JAR_PATH=ui/bin/gateway-standalone.jar
 
-STANDALONE_CORE_SOURCE_JAR_PATH=services/core/target/core-$RELEASE.war
+STANDALONE_CORE_SOURCE_JAR_PATH=services/core/target/core-$RELEASE.jar
 STANDALONE_CORE_TARGET_JAR_PATH=ui/bin/core-standalone.jar
 
 mvn $PHASE -Drevision=$RELEASE -DskipTests $BUILD_DOCKER
