@@ -252,8 +252,8 @@ jobs:
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
-          # yq w .\electron-builder.main.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[5] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
-          yq w .\electron-builder.main.yml extraResources[5] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
+          yq w .\electron-builder.main.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[5] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
+          # yq w .\electron-builder.main.yml extraResources[5] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
           $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
           echo $BUILDER_CONTENT
           Remove-Item -path .\electron-builder.main.yml
@@ -279,8 +279,8 @@ jobs:
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
           $Env:RELEASE_TYPE = "customer"
-          # yq w .\electron-builder.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[5] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip"> .\ebtmp.txt
-          yq w .\electron-builder.main.yml extraResources[5] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
+          yq w .\electron-builder.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[5] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip"> .\ebtmp.txt
+          # yq w .\electron-builder.yml extraResources[5] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
           $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
           echo $BUILDER_CONTENT
           Remove-Item -path .\electron-builder.yml
