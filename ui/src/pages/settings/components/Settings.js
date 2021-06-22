@@ -29,8 +29,11 @@ class Settings extends Component {
       domain: "",
       proxyPort: "",
       gRPCProxyPort: "",
+      replayDriverPort: "",
+      cubeUIBackendPort: "",
       httpsProxyPort: "",
       generateCertificate: false,
+      isLocalHost: true
     },
   };
 
@@ -38,7 +41,9 @@ class Settings extends Component {
     ipcRenderer.on("get_config", (event, config) => {
       ipcRenderer.removeAllListeners("get_config");
       console.log("config: ", config);
-      this.setState({ config });
+      const isLocalHost = config.cubeUIBackendPort && config.domain.includes(`//localhost:${config.cubeUIBackendPort}`);
+      this.setState({ config: {...config, isLocalHost} });
+      console.log("After mount Settings ", this.state);
     });
 
     ipcRenderer.on("config_update_success", (event) => {
@@ -54,19 +59,35 @@ class Settings extends Component {
     ipcRenderer.send("get_config");
   }
 
-  hasInvalidInputFields = (domain, proxyPort, gRPCProxyPort, httpsProxyPort) => {
+  addNonExistingPort(portList, port){
+    if(portList.includes(port)){
+      return true;
+    }
+    portList.push(port);
+    return false;
+  }
+
+  hasInvalidInputFields = (domain, proxyPort, gRPCProxyPort, httpsProxyPort, replayDriverPort, cubeUIBackendPort) => {
+    var portList = [];
+
     return (
       !domain ||
       !proxyPort ||
       !gRPCProxyPort ||
+      !cubeUIBackendPort ||
+      !replayDriverPort ||
       !httpsProxyPort ||
       !isUrl(domain, { require_tld: false }) ||
       !isPort(String(proxyPort)) ||
       !isPort(String(gRPCProxyPort)) ||
+      !isPort(String(cubeUIBackendPort)) ||
+      !isPort(String(replayDriverPort)) ||
       !isPort(String(httpsProxyPort)) ||
-      proxyPort == gRPCProxyPort ||
-      proxyPort == httpsProxyPort ||
-      gRPCProxyPort == httpsProxyPort
+      this.addNonExistingPort(portList, gRPCProxyPort) ||
+      this.addNonExistingPort(portList, httpsProxyPort) ||
+      this.addNonExistingPort(portList, proxyPort) ||
+      this.addNonExistingPort(portList, cubeUIBackendPort) ||
+      this.addNonExistingPort(portList, replayDriverPort)
     );
   };
 
@@ -89,10 +110,15 @@ class Settings extends Component {
   };
 
   handleMockSettingsChange = (name, value) => {
+    const stateChange = {};
+    if(name == "cubeUIBackendPort"){
+      stateChange.domain = `http://localhost:${value}`;
+    }
     this.setState({
       config: {
         ...this.state.config,
         [name]: value,
+        ...stateChange
       },
     });
   };
@@ -102,6 +128,13 @@ class Settings extends Component {
   handleHideDomainSettingsModal = () => this.setState({ domainSettingsModalVisible: false });
 
   handleHideMockSettingsModal = () => this.setState({ mockSettingsModalVisible: false });
+  handleClickIsLocalhost = () => {
+    const stateChange = { isLocalHost: !this.state.config.isLocalHost };
+    if(!this.state.config.isLocalHost){
+      stateChange.domain = `http://localhost:${this.state.config.cubeUIBackendPort}`;
+    }
+    this.setState({config: {...this.state.config, ...stateChange}});
+  }
 
   handleSaveDomainClick = () => this.setState({ domainSettingsModalVisible: true });
 
@@ -109,13 +142,13 @@ class Settings extends Component {
 
   render() {
     const {
-      config: { domain, proxyPort, gRPCProxyPort, httpsProxyPort, generateCertificate },
+      config: { domain, proxyPort, gRPCProxyPort, httpsProxyPort, generateCertificate, replayDriverPort, cubeUIBackendPort, isLocalHost },
       domainSettingsModalVisible,
       mockSettingsModalVisible,
       successAlertModalVisible,
     } = this.state;
 
-    const isSaveButtonDisabled = this.hasInvalidInputFields(domain, proxyPort, gRPCProxyPort, httpsProxyPort);
+    const isSaveButtonDisabled = this.hasInvalidInputFields(domain, proxyPort, gRPCProxyPort, httpsProxyPort, replayDriverPort, cubeUIBackendPort);
 
     return (
       <div className="settings-parent-container">
@@ -132,12 +165,17 @@ class Settings extends Component {
           <DomainSettings
             domain={domain}
             isSaveButtonDisabled={isSaveButtonDisabled}
+            isLocalHost={isLocalHost}
+            handleClickIsLocalhost={this.handleClickIsLocalhost}
             handleDomainInputChange={this.handleDomainInputChange}
             handleSaveDomainClick={this.handleSaveDomainClick}
           />
           <MockSettings
             proxyPort={proxyPort}
             gRPCProxyPort={gRPCProxyPort}
+            replayDriverPort={replayDriverPort}
+            isLocalHost={isLocalHost}
+            cubeUIBackendPort={cubeUIBackendPort}
             httpsProxyPort={httpsProxyPort}
             generateCertificate={generateCertificate}
             isSaveButtonDisabled={isSaveButtonDisabled}

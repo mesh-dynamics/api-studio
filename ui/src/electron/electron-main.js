@@ -17,6 +17,7 @@ const { setupApplicationConfig } = require('./core/fs-utils');
 const setupReplayDriver = require('./core/replay-driver');
 const setupGrpcH2Server = require('./core/proxy/grpc-h2-server');
 const setupMeshProxy = require('./core/proxy/mesh-proxy-server');
+const setupLocalCubeBackend = require('./backend/localSetup');
 /**
  * This will setup the application config into fs for persistence.
  */
@@ -49,6 +50,11 @@ const mockContext = {
 const replayContext = {
     // TODO: This will most likely be required 
 };
+
+/*
+ * set up local cube backend
+*/
+setupLocalCubeBackend();
 
 /**
  * Set up auto update, ipc and main window listeners

@@ -22,7 +22,10 @@ const MockSettings = (props) => {
         generateCertificate,
         isSaveButtonDisabled,
         handleMockSettingsChange,
-        handleSaveMockSettingsClick
+        handleSaveMockSettingsClick,
+        isLocalHost,
+        replayDriverPort,
+        cubeUIBackendPort
     } = props;
 
     return (
@@ -30,7 +33,7 @@ const MockSettings = (props) => {
             <div className="panel panel-default">
                 <div className="settings-panel">
                     <i className="icon-calendar"></i>
-                    <span>Mock Settings</span>
+                    <span>PORTs Settings</span>
                 </div>
 
                 <div className="panel-body">
@@ -66,6 +69,7 @@ const MockSettings = (props) => {
                         />
                     </div>
                     {(!gRPCProxyPort || !isPort(String(gRPCProxyPort))) && <span className="settings-error-text">Port provided is not valid</span>}
+                   
                     <br />
                     <span>HTTPS Proxy Port</span>
                     <div className="input-group input-group-sm">
@@ -76,12 +80,45 @@ const MockSettings = (props) => {
                             id="dev-tool-https-proxy" 
                             type="text" 
                             className="form-control settings-no-border" 
-                            placeholder="Default Port: 9003"
+                            placeholder="Default Port: 9002"
                             value={httpsProxyPort}
                             onChange={(event) => handleMockSettingsChange('httpsProxyPort', event.target.value)}
                         />
                     </div>
                     {(!httpsProxyPort || !isPort(String(httpsProxyPort))) && <span className="settings-error-text">Port provided is not valid</span>}
+                    <br />
+                    <span>UI Backend Port</span>
+                    <div className="input-group input-group-sm">
+                        <span className="input-group-addon settings-no-border">
+                            <i className="fa fa-server" aria-hidden="true"></i>
+                        </span>
+                        <input 
+                            id="dev-tool-https-proxy" 
+                            type="text" 
+                            readOnly={!isLocalHost}
+                            className="form-control settings-no-border" 
+                            placeholder="Default Port: 9003"
+                            value={cubeUIBackendPort}
+                            onChange={(event) => handleMockSettingsChange('cubeUIBackendPort', event.target.value)}
+                        />
+                    </div>
+                    {(!cubeUIBackendPort || !isPort(String(cubeUIBackendPort))) && <span className="settings-error-text">Port provided is not valid</span>}
+                    <br />
+                    <span>Local Replay Port</span>
+                    <div className="input-group input-group-sm">
+                        <span className="input-group-addon settings-no-border">
+                            <i className="fa fa-server" aria-hidden="true"></i>
+                        </span>
+                        <input 
+                            id="dev-tool-https-proxy" 
+                            type="text" 
+                            className="form-control settings-no-border" 
+                            placeholder="Default Port: 9004"
+                            value={replayDriverPort}
+                            onChange={(event) => handleMockSettingsChange('replayDriverPort', event.target.value)}
+                        />
+                    </div>
+                    {(!replayDriverPort || !isPort(String(replayDriverPort))) && <span className="settings-error-text">Port provided is not valid</span>}
                     {
                         (
                             (proxyPort == gRPCProxyPort) 
@@ -100,7 +137,7 @@ const MockSettings = (props) => {
                             onChange={(event) => handleMockSettingsChange('generateCertificate', event.target.checked)}
                         />
                     </span>
-                    <span class="settings-left-padding">Generate Root Certificate</span>
+                    <span className="settings-left-padding">Generate Root Certificate</span>
                     <div className="settings-action-buttons">
                         <span className="settings-margin-left-10">
                             <button 
