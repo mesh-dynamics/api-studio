@@ -1,6 +1,6 @@
 spring:
   datasource:
-    #url: jdbc:h2:file:/var/lib/meshd/data
+    url: jdbc:h2:file:/var/lib/meshd/data
     username: cube
     password: cubeio
     cachePrepStmts: true
