@@ -137,7 +137,7 @@ jobs:
         run: |
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
           echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server><server><id>docker.pkg.github.com</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$(version) --buildDocker --deploy
+          ./build.sh -r=$version --buildDocker --deploy
       - name: Build with Maven(publish internal)
         if: ${{ github.event_name == 'push'}}
         env:
