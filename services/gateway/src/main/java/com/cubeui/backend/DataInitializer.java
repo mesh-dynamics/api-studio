@@ -41,7 +41,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHeaders;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import org.springframework.mock.web.MockHttpServletRequest;
 
 @Setter
 @Getter
@@ -60,8 +59,6 @@ public class DataInitializer implements CommandLineRunner {
 
     private AppRepository appRepository;
 
-    private HttpServletRequest httpServletRequest;
-
     private AppFileStorageService appFileStorageService;
 
     private DevtoolEnvironmentsRepository devtoolEnvironmentsRepository;
@@ -70,8 +67,7 @@ public class DataInitializer implements CommandLineRunner {
 
 
     public DataInitializer(UserService userService, CustomerService customerService,
-        CustomerRepository customerRepository, UserRepository userRepository,
-        HttpServletRequest httpServletRequest, AppRepository appRepository,
+        CustomerRepository customerRepository, UserRepository userRepository, AppRepository appRepository,
         AppFileStorageService appFileStorageService, DevtoolEnvironmentsRepository devtoolEnvironmentsRepository,
         AppFileRepository appFileRepository) {
 
@@ -80,7 +76,6 @@ public class DataInitializer implements CommandLineRunner {
         this.customerRepository = customerRepository;
         this.userRepository = userRepository;
         this.appRepository = appRepository;
-        this.httpServletRequest = httpServletRequest;
         this.appFileStorageService = appFileStorageService;
         this.devtoolEnvironmentsRepository = devtoolEnvironmentsRepository;
         this.appFileRepository = appFileRepository;
@@ -96,7 +91,7 @@ public class DataInitializer implements CommandLineRunner {
             customerDTO.setName("Admin");
             customerDTO.setEmail("admin");
             customerDTO.setDomainURLs(Set.of("admin.io"));
-            customer = Optional.of(this.customerService.save(httpServletRequest, customerDTO));
+            customer = Optional.of(this.customerService.save(null, customerDTO));
        }
 
         Optional<User> user = userRepository.findByUsernameIgnoreCase("admin");
@@ -110,12 +105,7 @@ public class DataInitializer implements CommandLineRunner {
             userDTOAdmin.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
             userDTOAdmin.setActivated(true);
             User saved = this.userService.save(userDTOAdmin, true, true);
-            MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
-            mockHttpServletRequest.addHeader(HttpHeaders.AUTHORIZATION,
-                "Bearer " + this.userService.getByUsername("admin").map(
-                    User::getActivationKey).orElse(""));
-
-            userService.createHistoryForEachApp(mockHttpServletRequest, saved);
+            userService.createHistoryForEachApp(null, saved);
 
             log.info("User with username '{}' created", userDTOAdmin.getEmail());
         }

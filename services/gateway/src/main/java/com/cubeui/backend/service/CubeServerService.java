@@ -291,16 +291,30 @@ public class CubeServerService {
     }
 
     public <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method, String... pathValue){
-        String requestURI = pathValue.length> 0 ? pathValue[0] : request.getRequestURI().replaceFirst("^/api", "");
+        // NOTE: request param is null for internal calls.
+
+        String requestURI = pathValue.length > 0 ? pathValue[0]
+            : request != null ? request.getRequestURI().replaceFirst("^/api", "") : null;
+
+        if (requestURI == null)
+        {
+            log.error("URI not found in request or pathValue");
+            return noContent().build();
+        }
+
         String path = getCubeServerUrl(requestURI);
-        if (request.getQueryString() != null) {
+
+        if (request != null && request.getQueryString() != null) {
             path += "?" + request.getQueryString();
         }
         try {
             // here escaping is not needed, since the getRequestURI returns escaped. So using regular URI constructor
             URI uri = new URI(path);
             HttpHeaders headers = new HttpHeaders();
-            request.getHeaderNames().asIterator().forEachRemaining(key -> headers.set(key, request.getHeader(key)));
+            if (request != null) {
+                request.getHeaderNames().asIterator()
+                    .forEachRemaining(key -> headers.set(key, request.getHeader(key)));
+            }
             if (pathValue.length >1)
                 headers.set("Content-Type", pathValue[1]);
 //            MultiValueMap<String, String[]> map = new LinkedMultiValueMap<>();
