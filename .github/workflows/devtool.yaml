@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - test
       - cubeui/build-test
 
   release:
@@ -78,7 +77,7 @@ jobs:
           yq eval '.extraResources += ["./bin/jdk-14.0.2+12-jre.tar.gz"]' -i electron-builder.main.yml
           cat electron-builder.main.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
-          npx electron-builder build -m --config electron-builder.main.yml --publish always
+          npx electron-builder build -m --config electron-builder.main.yml
       - name: Build for macOS(release)
         working-directory: ./ui
         if: ${{ github.event_name == 'release'}}
@@ -138,7 +137,7 @@ jobs:
         run: |
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
           echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server><server><id>docker.pkg.github.com</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$(version) --buildDocker --deploy
+          ./build.sh -r=$version --buildDocker --deploy
       - name: Build with Maven(publish internal)
         if: ${{ github.event_name == 'push'}}
         env:
@@ -146,11 +145,12 @@ jobs:
         run: |
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
           IFS=$'\n'
-          NEXTVERSION=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server><server><id>docker.pkg.github.com</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-          ./build.sh -r=$NEXTVERSION --buildDocker --deploy
+          NEXTVERSION=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           git tag $NEXTVERSION
           git push --tags
+          ./build.sh -r=$NEXTVERSION
+          
       - name: Build for linux
         working-directory: ./ui
         env:
@@ -172,7 +172,7 @@ jobs:
           jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           /usr/bin/yq eval '.extraResources += ["./bin/OpenJDK14U-jre_x64_linux_openj9_14.0.2_12_openj9-0.21.0.tar.gz"]' -i electron-builder.main.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
-          npx electron-builder build -l --config electron-builder.main.yml --publish always
+          npx electron-builder build -l --config electron-builder.main.yml
 
       - name: Build for linux(release)
         working-directory: ./ui
@@ -252,13 +252,14 @@ jobs:
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
-          yq w .\electron-builder.main.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
+          # yq w .\electron-builder.main.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[5] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
+          yq w .\electron-builder.main.yml extraResources[5] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
           $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
           echo $BUILDER_CONTENT
           Remove-Item -path .\electron-builder.main.yml
           Add-Content -Path .\electron-builder.main.yml -Value $BUILDER_CONTENT
           npx webpack --mode production --display minimal --config webpack.electron.config.js
-          npx electron-builder build -w --config electron-builder.main.yml --publish always
+          npx electron-builder build -w --config electron-builder.main.yml
 
       - name: Build for windows(release)
         working-directory: .\ui
@@ -278,7 +279,8 @@ jobs:
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
           $Env:RELEASE_TYPE = "customer"
-          yq w .\electron-builder.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip"> ebtmp.txt
+          # yq w .\electron-builder.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[5] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip"> .\ebtmp.txt
+          yq w .\electron-builder.main.yml extraResources[5] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
           $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
           echo $BUILDER_CONTENT
           Remove-Item -path .\electron-builder.yml

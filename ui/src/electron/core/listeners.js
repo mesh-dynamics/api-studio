@@ -30,7 +30,7 @@ const os = require('os');
 const AnyProxy = require('anyproxy');
 const exec = require('child_process').exec;
 const menu = require('./menu');
-const { updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
+const { updateApplicationConfig, getApplicationConfig, store } = require('./fs-utils');
 const { clearRestrictedHeaders, Deferred } = require('../../shared/utils');
 const {getHttp2FetchUrl} = require('./proxy/h2server.utility')
 
@@ -127,6 +127,42 @@ const awsSigningCredentials = {
 
 const mainWindowIndex = `file://${path.join(__dirname, `../../../dist/index.html`)}`;
 
+const killProcessByPort = async function (port){
+    const processList = await find('port', port);
+
+    logger.info(`Processes running on port ${port} :`, processList);
+
+    processList.map((item) => {
+        logger.info('Killing Process...', item.pid);
+        process.kill(item.pid);
+    });
+}
+
+const stopChangedPorts = async function(config){
+    const { proxyPort, cubeUIBackendPort, replayDriverPort,  gRPCProxyPort, httpsProxyPort } = config;
+    const oldReplayDriverPort = store.get("replayDriverPort");
+    const oldCubeUIBackendPort = store.get("cubeUIBackendPort");
+    const oldProxyPort = store.get("proxyPort");
+    const oldHttpsProxyPort = store.get("httpsProxyPort");
+    const oldgRPCProxyPort = store.get("gRPCProxyPort");
+
+    if(oldProxyPort && oldProxyPort.toString() != proxyPort.toString()){
+        await killProcessByPort(oldProxyPort);
+    }
+    if(oldCubeUIBackendPort && oldCubeUIBackendPort.toString() != cubeUIBackendPort.toString()){
+        await killProcessByPort(oldCubeUIBackendPort);
+    }
+    if(oldReplayDriverPort && oldReplayDriverPort.toString() != replayDriverPort.toString()){
+        await killProcessByPort(oldReplayDriverPort);
+    }
+    if(oldHttpsProxyPort && oldHttpsProxyPort.toString() != httpsProxyPort.toString()){
+        await killProcessByPort(oldHttpsProxyPort);
+    }
+    if(oldgRPCProxyPort && oldgRPCProxyPort.toString() != gRPCProxyPort.toString()){
+        await killProcessByPort(oldgRPCProxyPort);
+    }
+}
+
 const setupListeners = (mockContext, user, replayContext) => {
     logger.info('Setup listeners');
 
@@ -172,29 +208,16 @@ const setupListeners = (mockContext, user, replayContext) => {
     });
 
     app.on('window-all-closed', async function () {
-        const REPLAY_DRIVER_PORT = 9992; // TODO: Get from config
-
+         
         try {
-            const { proxyPort } = config;
+            const { proxyPort, cubeUIBackendPort, replayDriverPort,  gRPCProxyPort, httpsProxyPort } = config;
+            const REPLAY_DRIVER_PORT = replayDriverPort || 9992;
             
-            const replayDriverPList = await find('port', REPLAY_DRIVER_PORT);
-
-            logger.info(`Processes running on port ${REPLAY_DRIVER_PORT} :`, replayDriverPList);
-
-            replayDriverPList.map((item) => {
-                logger.info('Killing Process...', item.pid);
-                process.kill(item.pid);
-            });
-
-            const proxyPortList = await find('port', proxyPort);
-            
-            logger.info(`Processes Listening at port ${proxyPort} : `, proxyPortList);
-
-            proxyPortList.map((item) => {
-                logger.info(`Found process active at port ${proxyPort}`, item.pid);
-                logger.info('Kill Process...')
-                process.kill(item.pid);
-            });
+            killProcessByPort(REPLAY_DRIVER_PORT);
+            killProcessByPort(proxyPort);
+            killProcessByPort(cubeUIBackendPort);
+            killProcessByPort(gRPCProxyPort);
+            killProcessByPort(httpsProxyPort);
     
             if (process.platform !== 'darwin') {
                 app.quit();
@@ -329,11 +352,13 @@ const setupListeners = (mockContext, user, replayContext) => {
         autoUpdater.quitAndInstall();
     });
 
-    ipcMain.on('save_target_domain', (event, config) => {
+    ipcMain.on('save_target_domain', async(event, config) => {
         // The whole config object is required
         logger.info('Received target domain as :', config);
 
         logger.info('Writing to config file...');
+
+        await stopChangedPorts(config);
 
         // utils.writeTargetToConfig(config);
         updateApplicationConfig(config);
