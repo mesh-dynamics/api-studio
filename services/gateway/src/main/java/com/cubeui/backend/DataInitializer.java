@@ -38,8 +38,10 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpHeaders;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 @Setter
 @Getter
@@ -108,7 +110,12 @@ public class DataInitializer implements CommandLineRunner {
             userDTOAdmin.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
             userDTOAdmin.setActivated(true);
             User saved = this.userService.save(userDTOAdmin, true, true);
-            //userService.createHistoryForEachApp(httpServletRequest, saved);
+            MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
+            mockHttpServletRequest.addHeader(HttpHeaders.AUTHORIZATION,
+                "Bearer " + this.userService.getByUsername("admin").map(
+                    User::getActivationKey).orElse(""));
+
+            userService.createHistoryForEachApp(mockHttpServletRequest, saved);
 
             log.info("User with username '{}' created", userDTOAdmin.getEmail());
         }
