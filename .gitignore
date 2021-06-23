@@ -28,3 +28,14 @@ hs_err_pid*
 /.idea/
 /target/
 /agent.iml
+
+# Remove build.sh output files
+agent/target
+commons/target
+services/*/target
+commons-server/target
+interceptors/java/*/target/
+interceptors/java/*/dependency-reduced-pom.xml
+**/.flattened-pom.xml
+**/target/**/docker/*
+**/target/**/pom.properties
