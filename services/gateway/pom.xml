@@ -23,11 +23,10 @@
         <relativePath>../../shared</relativePath>
     </parent>
 
-
     <groupId>io.meshdynamics</groupId>
     <artifactId>gateway</artifactId>
     <version>${revision}</version>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
     <name>gateway</name>
     <description>Backend REST application for CubeIO</description>
 
@@ -118,7 +117,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.rest-assured</groupId>
@@ -212,11 +211,6 @@
             </plugin>
 
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version> <!-- or newer version -->
@@ -243,6 +237,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>war</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <warSourceDirectory>WebContent</warSourceDirectory>
                 </configuration>
@@ -252,6 +254,27 @@
             <plugin>
                 <groupId>com.spotify</groupId>
                 <artifactId>dockerfile-maven-plugin</artifactId>
+                <configuration>
+                    <buildArgs>
+                        <JAR_FILE>${project.build.finalName}.war</JAR_FILE>
+                    </buildArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.cubeui.backend.BackendApplication</mainClass>
+                </configuration>
+
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
             </plugin>
 
         </plugins>

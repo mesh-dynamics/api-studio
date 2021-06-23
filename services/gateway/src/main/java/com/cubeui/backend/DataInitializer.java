@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -58,8 +57,6 @@ public class DataInitializer implements CommandLineRunner {
 
     private AppRepository appRepository;
 
-    private HttpServletRequest httpServletRequest;
-
     private AppFileStorageService appFileStorageService;
 
     private DevtoolEnvironmentsRepository devtoolEnvironmentsRepository;
@@ -68,8 +65,7 @@ public class DataInitializer implements CommandLineRunner {
 
 
     public DataInitializer(UserService userService, CustomerService customerService,
-        CustomerRepository customerRepository, UserRepository userRepository,
-        HttpServletRequest httpServletRequest, AppRepository appRepository,
+        CustomerRepository customerRepository, UserRepository userRepository, AppRepository appRepository,
         AppFileStorageService appFileStorageService, DevtoolEnvironmentsRepository devtoolEnvironmentsRepository,
         AppFileRepository appFileRepository) {
 
@@ -78,7 +74,6 @@ public class DataInitializer implements CommandLineRunner {
         this.customerRepository = customerRepository;
         this.userRepository = userRepository;
         this.appRepository = appRepository;
-        this.httpServletRequest = httpServletRequest;
         this.appFileStorageService = appFileStorageService;
         this.devtoolEnvironmentsRepository = devtoolEnvironmentsRepository;
         this.appFileRepository = appFileRepository;
@@ -94,7 +89,7 @@ public class DataInitializer implements CommandLineRunner {
             customerDTO.setName("Admin");
             customerDTO.setEmail("admin");
             customerDTO.setDomainURLs(Set.of("admin.io"));
-            customer = Optional.of(this.customerService.save(httpServletRequest, customerDTO));
+            customer = Optional.of(this.customerService.save(null, customerDTO));
        }
 
         Optional<User> user = userRepository.findByUsernameIgnoreCase("admin");
@@ -107,8 +102,8 @@ public class DataInitializer implements CommandLineRunner {
             userDTOAdmin.setCustomerId(customer.get().getId());
             userDTOAdmin.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
             userDTOAdmin.setActivated(true);
-            User saved = this.userService.save(userDTOAdmin, true, false);
-            userService.createHistoryForEachApp(httpServletRequest, saved);
+            User saved = this.userService.save(userDTOAdmin, true, true);
+            userService.createHistoryForEachApp(null, saved);
 
             log.info("User with username '{}' created", userDTOAdmin.getEmail());
         }

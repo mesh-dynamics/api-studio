@@ -149,7 +149,7 @@ jobs:
           NEXTVERSION=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           git tag $NEXTVERSION
           git push --tags
-          ./build.sh -r=$NEXTVERSION
+          ./build.sh -r=$NEXTVERSION --buildDocker
           
       - name: Build for linux
         working-directory: ./ui
