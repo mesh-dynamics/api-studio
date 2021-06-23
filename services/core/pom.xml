@@ -76,7 +76,7 @@
 				<artifactId>maven-shade-plugin</artifactId>
 				<version>3.2.4</version>
 				<configuration>
-					<finalName>tomcat-embedded-cubews-${project.version}</finalName>
+					<finalName>core-${project.version}</finalName>
 					<filters>
 						<filter>
 							<artifact>*:*</artifact>
