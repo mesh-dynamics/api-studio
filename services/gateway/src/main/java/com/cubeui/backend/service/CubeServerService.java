@@ -84,6 +84,13 @@ public class CubeServerService {
     @Value("${cube.server.baseUrl.record}")
     private String cubeServerBaseUrlRecord = CUBE_SERVER_HREF;
 
+    @Value("${cube.server.port:}")
+    private String cubeServerPort = "";
+
+    public String getUrls(){
+        return String.format("%s-%s",cubeServerBaseUrlReplay , cubeServerPort );
+    }
+
     @Autowired
     @Qualifier("appRestClient")
     private RestTemplate restTemplate;
@@ -103,6 +110,15 @@ public class CubeServerService {
         //Read timeout
         clientHttpRequestFactory.setReadTimeout(600000);
         restTemplate.setRequestFactory(clientHttpRequestFactory);
+
+        Optional<Integer>  cubeport =  io.md.utils.Utils.strToInt(cubeServerPort);
+        if(cubeport.isPresent()){
+            //If a specific cubeio port is provided , replace the port in all urls
+            cubeServerBaseUrlReplay = cubeServerBaseUrlReplay.replaceFirst(":\\d+" , ":"+cubeServerPort);
+            cubeServerBaseUrlMock = cubeServerBaseUrlMock.replaceFirst(":\\d+" , ":"+cubeServerPort);
+            cubeServerBaseUrlRecord = cubeServerBaseUrlRecord.replaceFirst(":\\d+" , ":"+cubeServerPort);
+
+        }
     }
 
     public ResponseEntity fetchGetResponse(String path, String query){
@@ -275,16 +291,30 @@ public class CubeServerService {
     }
 
     public <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method, String... pathValue){
-        String requestURI = pathValue.length> 0 ? pathValue[0] : request.getRequestURI().replaceFirst("^/api", "");
+        // NOTE: request param is null for internal calls.
+
+        String requestURI = pathValue.length > 0 ? pathValue[0]
+            : request != null ? request.getRequestURI().replaceFirst("^/api", "") : null;
+
+        if (requestURI == null)
+        {
+            log.error("URI not found in request or pathValue");
+            return noContent().build();
+        }
+
         String path = getCubeServerUrl(requestURI);
-        if (request.getQueryString() != null) {
+
+        if (request != null && request.getQueryString() != null) {
             path += "?" + request.getQueryString();
         }
         try {
             // here escaping is not needed, since the getRequestURI returns escaped. So using regular URI constructor
             URI uri = new URI(path);
             HttpHeaders headers = new HttpHeaders();
-            request.getHeaderNames().asIterator().forEachRemaining(key -> headers.set(key, request.getHeader(key)));
+            if (request != null) {
+                request.getHeaderNames().asIterator()
+                    .forEachRemaining(key -> headers.set(key, request.getHeader(key)));
+            }
             if (pathValue.length >1)
                 headers.set("Content-Type", pathValue[1]);
 //            MultiValueMap<String, String[]> map = new LinkedMultiValueMap<>();

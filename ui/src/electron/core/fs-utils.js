@@ -59,11 +59,12 @@ const readConfig = () => {
 };
 
 const setupApplicationConfig = () => {
-    const { domain, proxyPort, replayDriverPort, gRPCProxyPort, httpsProxyPort, generateCertificate } = readConfig();
+    const { domain, proxyPort, replayDriverPort, gRPCProxyPort, httpsProxyPort, generateCertificate, cubeUIBackendPort } = readConfig();
 
     const appDomain = store.get("domain");
     const appProxyPort = store.get("proxyPort");
     const appReplayDriverPort = store.get("replayDriverPort");
+    const appCubeUIBackendPort = store.get("cubeUIBackendPort");
     const appGRPCProxyPort = store.get("gRPCProxyPort");
     const appHttpsProxyPort = store.get("httpsProxyPort");
     const appGenerateCertificate = store.get("generateCertificate");
@@ -84,6 +85,12 @@ const setupApplicationConfig = () => {
     if(!appReplayDriverPort) {
       logger.info("Setting default port for local replay driver at:", replayDriverPort);
       store.set("replayDriverPort", replayDriverPort);
+    }
+
+    // If replay driver port is not already set
+    if(!appCubeUIBackendPort) {
+      logger.info("Setting default port for cube UI backend at:", cubeUIBackendPort);
+      store.set("cubeUIBackendPort", cubeUIBackendPort);
     }
 
     if(!appGRPCProxyPort) {
@@ -122,6 +129,7 @@ const getApplicationConfig = () => {
     const replayDriverPort =  store.get("replayDriverPort");
     const gRPCProxyPort = store.get("gRPCProxyPort");
     const httpsProxyPort = store.get("httpsProxyPort");
+    const cubeUIBackendPort = store.get("cubeUIBackendPort");
     const generateCertificate = store.get("generateCertificate");
     const parsedUrl = url.parse(appDomain);
 
@@ -134,6 +142,7 @@ const getApplicationConfig = () => {
       proxyPort,
       replayDriverPort,
       gRPCProxyPort,
+      cubeUIBackendPort,
       httpsProxyPort,
       generateCertificate,
       proxyDestination: {
@@ -149,7 +158,7 @@ const getApplicationConfig = () => {
 };
 
 const updateApplicationConfig = (config) => {
-    const { domain, proxyPort, gRPCProxyPort, httpsProxyPort, generateCertificate } = config;
+    const { domain, proxyPort, gRPCProxyPort, httpsProxyPort, generateCertificate, cubeUIBackendPort, replayDriverPort } = config;
     
     logger.info("Updating application config domain to :", domain);
     store.set("domain", domain);
@@ -161,6 +170,14 @@ const updateApplicationConfig = (config) => {
     logger.info("Updating application config gRPCProxyPort to :", gRPCProxyPort);
 
     store.set("gRPCProxyPort", Number(gRPCProxyPort));
+
+    logger.info("Updating application config replayDriverPort to :", replayDriverPort);
+
+    store.set("replayDriverPort", Number(replayDriverPort));
+
+    logger.info("Updating application config cubeUIBackendPort to :", cubeUIBackendPort);
+
+    store.set("cubeUIBackendPort", Number(cubeUIBackendPort));
 
     logger.info("Updating application config httpsProxyPort to :", httpsProxyPort);
 

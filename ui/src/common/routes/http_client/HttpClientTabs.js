@@ -1513,7 +1513,7 @@ class HttpClientTabs extends Component {
             ipcRenderer.on('get_config', (event, appConfig) => {
                 ipcRenderer.removeAllListeners('get_config');
                 
-                config.localReplayBaseUrl = `http://localhost:${appConfig.replayDriverPort}/rs`;
+                config.localReplayBaseUrl = `http://localhost:${appConfig.replayDriverPort}/cubews/proxyrs`;
                 config.apiBaseUrl= `${appConfig.domain}/api`;
                 config.recordBaseUrl= `${appConfig.domain}/api/cs`;
                 config.replayBaseUrl= `${appConfig.domain}/api/rs`;

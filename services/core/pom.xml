@@ -13,9 +13,9 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>cubews</artifactId>
-  <version>V1-SNAPSHOT</version>
-  <packaging>war</packaging>
+  <artifactId>core</artifactId>
+  <version>${revision}</version>
+  <packaging>jar</packaging>
   <properties>
 	  <version.jersey>2.27</version.jersey>
 	  <version.log4j>2.11.1</version.log4j>
@@ -24,36 +24,29 @@
 	  <version.jaxb>2.3.2</version.jaxb>
 	  <version.jaeger>1.1.0</version.jaeger>
 	  <version.gson>2.8.5</version.gson>
-  </properties>
+		<maven.deploy.skip>false</maven.deploy.skip>
+		<version.tomcat>8.5.23</version.tomcat>
+		<maven.compiler.source>1.9</maven.compiler.source>
+		<maven.compiler.target>1.9</maven.compiler.target>
+
+	</properties>
+	<parent>
+		<groupId>io.meshdynamics</groupId>
+		<artifactId>shared</artifactId>
+		<version>${revision}</version>
+		<relativePath>../../shared</relativePath>
+	</parent>
 
 	<repositories>
-		<!-- <repository>
-			<id>project.local</id>
-			<name>maven-repository</name>
-			<url>file:///${project.basedir}/repo</url>
-		</repository> -->
-    		<repository>
-          		<id>github-agent</id>
-          		<name>GitHub OWNER Apache Maven Packages</name>
-          		<url>https://maven.pkg.github.com/cube-io-corp/agent</url>
-    		</repository>
 		<repository>
-			<id>github</id>
-			<name>GitHub OWNER Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
-		</repository>
-		<repository>
-			<id>github-md-commons-server</id>
-			<name>GitHub OWNER Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/cube-io-corp/md-commons-server</url>
-		</repository>
-		<repository>
-			<id>github-interceptor</id>
-			<name>GitHub CubeIO Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/cube-io-corp/interceptor-framework</url>
+			<id>maven-restlet</id>
+			<name>Public online Restlet repository</name>
+			<url>https://maven.restlet.com</url>
 		</repository>
 	</repositories>
-  <!--  this is for having consistent jackson versions -->
+
+
+	<!--  this is for having consistent jackson versions -->
   <dependencyManagement>
     <dependencies>
         <dependency>
@@ -75,8 +68,51 @@
 	</dependencies>
   </dependencyManagement>
   <build>
+
+
     <plugins>
-      <plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.2.4</version>
+				<configuration>
+					<finalName>core-${project.version}</finalName>
+					<filters>
+						<filter>
+							<artifact>*:*</artifact>
+							<excludes>
+								<exclude>META-INF/*.SF</exclude>
+								<exclude>META-INF/*.DSA</exclude>
+								<exclude>META-INF/*.RSA</exclude>
+							</excludes>
+						</filter>
+					</filters>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<transformers>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>com.cube.launch.Main</mainClass>
+								</transformer>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+
+							</transformers>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+			</plugin>
+
+			<plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.0</version>
         <configuration>
@@ -88,13 +124,23 @@
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-war-plugin</artifactId>
 			<version>3.2.1</version>
+			<executions>
+				<execution>
+					<phase>package</phase>
+					<goals>
+						<goal>war</goal>
+					</goals>
+				</execution>
+			</executions>
 			<configuration>
 				<warSourceDirectory>WebContent</warSourceDirectory>
+
 			</configuration>
 		</plugin>
 
-		<!--  needed for unit and integration testing  -->
-      <plugin>
+
+			<!--  needed for unit and integration testing  -->
+			<plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.22.0</version>
@@ -129,10 +175,21 @@
                 <password>tomcat4cube$</password>
 		    </configuration>
 		</plugin>
-    </plugins>
-  </build>
 
-  <dependencies>
+		<plugin>
+				<groupId>com.spotify</groupId>
+				<artifactId>dockerfile-maven-plugin</artifactId>
+				<configuration>
+					<buildArgs>
+						<JAR_FILE>${project.build.finalName}.war</JAR_FILE>
+					</buildArgs>
+				</configuration>
+		</plugin>
+
+		</plugins>
+	</build>
+
+	<dependencies>
 
 
 	<!--  For junit testing -->
@@ -181,7 +238,13 @@
   		<artifactId>jersey-hk2</artifactId>
   		<version>${version.jersey}</version>
   	</dependency>
-  	<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jdk8 -->
+		<dependency>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-core</artifactId>
+			<version>${version.tomcat}</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jdk8 -->
   	<!--  json support for jdk 8 types such as Optional -->
 	<dependency>
 	    <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -357,28 +420,28 @@
 	  </dependency>
 
 		<dependency>
-			<groupId>io.cube</groupId>
+			<groupId>io.meshdynamics</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.2.6.0</version>
+			<version>${revision}</version>
 		</dependency>
 
 		<dependency>
-			<groupId>io.cube</groupId>
+			<groupId>io.meshdynamics</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.2.55.0</version>
+			<version>${revision}</version>
 <!--			<version>1.1-SNAPSHOT</version>-->
 		</dependency>
 
 		<dependency>
-			<groupId>io.cube</groupId>
+			<groupId>io.meshdynamics</groupId>
 			<artifactId>commons-server</artifactId>
-			<version>1.0.69.0</version>
+			<version>${revision}</version>
 <!--			<version>1.1-SNAPSHOT</version>-->
 		</dependency>
 		<dependency>
-			<groupId>io.cube</groupId>
+			<groupId>io.meshdynamics</groupId>
 			<artifactId>md-df-jaxrs-interceptor</artifactId>
-			<version>1.2.8</version>
+			<version>${revision}</version>
 		</dependency>
 		<dependency>
 			<groupId>it.ozimov</groupId>
@@ -386,5 +449,5 @@
 			<version>0.7.3</version>
 		</dependency>
 	</dependencies>
-  <groupId>com.cube</groupId>
+  <groupId>io.meshdynamics</groupId>
 </project>

@@ -49,6 +49,7 @@
     padding: 20px;
     background-color: #eaeaea;
     justify-content: center;
+    overflow: auto;
 }
 
 .settings-width-100 {

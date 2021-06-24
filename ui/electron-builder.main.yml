@@ -25,10 +25,10 @@ extraMetadata:
 #   acl: private
 
 
-publish:
-  provider: github
-  repo: meshd-complete
-  releaseType: release
+# publish:
+#   provider: github
+#   repo: meshd-complete
+#   releaseType: release
 
 # files:
 #   - "build/"
@@ -40,6 +40,8 @@ extraResources:
   - "./bin/cubews-replay-V1-SNAPSHOT-jar-with-dependencies.jar"
   - "./config/mesh-dynamics.yml"
   - "./public/assets/**"
+  - "./bin/gateway-standalone.jar"
+  - "./bin/core-standalone.jar"
 
 # Mac OS configuration
 mac:
@@ -62,8 +64,8 @@ win:
     - "nsis"
     # - "appx"
   publisherName: "Mesh Dynamics"
-  signAndEditExecutable: true
-  rfc3161TimeStampServer: http://timestamp.digicert.com
+  signAndEditExecutable: false
+  # rfc3161TimeStampServer: http://timestamp.digicert.com
 
 nsis:
   oneClick: true

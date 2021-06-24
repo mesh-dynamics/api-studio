@@ -11,14 +11,14 @@
             }
         ],
         [
-            "@babel/preset-react"
+            "@babel/preset-react", {"loose": true}
         ],
         [
-            "@babel/preset-typescript"
+            "@babel/preset-typescript", {"loose": true}
         ]
     ],
     "plugins": [
-        "@babel/plugin-proposal-class-properties",
-        "@babel/plugin-proposal-export-default-from",
+        ["@babel/plugin-proposal-class-properties", {"loose": true}],
+        ["@babel/plugin-proposal-export-default-from", {"loose": true}], 
     ]
 }

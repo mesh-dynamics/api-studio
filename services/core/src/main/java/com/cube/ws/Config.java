@@ -4,7 +4,11 @@
 package com.cube.ws;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -12,6 +16,8 @@ import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.inject.Singleton;
 
@@ -161,6 +167,26 @@ public class Config {
 	    }
     }
 
+	public static void unzip(InputStream is, Path targetDir) throws IOException {
+		targetDir = targetDir.toAbsolutePath();
+		try (ZipInputStream zipIn = new ZipInputStream(is)) {
+			for (ZipEntry ze; (ze = zipIn.getNextEntry()) != null; ) {
+				Path resolvedPath = targetDir.resolve(ze.getName()).normalize();
+				if (!resolvedPath.startsWith(targetDir)) {
+					// see: https://snyk.io/research/zip-slip-vulnerability
+					throw new RuntimeException("Entry with an illegal path: "
+						+ ze.getName());
+				}
+				if (ze.isDirectory()) {
+					Files.createDirectories(resolvedPath);
+				} else {
+					Files.createDirectories(resolvedPath.getParent());
+					Files.copy(zipIn, resolvedPath);
+				}
+			}
+		}
+	}
+
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
 		properties = new java.util.Properties();
@@ -191,18 +217,25 @@ public class Config {
         } else {
 
         	//Embedded Solr
-            String solrHome = fromEnvOrProperties("data_dir", "/var/lib/meshd/data") + "/solr";
+	        String dataDir = fromEnvOrProperties("data_dir", "/var/lib/meshd/data");
+            String solrHome = dataDir + "/solr";
             File solrXml = new File(solrHome + "/"+"solr.xml");
             //Check if the solr.xml exists. If yes do nothing
 	        //If no that means it it is the first time container start. Copy from datasrc directory
+
 	        if(!solrXml.exists()){
-	        	String solrDataSrc = fromEnvOrProperties("datasrc_dir", "/var/lib/meshd/datasrc/embedded_solr_config");
+		        InputStream solrZip =  this.getClass().getClassLoader().getResourceAsStream("solr.zip");
+				/*
+		        String solrDataSrc = fromEnvOrProperties("datasrc_dir", "/var/lib/meshd/datasrc/embedded_solr_config");
 		        File solrHomeDir = new File(solrHome);
 		        if(!solrHomeDir.exists()){
 			        solrHomeDir.mkdirs();
-		        }
-		        FileUtils.copyDirectory(new File(solrDataSrc) , solrHomeDir);
-		        LOGGER.info(String.format("Copying solr data from %s to %s" , solrDataSrc , solrHome ));
+		        }*/
+		        unzip(solrZip , new File(dataDir).toPath());
+		        //FileUtils.copyDirectory(new File(solrDataSrc) , solrHomeDir);
+		        LOGGER.info(String.format("Copying solr data to %s" , solrHome ));
+
+
 	        }else{
 	        	LOGGER.info("SolrXml already exists at location "+solrXml.getAbsolutePath());
 	        }

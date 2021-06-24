@@ -17,35 +17,42 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.cube</groupId>
+  <groupId>io.meshdynamics</groupId>
   <artifactId>md-spring-egress-resttemplate-interceptor</artifactId>
-  <version>1.2.17</version>
+  <version>${revision}</version>
   <packaging>jar</packaging>
 
   <name>spring-egress-resttemplate-interceptor</name>
   <description>Spring Egress Rest Template Interceptor for HTTP Requests</description>
 
   <parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.0.2.RELEASE</version>
-    <relativePath/> <!-- lookup parent from repository -->
+    <groupId>io.meshdynamics</groupId>
+    <artifactId>shared</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../../shared</relativePath>
   </parent>
+
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>8</java.version>
+    <maven.deploy.skip>false</maven.deploy.skip>
   </properties>
 
-
-  <repositories>
-    <repository>
-      <id>github</id>
-      <name>GitHub OWNER Apache Maven Packages</name>
-      <url>https://maven.pkg.github.com/cube-io-corp/agent</url>
-    </repository>
-  </repositories>
+  <dependencyManagement>
+    <!-- From https://stackoverflow.com/questions/21317006/spring-boot-parent-pom-when-you-already-have-a-parent-pom-->
+    <dependencies>
+      <dependency>
+        <!-- Import dependency management from Spring Boot -->
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.0.2.RELEASE</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -72,9 +79,9 @@
     </dependency>
 
     <dependency>
-      <groupId>io.cube</groupId>
+      <groupId>io.meshdynamics</groupId>
       <artifactId>agent</artifactId>
-      <version>1.0.65</version>
+      <version>${revision}</version>
     </dependency>
 
     <dependency>
@@ -93,6 +100,11 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+      </plugin>
+
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.0</version>

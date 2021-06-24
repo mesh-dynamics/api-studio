@@ -16,13 +16,12 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>io.cube</groupId>
+  <groupId>io.meshdynamics</groupId>
   <artifactId>thrift-commons</artifactId>
-  <version>1.0.0</version>
+  <version>${revision}</version>
   <packaging>jar</packaging>
   <properties>
     <version.java>11</version.java>
-    <version.mdcommons>1.0.7</version.mdcommons>
   </properties>
   <!--    <distributionManagement>-->
   <!--      <repository>-->
@@ -42,15 +41,14 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-  <distributionManagement>
-    <repository>
-      <id>github</id>
-      <name>GitHub CubeIO Apache Maven Packages</name>
-      <url>https://maven.pkg.github.com/cube-io-corp/md-thrift-commons</url>
-    </repository>
-  </distributionManagement>
+
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+      </plugin>
+
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.0</version>
@@ -79,9 +77,9 @@
   <dependencies>
 
     <dependency>
-      <groupId>io.cube</groupId>
+      <groupId>io.meshdynamics</groupId>
       <artifactId>commons</artifactId>
-      <version>${version.mdcommons}</version>
+      <version>${revision}</version>
     </dependency>
 
   </dependencies>
