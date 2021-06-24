@@ -32,20 +32,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: Build with Maven(on PR)
-        if: ${{ github.event_name == 'pull_request'}}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ./build.sh
-      - name: Build with Maven(release)
-        if: ${{ github.event_name == 'release'}}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ./build.sh
-      - name: Build with Maven(publish internal)
-        if: ${{ github.event_name == 'push'}}
+      - name: Build with Maven
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -63,7 +50,7 @@ jobs:
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(git describe --tags `git rev-list --tags --max-count=1`)
+          version=$(git tag --sort=committerdate | tail -1)
           version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           TIMESTAMP=$(date "+%Y%m%d%H%M%S")
           BRANCH=${GITHUB_REF##*/}
@@ -78,7 +65,7 @@ jobs:
           cat electron-builder.main.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.main.yml
-      - name: Build for macOS(release)
+      - name: Build for macOS (release)
         working-directory: ./ui
         if: ${{ github.event_name == 'release'}}
         env:
@@ -86,7 +73,7 @@ jobs:
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(git describe --tags `git rev-list --tags --max-count=1`)
+          version=$(git tag --sort=committerdate | tail -1)
           echo $version
           npm install
           export RELEASE_TYPE=customer
@@ -95,7 +82,7 @@ jobs:
           yq eval '.extraResources += ["./bin/jdk-14.0.2+12-jre.tar.gz"]' -i electron-builder.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.yml --publish always
-      - name: Build for macOS(manual)
+      - name: Build for macOS (manual)
         working-directory: ./ui
         if: ${{ github.event_name == 'workflow_dispatch'}}
         env:
@@ -124,33 +111,51 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: Build with Maven(on PR)
+      - name: Build with Maven (Build on PR)
         if: ${{ github.event_name == 'pull_request'}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./build.sh --buildDocker
-      - name: Build with Maven(release)
+      - name: Build with Maven (Tag and Publish on Release)
         if: ${{ github.event_name == 'release'}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(git describe --tags `git rev-list --tags --max-count=1`)
-          echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server><server><id>docker.pkg.github.com</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
+          version=$(git tag --sort=committerdate | tail -1)
+          echo "<settings><servers><server>\
+          <id>github</id>\
+          <username>x-access-token</username>\
+          <password>${GITHUB_TOKEN}</password>\
+          </server>\
+          <server>\
+          <id>docker.pkg.github.com</id>\
+          <username>x-access-token</username>\
+          <password>${GITHUB_TOKEN}</password>\
+          </server></servers></settings>" > ~/.m2/settings.xml
           ./build.sh -r=$version --buildDocker --deploy
-      - name: Build with Maven(publish internal)
+      - name: Build with Maven (Increment Patch on Push)
         if: ${{ github.event_name == 'push'}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(git describe --tags `git rev-list --tags --max-count=1`)
+          version=$(git tag --sort=committerdate | tail -1)
           IFS=$'\n'
-          echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server><server><id>docker.pkg.github.com</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
+          echo "<settings><servers><server>\
+          <id>github</id>\
+          <username>x-access-token</username>\
+          <password>${GITHUB_TOKEN}</password>\
+          </server>\
+          <server>\
+          <id>docker.pkg.github.com</id>\
+          <username>x-access-token</username>\
+          <password>${GITHUB_TOKEN}</password>\
+          </server></servers></settings>" > ~/.m2/settings.xml
           NEXTVERSION=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           git tag $NEXTVERSION
           git push --tags
           ./build.sh -r=$NEXTVERSION --buildDocker
-          
+
       - name: Build for linux
         working-directory: ./ui
         env:
@@ -159,7 +164,7 @@ jobs:
         run: |
           sudo wget https://github.com/mikefarah/yq/releases/download/v4.6.0/yq_linux_386 -O /usr/bin/yq
           sudo chmod +x /usr/bin/yq
-          version=$(git describe --tags `git rev-list --tags --max-count=1`)
+          version=$(git tag --sort=committerdate | tail -1)
           version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           TIMESTAMP=$(date "+%Y%m%d%H%M%S")
           BRANCH=${GITHUB_REF##*/}
@@ -174,7 +179,7 @@ jobs:
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -l --config electron-builder.main.yml
 
-      - name: Build for linux(release)
+      - name: Build for linux (release)
         working-directory: ./ui
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -182,7 +187,7 @@ jobs:
         run: |
           sudo wget https://github.com/mikefarah/yq/releases/download/v4.6.0/yq_linux_386 -O /usr/bin/yq
           sudo chmod +x /usr/bin/yq
-          version=$(git describe --tags `git rev-list --tags --max-count=1`)
+          version=$(git tag --sort=committerdate | tail -1)
           npm install
           export RELEASE_TYPE=customer
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
@@ -201,23 +206,8 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: Build with Maven(on PR)
+      - name: Build with Maven
         shell: bash
-        if: ${{ github.event_name == 'pull_request'}}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ./build.sh
-      - name: Build with Maven(release)
-        shell: bash
-        if: ${{ github.event_name == 'release'}}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ./build.sh
-      - name: Build with Maven(publish internal)
-        shell: bash
-        if: ${{ github.event_name == 'push'}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -237,8 +227,7 @@ jobs:
           $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.WIN_CSC_LINK }}")
           [IO.File]::WriteAllBytes("md-cert.pfx", $pfx_cert_byte)
           npm install
-          $revision = $(git rev-list --tags --max-count=1)
-          $version = $(git describe --tags $revision)
+          $version = $(git tag --sort=committerdate | tail -1)
           $versionParts = $version.split('.')
           ([int]$versionParts[2])++
           $NEW_VERSION_NUMBER = $versionParts -join('.')
@@ -261,7 +250,7 @@ jobs:
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -w --config electron-builder.main.yml
 
-      - name: Build for windows(release)
+      - name: Build for windows (release)
         working-directory: .\ui
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -272,8 +261,7 @@ jobs:
           $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.WIN_CSC_LINK }}")
           [IO.File]::WriteAllBytes("md-cert.pfx", $pfx_cert_byte)
           npm install
-          $revision = $(git rev-list --tags --max-count=1)
-          $version = $(git describe --tags $revision)
+          $version = $(git tag --sort=committerdate | tail -1)
           jq --arg version $version '.version = $version' package.json > .\tmp.txt
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
