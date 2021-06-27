@@ -15,7 +15,7 @@ protocols:
 extraMetadata:
   main: "dist/electron/electron-main.js"
 
-# afterSign: "scripts/notarize.js" #UnComment it
+afterSign: "scripts/notarize.js"
 
 # publish:
 #   provider: s3
@@ -64,8 +64,8 @@ win:
     - "nsis"
     # - "appx"
   publisherName: "Mesh Dynamics"
-  signAndEditExecutable: false
-  # rfc3161TimeStampServer: http://timestamp.digicert.com
+  signAndEditExecutable: true
+  rfc3161TimeStampServer: http://timestamp.digicert.com
 
 nsis:
   oneClick: true
