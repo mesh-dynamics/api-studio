@@ -6,7 +6,7 @@ spring:
         name: CubeIO Backend
 
     profiles:
-        active: @spring.profiles.active@
+        active: '@spring.profiles.active@'
 
     jackson:
         mapper:
