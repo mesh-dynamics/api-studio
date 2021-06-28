@@ -78,7 +78,7 @@
 				]
 			},
 			"logger": {
-				"enable" : true ,
+				"enable" : false ,
 				"uri" : "wss://logcollector.dev.cubecorp.io/api/logStore",
 				"level" : "debug"
 			},
