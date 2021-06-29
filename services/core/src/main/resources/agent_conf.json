@@ -78,6 +78,11 @@
 						"rate": 0.3
 					}
 				]
+			},
+			"logger": {
+				"enable" : false ,
+				"uri" : "wss://logcollector.dev.cubecorp.io/api/logStore",
+				"level" : "debug"
 			}
 		}
 	}
