@@ -29,7 +29,7 @@ public class Main {
 
 		Context context = tomcat.addContext(contextPath, appBase);
 		Tomcat.addServlet(context, JERSEY_SERVLET_NAME,
-			new ServletContainer(/*new JerseyConfiguration()*/new CubeApplication()));
+			new ServletContainer(/*new JerseyConfiguration()*/new CubeApplication())).setAsyncSupported(true);
 		context.addServletMappingDecoded("/cubews/*", JERSEY_SERVLET_NAME);
 		/*
 		CubeApplication ddd = new CubeApplication();
