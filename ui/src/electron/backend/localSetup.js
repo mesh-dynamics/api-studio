@@ -39,7 +39,8 @@ const setupLocalCubeBackend = async() => {
         const gatewayBinaryPath = setupGatewayExecutable();
 
         const gatewayCommand = `"${javaBinaryPath}" -Dspring.profiles.active=local -Dspring.datasource.url="jdbc:h2:file:${localCubeUIBackendDataPath}"  -jar -Dcube.server.port=${replayDriverPort} -Dserver.port=${cubeUIBackendPort} -Dcatalina.base="${localCatlinaGatewayPath}"  "${gatewayBinaryPath}"`
-        const coreCommand = `"${javaBinaryPath}" -jar -Ddata_dir="${localCubeIOBackendDataPath}" -Dcatalina.base="${localCatlinaCorePath}" -DPORT=${replayDriverPort}  "${coreJarPath}" -Drun_mode=local`;
+        const coreCommand = `"${javaBinaryPath}" -jar -Ddata_dir="${localCubeIOBackendDataPath}" -Dcatalina.base="${localCatlinaCorePath}" -DPORT=${replayDriverPort}  -Drun_mode=local  "${coreJarPath}"`;
+
         logger.info("Running core command", coreCommand);
         if(domain.includes(`//localhost:${cubeUIBackendPort}`)){
             logger.log("Found localhost as backend, will start local backend server");
