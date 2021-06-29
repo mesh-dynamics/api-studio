@@ -22,6 +22,14 @@ const setupLocalCubeBackend = async() => {
         if(!fs.existsSync(localCubeIOBackendDataPath)) {
             fs.mkdirSync(localCubeIOBackendDataPath)
         }
+        const localCatlinaCorePath = path.join(userDataPath, "core")
+        if(!fs.existsSync(localCatlinaCorePath)) {
+            fs.mkdirSync(localCatlinaCorePath)
+        }
+        const localCatlinaGatewayPath = path.join(userDataPath, "gateway")
+        if(!fs.existsSync(localCatlinaGatewayPath)) {
+            fs.mkdirSync(localCatlinaGatewayPath)
+        }
         const localCubeUIBackendDataPath = path.join(userDataPath, "cubeuiBackendData")
         if(!fs.existsSync(localCubeUIBackendDataPath)) {
             fs.mkdirSync(localCubeUIBackendDataPath)
@@ -30,8 +38,9 @@ const setupLocalCubeBackend = async() => {
         const coreJarPath = setupCoreExecutable();
         const gatewayBinaryPath = setupGatewayExecutable();
 
-        const gatewayCommand = `"${javaBinaryPath}" -Dspring.profiles.active=local -Dspring.datasource.url="jdbc:h2:file:${localCubeUIBackendDataPath}"  -jar -Dcube.server.port=${replayDriverPort} -Dserver.port=${cubeUIBackendPort} "${gatewayBinaryPath}"`
-        const coreCommand = `"${javaBinaryPath}" -jar -Ddata_dir="${localCubeIOBackendDataPath}" -DPORT=${replayDriverPort}  -Drun_mode=local  "${coreJarPath}"`;
+        const gatewayCommand = `"${javaBinaryPath}" -Dspring.profiles.active=local -Dspring.datasource.url="jdbc:h2:file:${localCubeUIBackendDataPath}"  -jar -Dcube.server.port=${replayDriverPort} -Dserver.port=${cubeUIBackendPort} -Dcatalina.base="${localCatlinaGatewayPath}"  "${gatewayBinaryPath}"`
+        const coreCommand = `"${javaBinaryPath}" -jar -Ddata_dir="${localCubeIOBackendDataPath}" -Dcatalina.base="${localCatlinaCorePath}" -DPORT=${replayDriverPort}  -Drun_mode=local  "${coreJarPath}"`;
+
         logger.info("Running core command", coreCommand);
         if(domain.includes(`//localhost:${cubeUIBackendPort}`)){
             logger.log("Found localhost as backend, will start local backend server");
