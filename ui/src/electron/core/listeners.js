@@ -24,7 +24,6 @@ const isDev = require('electron-is-dev');
 const logger = require('electron-log');
 const find = require('find-process');
 const path = require('path');
-const aws4 = require('aws4');
 const { URLSearchParams } = require('url');
 const os = require('os');
 const AnyProxy = require('anyproxy');
@@ -41,8 +40,9 @@ autoUpdater.channel = 'latest';
 let mainWindow;
 let deeplinkingUrl;
 let releaseDirectory = '/'; // Default is root of bucket
-let downloadInfo = null;
 const reqMap = {};
+
+autoUpdater.updateConfigPath = path.join(__dirname, '../../../dist/auto-updator-config.yml');
 
 const browserWindowOptions = {
     width: 1280,
@@ -112,18 +112,6 @@ const releaseMetaDataFile = (releaseType) => {
     return filePath[platform];
 };
 
-const awsSigingOptions = {
-    service: 's3',
-    region: 'us-east-2',
-    method: 'GET',
-    host:  'meshdynamics-devtool.s3.amazonaws.com',
-    path: ''
-};
-
-const awsSigningCredentials = {
-    accessKeyId: '',
-    secretAccessKey: ''
-};
 
 const mainWindowIndex = `file://${path.join(__dirname, `../../../dist/index.html`)}`;
 
@@ -256,29 +244,12 @@ const setupListeners = (mockContext, user, replayContext) => {
         logger.info('Sending App version to IPC Renderer');
         event.sender.send('app_version', { version: app.getVersion() });
     });
+    
+    ipcMain.on('check_for_updates', (event, updaterConfig) => {
+        logger.log("Checking for Update event triggered");
 
-    ipcMain.on('set_updater_config', (event, updaterConfig) => {
-        logger.info('Received Updater Config', );
-
-        const { releaseType, accessKeyId, secretAccessKey } = updaterConfig; // (develop, staging, master, customer)
-
-        releaseDirectory = `/${releaseType}`;
-
-        const metaFilePath = `/${releaseType}/${releaseMetaDataFile(releaseType)}`;
-
-        awsSigingOptions.path = metaFilePath;
-
-        awsSigningCredentials.accessKeyId = accessKeyId;
-
-        awsSigningCredentials.secretAccessKey = secretAccessKey;
-
-        logger.info('Current release directory is set to :', releaseDirectory);
-
-        logger.info('Updated AWS Signing Options \n', awsSigingOptions);
-
-        // Check for updates once the configs are set
         if(!isDev) {
-            autoUpdater.checkForUpdates();
+            autoUpdater.checkForUpdatesAndNotify();
         }
     });
 
@@ -393,22 +364,6 @@ const setupListeners = (mockContext, user, replayContext) => {
     });
 
     ipcMain.on('download_update', () => {
-        if(!downloadInfo) {
-            mainWindow.webContents.send('error_downloading_update');
-        }
-
-        const filePath =  `${releaseDirectory}/${downloadInfo.path}`;
-
-        awsSigingOptions.path = filePath;
-
-        // Sign the headers
-        aws4.sign(awsSigingOptions, awsSigningCredentials);
-
-        logger.info("Updater Signing Options \n", awsSigingOptions);
-
-        // Update the headers
-        autoUpdater.requestHeaders = awsSigingOptions.headers;
-        
         // Trigger Download
         autoUpdater.downloadUpdate();
     });
@@ -513,24 +468,11 @@ const setupListeners = (mockContext, user, replayContext) => {
     /**
      * AUTO Updater events
      */
-    autoUpdater.on('checking-for-update', () => {
-        logger.info('Update checking triggered');
-        
-        aws4.sign(awsSigingOptions, awsSigningCredentials);
-
-        logger.info("AWS Header Options", awsSigingOptions);
-
-        autoUpdater.requestHeaders = awsSigingOptions.headers;
-
-        logger.info('Update Check Complete');
-    });
 
     autoUpdater.on('update-available', (info) => {
         logger.info('Update available');
         
         logger.info("\n\n", info);
-
-        downloadInfo = info;
 
         // Notify Renderer Process
         mainWindow.webContents.send('update_available');
