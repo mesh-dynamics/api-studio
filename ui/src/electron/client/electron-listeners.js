@@ -31,7 +31,7 @@ const setupElectronListeners = () => {
         };
     
         ipcRenderer.send('get_config');
-        ipcRenderer.send('set_updater_config', updaterConfig);
+        ipcRenderer.send('check_for_updates');
     
         ipcRenderer.on('update_available', () => {
           ipcRenderer.removeAllListeners('update_available');
