@@ -31,6 +31,7 @@ class Settings extends Component {
       gRPCProxyPort: "",
       replayDriverPort: "",
       cubeUIBackendPort: "",
+      redisPort: "",
       httpsProxyPort: "",
       generateCertificate: false,
       isLocalHost: true
@@ -67,7 +68,7 @@ class Settings extends Component {
     return false;
   }
 
-  hasInvalidInputFields = (domain, proxyPort, gRPCProxyPort, httpsProxyPort, replayDriverPort, cubeUIBackendPort) => {
+  hasInvalidInputFields = (domain, proxyPort, gRPCProxyPort, httpsProxyPort, replayDriverPort, cubeUIBackendPort, redisPort) => {
     var portList = [];
 
     return (
@@ -75,18 +76,21 @@ class Settings extends Component {
       !proxyPort ||
       !gRPCProxyPort ||
       !cubeUIBackendPort ||
+      !redisPort ||
       !replayDriverPort ||
       !httpsProxyPort ||
       !isUrl(domain, { require_tld: false }) ||
       !isPort(String(proxyPort)) ||
       !isPort(String(gRPCProxyPort)) ||
       !isPort(String(cubeUIBackendPort)) ||
+      !isPort(String(redisPort)) ||
       !isPort(String(replayDriverPort)) ||
       !isPort(String(httpsProxyPort)) ||
       this.addNonExistingPort(portList, gRPCProxyPort) ||
       this.addNonExistingPort(portList, httpsProxyPort) ||
       this.addNonExistingPort(portList, proxyPort) ||
       this.addNonExistingPort(portList, cubeUIBackendPort) ||
+      this.addNonExistingPort(portList, redisPort) ||
       this.addNonExistingPort(portList, replayDriverPort)
     );
   };
@@ -142,13 +146,13 @@ class Settings extends Component {
 
   render() {
     const {
-      config: { domain, proxyPort, gRPCProxyPort, httpsProxyPort, generateCertificate, replayDriverPort, cubeUIBackendPort, isLocalHost },
+      config: { domain, proxyPort, gRPCProxyPort, httpsProxyPort, generateCertificate, replayDriverPort, cubeUIBackendPort,redisPort, isLocalHost },
       domainSettingsModalVisible,
       mockSettingsModalVisible,
       successAlertModalVisible,
     } = this.state;
 
-    const isSaveButtonDisabled = this.hasInvalidInputFields(domain, proxyPort, gRPCProxyPort, httpsProxyPort, replayDriverPort, cubeUIBackendPort);
+    const isSaveButtonDisabled = this.hasInvalidInputFields(domain, proxyPort, gRPCProxyPort, httpsProxyPort, replayDriverPort, cubeUIBackendPort, redisPort);
 
     return (
       <div className="settings-parent-container">
@@ -176,6 +180,7 @@ class Settings extends Component {
             replayDriverPort={replayDriverPort}
             isLocalHost={isLocalHost}
             cubeUIBackendPort={cubeUIBackendPort}
+            redisPort={redisPort}
             httpsProxyPort={httpsProxyPort}
             generateCertificate={generateCertificate}
             isSaveButtonDisabled={isSaveButtonDisabled}

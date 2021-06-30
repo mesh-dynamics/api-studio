@@ -31,14 +31,15 @@ const DomainSettings = (props) => {
             <label>Setup Localhost Backend?
               <input id="domain-input" type="checkbox" className="form-control" style={{height:'15px', margin: '0px 5px', width: '20px'}} checked={isLocalHost} onChange={handleClickIsLocalhost} />
             </label>
+            {isLocalHost && <span style={{"paddingLeft": "20px", "fontStyle": "italic", fontWeight: "300"}}>(Backend service will be setup at : {domain})</span>}
           </div>
            
-          <div className="input-group input-group-sm">
+          {!isLocalHost && <div className="input-group input-group-sm">
             <span className="input-group-addon settings-no-border">
               <i className="fa fa-globe" aria-hidden="true"></i>
             </span>
-            <input id="domain-input" type="text" readOnly={isLocalHost} className="form-control settings-no-border" placeholder="http://example.com" value={domain} onChange={handleDomainInputChange} />
-          </div>
+            <input id="domain-input" type="text" className="form-control settings-no-border" placeholder="http://example.com" value={domain} onChange={handleDomainInputChange} />
+          </div>}
           {!isUrl(domain, { require_tld: false }) && <span className="settings-error-text">The url is not valid</span>}
           <br />
           <div className="settings-action-buttons">

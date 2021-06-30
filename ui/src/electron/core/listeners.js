@@ -127,9 +127,10 @@ const killProcessByPort = async function (port){
 }
 
 const stopChangedPorts = async function(config){
-    const { proxyPort, cubeUIBackendPort, replayDriverPort,  gRPCProxyPort, httpsProxyPort } = config;
+    const { proxyPort, cubeUIBackendPort, replayDriverPort,  gRPCProxyPort, httpsProxyPort, redisPort } = config;
     const oldReplayDriverPort = store.get("replayDriverPort");
     const oldCubeUIBackendPort = store.get("cubeUIBackendPort");
+    const oldRedisPort = store.get("redisPort");
     const oldProxyPort = store.get("proxyPort");
     const oldHttpsProxyPort = store.get("httpsProxyPort");
     const oldgRPCProxyPort = store.get("gRPCProxyPort");
@@ -139,6 +140,9 @@ const stopChangedPorts = async function(config){
     }
     if(oldCubeUIBackendPort && oldCubeUIBackendPort.toString() != cubeUIBackendPort.toString()){
         await killProcessByPort(oldCubeUIBackendPort);
+    }
+    if(oldRedisPort && oldRedisPort.toString() != redisPort.toString()){
+        await killProcessByPort(oldRedisPort);
     }
     if(oldReplayDriverPort && oldReplayDriverPort.toString() != replayDriverPort.toString()){
         await killProcessByPort(oldReplayDriverPort);
@@ -195,18 +199,18 @@ const setupListeners = (mockContext, user, replayContext) => {
         // autoUpdater.checkForUpdates();
     });
 
-    app.on('window-all-closed', async function () {
+    async function closePortsBeforeQuit() {
          
         try {
-            const { proxyPort, cubeUIBackendPort, replayDriverPort,  gRPCProxyPort, httpsProxyPort } = config;
+            const { proxyPort, cubeUIBackendPort, replayDriverPort,  gRPCProxyPort, httpsProxyPort, redisPort } = config;
             const REPLAY_DRIVER_PORT = replayDriverPort || 9992;
             
-            killProcessByPort(REPLAY_DRIVER_PORT);
-            killProcessByPort(proxyPort);
-            killProcessByPort(cubeUIBackendPort);
-            killProcessByPort(gRPCProxyPort);
-            killProcessByPort(httpsProxyPort);
-    
+            await killProcessByPort(REPLAY_DRIVER_PORT);
+            await killProcessByPort(cubeUIBackendPort);
+            await killProcessByPort(redisPort);
+            await killProcessByPort(proxyPort);
+            await killProcessByPort(gRPCProxyPort);
+            await killProcessByPort(httpsProxyPort);
             if (process.platform !== 'darwin') {
                 app.quit();
             }
@@ -214,7 +218,20 @@ const setupListeners = (mockContext, user, replayContext) => {
         } catch (error) {
             logger.info('Error Exiting App', error);
         }
-    });
+    }
+
+    app.on('window-all-closed', async function(){
+        await closePortsBeforeQuit();
+
+    }  );
+    app.on('before-quit', function(event){
+        event.preventDefault();
+        setTimeout(async()=>{
+            await closePortsBeforeQuit();
+        }, 0)
+        
+    }   );
+    
 
     app.on('activate', function () {
         if (mainWindow === null) {

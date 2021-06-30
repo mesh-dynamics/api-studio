@@ -69,7 +69,7 @@ setupProxy(mockContext, user);
 /**
  * Setup replay driver
  */
-setupReplayDriver(replayContext);
+// setupReplayDriver(replayContext);
 
 // setup gRPC http2 server proxy
 setupGrpcH2Server(mockContext, user);

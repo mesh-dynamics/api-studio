@@ -59,12 +59,13 @@ const readConfig = () => {
 };
 
 const setupApplicationConfig = () => {
-    const { domain, proxyPort, replayDriverPort, gRPCProxyPort, httpsProxyPort, generateCertificate, cubeUIBackendPort } = readConfig();
+    const { domain, proxyPort, replayDriverPort, gRPCProxyPort, httpsProxyPort, generateCertificate, cubeUIBackendPort, redisPort } = readConfig();
 
     const appDomain = store.get("domain");
     const appProxyPort = store.get("proxyPort");
     const appReplayDriverPort = store.get("replayDriverPort");
     const appCubeUIBackendPort = store.get("cubeUIBackendPort");
+    const appRedisPort = store.get("redisPort");
     const appGRPCProxyPort = store.get("gRPCProxyPort");
     const appHttpsProxyPort = store.get("httpsProxyPort");
     const appGenerateCertificate = store.get("generateCertificate");
@@ -87,10 +88,15 @@ const setupApplicationConfig = () => {
       store.set("replayDriverPort", replayDriverPort);
     }
 
-    // If replay driver port is not already set
+    // If backend port is not already set
     if(!appCubeUIBackendPort) {
       logger.info("Setting default port for cube UI backend at:", cubeUIBackendPort);
       store.set("cubeUIBackendPort", cubeUIBackendPort);
+    }
+
+    if(!appRedisPort) {
+      logger.info("Setting default port for Redis at:", redisPort);
+      store.set("redisPort", redisPort);
     }
 
     if(!appGRPCProxyPort) {
@@ -130,6 +136,7 @@ const getApplicationConfig = () => {
     const gRPCProxyPort = store.get("gRPCProxyPort");
     const httpsProxyPort = store.get("httpsProxyPort");
     const cubeUIBackendPort = store.get("cubeUIBackendPort");
+    const redisPort = store.get("redisPort");
     const generateCertificate = store.get("generateCertificate");
     const parsedUrl = url.parse(appDomain);
 
@@ -143,6 +150,7 @@ const getApplicationConfig = () => {
       replayDriverPort,
       gRPCProxyPort,
       cubeUIBackendPort,
+      redisPort,
       httpsProxyPort,
       generateCertificate,
       proxyDestination: {
@@ -158,7 +166,7 @@ const getApplicationConfig = () => {
 };
 
 const updateApplicationConfig = (config) => {
-    const { domain, proxyPort, gRPCProxyPort, httpsProxyPort, generateCertificate, cubeUIBackendPort, replayDriverPort } = config;
+    const { domain, proxyPort, gRPCProxyPort, httpsProxyPort, generateCertificate, cubeUIBackendPort, redisPort, replayDriverPort } = config;
     
     logger.info("Updating application config domain to :", domain);
     store.set("domain", domain);
@@ -178,6 +186,10 @@ const updateApplicationConfig = (config) => {
     logger.info("Updating application config cubeUIBackendPort to :", cubeUIBackendPort);
 
     store.set("cubeUIBackendPort", Number(cubeUIBackendPort));
+
+    logger.info("Updating application config redisPort to :", redisPort);
+
+    store.set("redisPort", Number(redisPort));
 
     logger.info("Updating application config httpsProxyPort to :", httpsProxyPort);
 

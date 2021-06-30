@@ -4,4 +4,5 @@ gRPCProxyPort: 9001
 httpsProxyPort: 9002
 cubeUIBackendPort: 9003
 replayDriverPort: 9004
+redisPort: 9005
 generateCertificate: false
