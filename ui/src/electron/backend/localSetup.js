@@ -17,6 +17,7 @@ const setupLocalCubeBackend = async() => {
     const domain = store.get("domain");
     const replayDriverPort = store.get("replayDriverPort"); //Default 9004
     const cubeUIBackendPort = store.get("cubeUIBackendPort"); //Default 9003
+    const redisPort = store.get("redisPort"); //Default 9005
    
         const userDataPath = app.getPath("userData")
         const localCubeIOBackendDataPath = path.join(userDataPath, "cubeioBackendData")
@@ -40,7 +41,7 @@ const setupLocalCubeBackend = async() => {
         const gatewayBinaryPath = setupGatewayExecutable();
 
         const gatewayCommand = `"${javaBinaryPath}" -Dspring.profiles.active=local -Dspring.datasource.url="jdbc:h2:file:${localCubeUIBackendDataPath}"  -jar -Dcube.server.port=${replayDriverPort} -Dserver.port=${cubeUIBackendPort} -Dcatalina.base="${localCatlinaGatewayPath}" -Dlog4j.configurationFile=log4j2local.xml "${gatewayBinaryPath}"`
-        const coreCommand = `"${javaBinaryPath}" -jar -Ddata_dir="${localCubeIOBackendDataPath}" -Dcatalina.base="${localCatlinaCorePath}" -DPORT=${replayDriverPort} -Dlog4j.configurationFile=log4j2local.xml -Drun_mode=local  "${coreJarPath}"`;
+        const coreCommand = `"${javaBinaryPath}" -jar -Ddata_dir="${localCubeIOBackendDataPath}" -Dcatalina.base="${localCatlinaCorePath}" -DPORT=${replayDriverPort} -Dlog4j.configurationFile=log4j2local.xml -Dredis_port=${redisPort} -Drun_mode=local  "${coreJarPath}"`;
 
 
          /**

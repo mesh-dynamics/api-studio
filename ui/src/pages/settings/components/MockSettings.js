@@ -25,7 +25,8 @@ const MockSettings = (props) => {
         handleSaveMockSettingsClick,
         isLocalHost,
         replayDriverPort,
-        cubeUIBackendPort
+        cubeUIBackendPort,
+        redisPort
     } = props;
 
     return (
@@ -86,6 +87,23 @@ const MockSettings = (props) => {
                         />
                     </div>
                     {(!httpsProxyPort || !isPort(String(httpsProxyPort))) && <span className="settings-error-text">Port provided is not valid</span>}
+                    <br />
+                    <span>Redis Port</span>
+                    <div className="input-group input-group-sm">
+                        <span className="input-group-addon settings-no-border">
+                            <i className="fa fa-server" aria-hidden="true"></i>
+                        </span>
+                        <input 
+                            id="dev-tool-https-proxy" 
+                            type="text" 
+                            readOnly={!isLocalHost}
+                            className="form-control settings-no-border" 
+                            placeholder="Default Port: 9005"
+                            value={redisPort}
+                            onChange={(event) => handleMockSettingsChange('redisPort', event.target.value)}
+                        />
+                    </div>
+                    {(!redisPort || !isPort(String(redisPort))) && <span className="settings-error-text">Port provided is not valid</span>}
                     <br />
                     <span>UI Backend Port</span>
                     <div className="input-group input-group-sm">
