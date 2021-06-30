@@ -44,7 +44,7 @@ public class Main {
 			tomcat.start();
 			tomcat.getServer().await();
 		}catch (Exception e){
-			LOGGER.error("Server start failed existing" , e);
+			LOGGER.error("Server start failed exiting" , e);
 			System.exit(ExitCode.SERVER_PORT_UNAVAILABLE.getValue());
 		}
 
