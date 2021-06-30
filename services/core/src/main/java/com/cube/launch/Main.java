@@ -2,6 +2,8 @@ package com.cube.launch;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.startup.Tomcat;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 import io.md.utils.CommonUtils;
@@ -9,6 +11,8 @@ import io.md.utils.CommonUtils;
 import com.cube.ws.CubeApplication;
 
 public class Main {
+
+	private static final Logger LOGGER = LogManager.getLogger(Main.class);
 
 	private static final String JERSEY_SERVLET_NAME = "cubews-servlet";
 
@@ -36,7 +40,13 @@ public class Main {
 		System.out.println(ddd);
 		*/
 
-		tomcat.start();
-		tomcat.getServer().await();
+		try{
+			tomcat.start();
+			tomcat.getServer().await();
+		}catch (Exception e){
+			LOGGER.error("Server start failed existing" , e);
+			System.exit(ExitCode.SERVER_PORT_UNAVAILABLE.getValue());
+		}
+
 	}
 }

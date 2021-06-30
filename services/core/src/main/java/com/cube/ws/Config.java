@@ -56,6 +56,7 @@ import com.cube.cache.RedisPubSub;
 import com.cube.cache.TemplateCache;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
+import com.cube.launch.ExitCode;
 import com.cube.pubsub.PubSubChannel;
 import com.cube.pubsub.PubSubMgr;
 import com.cube.queue.DisruptorEventQueue;
@@ -210,13 +211,15 @@ public class Config {
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
             eta.printStackTrace();
         }
-        if (!isRunModeLocal && solrurl != null) {
+		int redisPort = Integer.parseInt(CommonUtils.fromEnvOrSystemProperties("redis_port").orElse("6379"));
+
+		if (!isRunModeLocal && solrurl != null) {
             solr = new MDHttpSolrClient.Builder(solrurl).build();
             LOGGER.info(String.format("Using solrurl IP %s", solrurl));
 
         } else {
 
-        	//Embedded Solr
+			//Embedded Solr
 	        String dataDir = fromEnvOrProperties("data_dir", "/var/lib/meshd/data");
             String solrHome = dataDir + "/solr";
             File solrXml = new File(solrHome + "/"+"solr.xml");
@@ -243,10 +246,15 @@ public class Config {
             final String msg = String.format("Using embedded solr with home dir path %s", solrHome);
             LOGGER.info(msg);
 
-            //Embedded Redis
-	        int redisPort = Integer.parseInt(CommonUtils.fromEnvOrSystemProperties("redis_port").orElse("6379"));
-	        redisServer = new RedisServer(redisPort);
-	        redisServer.start();
+            try{
+	            //Embedded Redis
+	            redisServer = new RedisServer(redisPort);
+	            redisServer.start();
+            }catch (Exception e){
+            	LOGGER.error("Could not start redis on port :"+redisPort + " exiting", e);
+            	System.exit(ExitCode.REDIS_PORT_UNAVAILABLE.getValue());
+            }
+
         }
 
         ReqRespStoreSolr storeSolr = new ReqRespStoreSolr(solr, this);
@@ -267,8 +275,6 @@ public class Config {
 
         try {
             String redisHost = fromEnvOrProperties("redis_host", "localhost");
-            int redisPort = Integer.valueOf(fromEnvOrProperties("redis_port"
-                , "6379"));
             String redisPassword = fromEnvOrProperties("redis_password" , null);
             JedisPoolConfig poolConfig = new JedisPoolConfig();
             poolConfig.setTestOnBorrow(true);

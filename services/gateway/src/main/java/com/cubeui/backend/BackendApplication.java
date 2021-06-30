@@ -19,6 +19,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.BindException;
 import java.util.List;
 import io.md.cube.spring.egress.RestTemplateMockInterceptor;
 import io.md.cube.spring.egress.RestTemplateTracingInterceptor;
@@ -64,8 +65,16 @@ public class BackendApplication {
 //        SpringApplication.run(BackendApplication.class, args);
         SpringApplication app = new SpringApplication(BackendApplication.class);
         addDefaultProfile(app);
-        Environment env = app.run(args).getEnvironment();
-        logApplicationStartup(env);
+        try{
+            Environment env = app.run(args).getEnvironment();
+            logApplicationStartup(env);
+        }
+        catch (Exception e){
+            System.out.println("Application Failed to start ");
+            e.printStackTrace();
+            System.exit(ExitCodes.GATEWAY_SERVER_PORT_BUSY);
+        }
+
     }
 
     @Bean
