@@ -38,7 +38,7 @@ const executeJar = (javaBinaryPath, driverExecutablePath) => {
     const appDomain = store.get("domain");
     const replayDriverPort = store.get("replayDriverPort");
 
-    logger.info('Replay driver endpoint is set to :', appDomain);
+    logger.info('Domain endpoint is set to :', appDomain);
     logger.info('Replay driver port listening at :', replayDriverPort);
 
     // To pass port config simply pass port number at the end 
