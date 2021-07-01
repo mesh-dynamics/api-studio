@@ -14,7 +14,7 @@
 
 <Configuration status="debug" name="CubeConfig">
     <Properties>
-        <Property name="filename">cube-gateway.log</Property>
+        <!--<Property name="filename">cube-gateway.log</Property>-->
     </Properties>
     <Filter type="ThresholdFilter" level="trace"/>
     <Appenders>
@@ -22,8 +22,8 @@
         <!--<Console name="LogToConsole" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
         </Console>-->
-        <RollingFile name="GatewayRollingFile" fileName="logs/cube-gateway.log"
-          filePattern="logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+        <RollingFile name="GatewayRollingFile" fileName="${sys:catalina.base}/logs/cube-gateway.log"
+          filePattern="gateway-logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
         <PatternLayout>
             <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
         </PatternLayout>

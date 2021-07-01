@@ -31,6 +31,7 @@ public class Main {
 		tomcat.setPort(Integer.valueOf(port));
 		tomcat.getHost().setAppBase(appBase);
 
+		System.out.println(String.format("base : %s home : %s appbase : %s" , tomcat.getServer().getCatalinaBase() , tomcat.getServer().getCatalinaHome() , tomcat.getHost().getAppBase()));
 		Context context = tomcat.addContext(contextPath, appBase);
 		Tomcat.addServlet(context, JERSEY_SERVLET_NAME,
 			new ServletContainer(/*new JerseyConfiguration()*/new CubeApplication())).setAsyncSupported(true);
