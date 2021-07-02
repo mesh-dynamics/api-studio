@@ -14,16 +14,17 @@
 
 <Configuration status="debug" name="CubeConfig">
     <Properties>
-        <Property name="filename">cube-core.log</Property>
+        <!--<Property name="filename">${env:logDir}/logs/cube-core.log</Property>-->
+        <!--<Property name="LOG_DIR">${sys:web.root}/logs</Property>-->
+        <!--<Property name="LOG_DIR">${web:rootDir}/logs</Property>-->
     </Properties>
     <Filter type="ThresholdFilter" level="trace"/>
     <Appenders>
-
         <!--<Console name="LogToConsole" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
         </Console>-->
-        <RollingFile name="CoreRollingFile" fileName="logs/cube-core.log"
-          filePattern="logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+        <RollingFile name="CoreRollingFile" fileName="${sys:catalina.base}/logs/cube-core.log"
+          filePattern="core-logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
         <PatternLayout>
             <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
         </PatternLayout>
