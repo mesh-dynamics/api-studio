@@ -1,27 +1,6 @@
 #!/bin/bash
 
-#
-# Copyright 2021 MeshDynamics.
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#     http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
 init () {
-	#Download an install Istio
-	curl -L https://git.io/getLatestIstio | ISTIO_VERSION=1.3.8 sh -
-	kubectl create namespace istio-system
-	for i in istio-1.3.8/install/kubernetes/helm/istio-init/files/crd*yaml; do kubectl apply -f $i; done
-	helm template istio-1.3.8/install/kubernetes/helm/istio --name istio --namespace istio-system --set global.proxy.accessLogFile="/dev/stdout" | kubectl apply -f -
-	#Cleanup
-	rm -rf istio-1.3.8
-	exit 0
 	#Install cube Application
 	helm template . | kubectl apply -f -
 	GATEWAYIP=$(kubectl describe services istio-ingressgateway -n istio-system | grep "LoadBalancer Ingress" | awk '{print $3}')
