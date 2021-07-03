@@ -1,7 +1,610 @@
+---
+# Source: solr/templates/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: solr
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nfs-server
+  namespace: solr
+spec:
+  clusterIP: 100.67.141.7
+  ports:
+    - name: nfs
+      port: 2049
+    - name: mountd
+      port: 20048
+    - name: rpcbind
+      port: 111
+  selector:
+    app: nfs-server
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs
+  namespace: solr
+  annotations:
+    pv.beta.kubernetes.io/gid: "8983"
+spec:
+  capacity:
+    storage: 200Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 100.67.141.7
+    path: "/"
+---
+# Source: solr/charts/zookeeper/templates/poddisruptionbudget.yaml
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: solr-zookeeper
+  namespace: solr
+  labels:
+    app: zookeeper
+    chart: zookeeper-2.1.0
+    release: solr
+    heritage: Tiller
+    component: server
+spec:
+  selector:
+    matchLabels:
+      app: zookeeper
+      release: solr
+      component: server
+  maxUnavailable: 1
+
+
+---
+# Source: solr/charts/zookeeper/templates/config-script.yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: solr-zookeeper
+  namespace: solr
+  labels:
+    app: zookeeper
+    chart: zookeeper-2.1.0
+    release: solr
+    heritage: Tiller
+    component: server
+data:
+    ok: |
+      #!/bin/sh
+      echo ruok | nc 127.0.0.1 ${1:-2181}
+
+    ready: |
+      #!/bin/sh
+      echo ruok | nc 127.0.0.1 ${1:-2181}
+
+    run: |
+      #!/bin/bash
+
+      set -a
+      ROOT=$(echo /apache-zookeeper-*)
+
+      ZK_USER=${ZK_USER:-"zookeeper"}
+      ZK_LOG_LEVEL=${ZK_LOG_LEVEL:-"INFO"}
+      ZK_DATA_DIR=${ZK_DATA_DIR:-"/data"}
+      ZK_DATA_LOG_DIR=${ZK_DATA_LOG_DIR:-"/data/log"}
+      ZK_CONF_DIR=${ZK_CONF_DIR:-"/conf"}
+      ZK_CLIENT_PORT=${ZK_CLIENT_PORT:-2181}
+      ZK_SERVER_PORT=${ZK_SERVER_PORT:-2888}
+      ZK_ELECTION_PORT=${ZK_ELECTION_PORT:-3888}
+      ZK_TICK_TIME=${ZK_TICK_TIME:-2000}
+      ZK_INIT_LIMIT=${ZK_INIT_LIMIT:-10}
+      ZK_SYNC_LIMIT=${ZK_SYNC_LIMIT:-5}
+      ZK_HEAP_SIZE=${ZK_HEAP_SIZE:-2G}
+      ZK_MAX_CLIENT_CNXNS=${ZK_MAX_CLIENT_CNXNS:-60}
+      ZK_MIN_SESSION_TIMEOUT=${ZK_MIN_SESSION_TIMEOUT:- $((ZK_TICK_TIME*2))}
+      ZK_MAX_SESSION_TIMEOUT=${ZK_MAX_SESSION_TIMEOUT:- $((ZK_TICK_TIME*20))}
+      ZK_SNAP_RETAIN_COUNT=${ZK_SNAP_RETAIN_COUNT:-3}
+      ZK_PURGE_INTERVAL=${ZK_PURGE_INTERVAL:-0}
+      ID_FILE="$ZK_DATA_DIR/myid"
+      ZK_CONFIG_FILE="$ZK_CONF_DIR/zoo.cfg"
+      LOG4J_PROPERTIES="$ZK_CONF_DIR/log4j.properties"
+      HOST=$(hostname)
+      DOMAIN=`hostname -d`
+      ZOOCFG=zoo.cfg
+      ZOOCFGDIR=$ZK_CONF_DIR
+      JVMFLAGS="-Xmx$ZK_HEAP_SIZE -Xms$ZK_HEAP_SIZE"
+
+      APPJAR=$(echo $ROOT/*jar)
+      CLASSPATH="${ROOT}/lib/*:${APPJAR}:${ZK_CONF_DIR}:"
+
+      if [[ $HOST =~ (.*)-([0-9]+)$ ]]; then
+          NAME=${BASH_REMATCH[1]}
+          ORD=${BASH_REMATCH[2]}
+          MY_ID=$((ORD+1))
+      else
+          echo "Failed to extract ordinal from hostname $HOST"
+          exit 1
+      fi
+
+      mkdir -p $ZK_DATA_DIR
+      mkdir -p $ZK_DATA_LOG_DIR
+      echo $MY_ID >> $ID_FILE
+
+      echo "clientPort=$ZK_CLIENT_PORT" >> $ZK_CONFIG_FILE
+      echo "dataDir=$ZK_DATA_DIR" >> $ZK_CONFIG_FILE
+      echo "dataLogDir=$ZK_DATA_LOG_DIR" >> $ZK_CONFIG_FILE
+      echo "tickTime=$ZK_TICK_TIME" >> $ZK_CONFIG_FILE
+      echo "initLimit=$ZK_INIT_LIMIT" >> $ZK_CONFIG_FILE
+      echo "syncLimit=$ZK_SYNC_LIMIT" >> $ZK_CONFIG_FILE
+      echo "maxClientCnxns=$ZK_MAX_CLIENT_CNXNS" >> $ZK_CONFIG_FILE
+      echo "minSessionTimeout=$ZK_MIN_SESSION_TIMEOUT" >> $ZK_CONFIG_FILE
+      echo "maxSessionTimeout=$ZK_MAX_SESSION_TIMEOUT" >> $ZK_CONFIG_FILE
+      echo "autopurge.snapRetainCount=$ZK_SNAP_RETAIN_COUNT" >> $ZK_CONFIG_FILE
+      echo "autopurge.purgeInterval=$ZK_PURGE_INTERVAL" >> $ZK_CONFIG_FILE
+      echo "4lw.commands.whitelist=*" >> $ZK_CONFIG_FILE
+
+      for (( i=1; i<=$ZK_REPLICAS; i++ ))
+      do
+          echo "server.$i=$NAME-$((i-1)).$DOMAIN:$ZK_SERVER_PORT:$ZK_ELECTION_PORT" >> $ZK_CONFIG_FILE
+      done
+
+      rm -f $LOG4J_PROPERTIES
+
+      echo "zookeeper.root.logger=$ZK_LOG_LEVEL, CONSOLE" >> $LOG4J_PROPERTIES
+      echo "zookeeper.console.threshold=$ZK_LOG_LEVEL" >> $LOG4J_PROPERTIES
+      echo "zookeeper.log.threshold=$ZK_LOG_LEVEL" >> $LOG4J_PROPERTIES
+      echo "zookeeper.log.dir=$ZK_DATA_LOG_DIR" >> $LOG4J_PROPERTIES
+      echo "zookeeper.log.file=zookeeper.log" >> $LOG4J_PROPERTIES
+      echo "zookeeper.log.maxfilesize=256MB" >> $LOG4J_PROPERTIES
+      echo "zookeeper.log.maxbackupindex=10" >> $LOG4J_PROPERTIES
+      echo "zookeeper.tracelog.dir=$ZK_DATA_LOG_DIR" >> $LOG4J_PROPERTIES
+      echo "zookeeper.tracelog.file=zookeeper_trace.log" >> $LOG4J_PROPERTIES
+      echo "log4j.rootLogger=\${zookeeper.root.logger}" >> $LOG4J_PROPERTIES
+      echo "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender" >> $LOG4J_PROPERTIES
+      echo "log4j.appender.CONSOLE.Threshold=\${zookeeper.console.threshold}" >> $LOG4J_PROPERTIES
+      echo "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout" >> $LOG4J_PROPERTIES
+      echo "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} [myid:%X{myid}] - %-5p [%t:%C{1}@%L] - %m%n" >> $LOG4J_PROPERTIES
+
+      if [ -n "$JMXDISABLE" ]
+      then
+          MAIN=org.apache.zookeeper.server.quorum.QuorumPeerMain
+      else
+          MAIN="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=$JMXPORT -Dcom.sun.management.jmxremote.authenticate=$JMXAUTH -Dcom.sun.management.jmxremote.ssl=$JMXSSL -Dzookeeper.jmx.log4j.disable=$JMXLOG4J org.apache.zookeeper.server.quorum.QuorumPeerMain"
+      fi
+
+      set -x
+      exec java -cp "$CLASSPATH" $JVMFLAGS $MAIN $ZK_CONFIG_FILE
+
+---
+# Source: solr/templates/nfs.yaml
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: solr-backup-nfs
+  namespace: solr
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-server
+  namespace: solr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfs-server
+  template:
+    metadata:
+      labels:
+        app: nfs-server
+    spec:
+      containers:
+      - name: nfs-server
+        image: k8s.gcr.io/volume-nfs:0.8
+        ports:
+          - name: nfs
+            containerPort: 2049
+          - name: mountd
+            containerPort: 20048
+          - name: rpcbind
+            containerPort: 111
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - mountPath: /exports
+            name: nfs-pvc
+      volumes:
+        - name: nfs-pvc
+          persistentVolumeClaim:
+            claimName: solr-backup-nfs
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs
+  namespace: solr
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 200Gi
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: set-permission
+  namespace: solr
+spec:
+  template:
+    spec:
+      containers:
+      - name: backup
+        image: "busybox:latest"
+        command:
+          - 'sh'
+          - '-c'
+          - |
+            chown -R 8983:8983 /mnt
+        volumeMounts:
+          - name: nfs
+            mountPath: "/mnt"
+      volumes:
+      - name: nfs
+        persistentVolumeClaim:
+          claimName: nfs
+      restartPolicy: Never
+---
+# Source: solr/charts/zookeeper/templates/service-headless.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: solr-zookeeper-headless
+  namespace: solr
+  labels:
+    app: zookeeper
+    chart: zookeeper-2.1.0
+    release: solr
+    heritage: Tiller
+spec:
+  clusterIP: None
+  ports:
+    - name: client
+      port: 2181
+      targetPort: client
+      protocol: TCP
+    - name: election
+      port: 3888
+      targetPort: election
+      protocol: TCP
+    - name: server
+      port: 2888
+      targetPort: server
+      protocol: TCP
+  selector:
+    app: zookeeper
+    release: solr
+
+---
+# Source: solr/charts/zookeeper/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: solr
+  name: solr-zookeeper
+  labels:
+    app: zookeeper
+    chart: zookeeper-2.1.0
+    release: solr
+    heritage: Tiller
+spec:
+  type: ClusterIP
+  ports:
+    - name: client
+      port: 2181
+      protocol: TCP
+      targetPort: client
+
+  selector:
+    app: zookeeper
+    release: solr
+
+---
+# Source: solr/charts/zookeeper/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: solr
+  name: solr-zookeeper
+  labels:
+    app: zookeeper
+    chart: zookeeper-2.1.0
+    release: solr
+    heritage: Tiller
+    component: server
+spec:
+  serviceName: solr-zookeeper-headless
+  replicas: 3
+  selector:
+    matchLabels:
+      app: zookeeper
+      release: solr
+      component: server
+  updateStrategy:
+    type: RollingUpdate
+
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+        release: solr
+        component: server
+    spec:
+      terminationGracePeriodSeconds: 1800
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+
+      containers:
+
+        - name: zookeeper
+          image: "zookeeper:3.5.5"
+          imagePullPolicy: IfNotPresent
+          command:
+             - "/bin/bash"
+             - "-xec"
+             - "/config-scripts/run"
+          ports:
+            - name: client
+              containerPort: 2181
+              protocol: TCP
+
+            - name: election
+              containerPort: 3888
+              protocol: TCP
+
+            - name: server
+              containerPort: 2888
+              protocol: TCP
+
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - /config-scripts/ok
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 2
+            successThreshold: 1
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - /config-scripts/ready
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 2
+            successThreshold: 1
+          env:
+            - name: ZK_REPLICAS
+              value: "3"
+            - name: JMXAUTH
+              value: "false"
+            - name: JMXDISABLE
+              value: "false"
+            - name: JMXPORT
+              value: "1099"
+            - name: JMXSSL
+              value: "false"
+            - name: ZK_SYNC_LIMIT
+              value: "10"
+            - name: ZK_TICK_TIME
+              value: "2000"
+            - name: ZOO_AUTOPURGE_PURGEINTERVAL
+              value: "0"
+            - name: ZOO_AUTOPURGE_SNAPRETAINCOUNT
+              value: "3"
+            - name: ZOO_INIT_LIMIT
+              value: "5"
+            - name: ZOO_MAX_CLIENT_CNXNS
+              value: "60"
+            - name: ZOO_PORT
+              value: "2181"
+            - name: ZOO_STANDALONE_ENABLED
+              value: "false"
+            - name: ZOO_TICK_TIME
+              value: "2000"
+          resources:
+            {}
+
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config-scripts
+      volumes:
+        - name: config
+          configMap:
+            name: solr-zookeeper
+            defaultMode: 0555
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "5Gi"
+
+---
+# Source: solr/templates/statefulset.yaml
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: solr
+  namespace: solr
+  labels:
+    app: solr
+    chart: solr-1.0.0
+    release: solr
+    heritage: Tiller
+    component: server
+spec:
+  selector:
+    matchLabels:
+      app: "solr"
+      release: "solr"
+      component: "server"
+  serviceName: solr-headless
+  replicas: 2
+  updateStrategy:
+        type: OnDelete
+
+  template:
+    metadata:
+      labels:
+        app: "solr"
+        release: "solr"
+        component: "server"
+      annotations:
+        {}
+
+    spec:
+      securityContext:
+        fsGroup: 8983
+      affinity:
+        {}
+
+      terminationGracePeriodSeconds: 180
+      volumes:
+        - name: nfs
+          persistentVolumeClaim:
+            claimName: nfs
+        - name: solr-xml
+          configMap:
+            name: solr-config-map
+            items:
+            - key: solr.xml
+              path: solr.xml
+      initContainers:
+        - name: check-zk
+          image: busybox:latest
+          command:
+            - 'sh'
+            - '-c'
+            - |
+              COUNTER=0;
+              while [  $COUNTER -lt 120 ]; do
+                for i in "solr-zookeeper-0.solr-zookeeper-headless" "solr-zookeeper-1.solr-zookeeper-headless" "solr-zookeeper-2.solr-zookeeper-headless" ;
+                  do mode=$(echo srvr | nc $i 2181 | grep "Mode");
+                    if [ "$mode" == "Mode: leader" ] || [ "$mode" == "Mode: standalone" ]; then
+                      exit 0;
+                    fi;
+                  done;
+                let COUNTER=COUNTER+1;
+                sleep 2;
+              done;
+              echo "Did NOT see a ZK leader after 240 secs!";
+              exit 1;
+        - name: "cp-solr-xml"
+          image: busybox:latest
+          command: ['sh', '-c', 'cp /tmp/solr.xml /tmp-config/solr.xml']
+          volumeMounts:
+          - name: "solr-xml"
+            mountPath: "/tmp"
+          - name: "solr-pvc"
+            mountPath: "/tmp-config"
+      containers:
+        - name: solr
+          image: "solr:8.4.1"
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 8Gi
+            requests:
+              cpu: 250m
+              memory: 2Gi
+
+          ports:
+          - containerPort: 8983
+            name: solr-client
+          env:
+            - name: "SOLR_JAVA_MEM"
+              value: "-Xms2g -Xmx3g"
+            - name: "SOLR_HOME"
+              value: "/opt/solr/server/home"
+            - name: "SOLR_PORT"
+              value: "8983"
+            - name: "POD_HOSTNAME"
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: "SOLR_HOST"
+              value: "$(POD_HOSTNAME).solr-headless"
+            - name: "ZK_HOST"
+              value: "solr-zookeeper:2181"
+            - name: "SOLR_LOG_LEVEL"
+              value: "INFO"
+
+          livenessProbe:
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            httpGet:
+              scheme: "HTTP"
+              path: /solr/admin/info/system
+              port: 8983
+          readinessProbe:
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            httpGet:
+              scheme: "HTTP"
+              path: /solr/admin/info/system
+              port: 8983
+          volumeMounts:
+            - name: nfs
+              mountPath: "/mnt"
+            - name: solr-pvc
+              mountPath: /opt/solr/server/home
+
+  volumeClaimTemplates:
+    - metadata:
+        name: solr-pvc
+        annotations:
+          pv.beta.kubernetes.io/gid: "8983"
+      spec:
+        accessModes:
+          - ReadWriteOnce
+
+        resources:
+          requests:
+            storage: 200Gi
+
+---
+# Source: solr/templates/initialsetup.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: solrsetup
+  namespace: solr
 spec:
   template:
     spec:
@@ -55,6 +658,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: solr-conf
+  namespace: solr
 data:
   managed-schema: "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<!--\n Licensed to
     the Apache Software Foundation (ASF) under one or more\n contributor license agreements.
@@ -1446,6 +2050,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: solr-lang
+  namespace: solr
 data:
   contractions_ca.txt: |
     # Set of Catalan contractions for ElisionFilter
@@ -5930,3 +6535,265 @@ data:
 
     # Custom reading for former sumo wrestler
     朝青龍,朝青龍,アサショウリュウ,カスタム人名
+
+---
+# Source: solr/templates/backup.yaml
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  namespace: solr
+  name: backup
+spec:
+  schedule: "0 6 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: backup
+            image: "curlimages/curl:latest"
+            command:
+              - 'sh'
+              - '-c'
+              - |
+                curl "solr-svc:8983/solr/cube/replication?command=backup&name=$(date +%m-%d-%Y)&location=/mnt/"
+                echo 'Successfully Backed Up'
+                echo 'deleting backups older than 10days..'
+                ls -t /mnt | tail -n +10 | xargs rm -rf
+            volumeMounts:
+              # name must match the volume name below
+              - name: nfs
+                mountPath: "/mnt"
+          volumes:
+          - name: nfs
+            persistentVolumeClaim:
+              claimName: nfs
+---
+# Source: solr/templates/solr-xml-configmap.yaml
+---
+
+apiVersion: "v1"
+kind: "ConfigMap"
+metadata:
+  name: "solr-config-map"
+  namespace: solr
+  labels:
+    app: solr
+    chart: solr-1.0.0
+    release: solr
+    heritage: Tiller
+data:
+  solr.xml: |
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <solr>
+      <solrcloud>
+        <str name="host">${host:}</str>
+        <int name="hostPort">${jetty.port:8983}</int>
+        <str name="hostContext">${hostContext:solr}</str>
+        <bool name="genericCoreNodeNames">${genericCoreNodeNames:true}</bool>
+        <int name="zkClientTimeout">${zkClientTimeout:30000}</int>
+        <int name="distribUpdateSoTimeout">${distribUpdateSoTimeout:600000}</int>
+        <int name="distribUpdateConnTimeout">${distribUpdateConnTimeout:60000}</int>
+        <str name="zkCredentialsProvider">${zkCredentialsProvider:org.apache.solr.common.cloud.DefaultZkCredentialsProvider}</str>
+        <str name="zkACLProvider">${zkACLProvider:org.apache.solr.common.cloud.DefaultZkACLProvider}</str>
+      </solrcloud>
+      <shardHandlerFactory name="shardHandlerFactory"
+        class="HttpShardHandlerFactory">
+        <int name="socketTimeout">${socketTimeout:600000}</int>
+        <int name="connTimeout">${connTimeout:60000}</int>
+      </shardHandlerFactory>
+    </solr>
+
+---
+# Source: solr/templates/poddisruptionbudget.yaml
+---
+apiVersion: "policy/v1beta1"
+kind: "PodDisruptionBudget"
+metadata:
+  name: "solr"
+  namespace: solr
+  labels:
+    app: solr
+    chart: solr-1.0.0
+    release: solr
+    heritage: Tiller
+spec:
+  selector:
+    matchLabels:
+      app: "solr"
+      release: "solr"
+      component: "server"
+  maxUnavailable: 1
+
+
+---
+# Source: solr/templates/exporter-deployment.yaml
+
+---
+
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "solr-exporter"
+  namespace: solr
+  labels:
+    app: solr
+    chart: solr-1.0.0
+    release: solr
+    heritage: Tiller
+    component: "exporter"
+  annotations:
+    {}
+
+spec:
+  type: "ClusterIP"
+  ports:
+  - port: 9983
+    name: "solr-client"
+  selector:
+    app: "solr"
+    release: "solr"
+    component: "exporter"
+
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: solr-exporter
+  namespace: solr
+  labels:
+    app: solr
+    chart: solr-1.0.0
+    release: solr
+    heritage: Tiller
+    component: "exporter"
+spec:
+  selector:
+    matchLabels:
+      app: "solr"
+      release: "solr"
+      component: "exporter"
+  replicas: 1
+  strategy:
+        {}
+
+  template:
+    metadata:
+      labels:
+        app: solr
+        chart: solr-1.0.0
+        release: solr
+        heritage: Tiller
+        component: "exporter"
+      annotations:
+        {}
+
+    spec:
+      affinity:
+        {}
+
+      containers:
+        - name: exporter
+          image: "solr:8.4.1"
+          imagePullPolicy: Always
+          resources:
+            {}
+
+          ports:
+          - containerPort: 8983
+            name: solr-client
+          command:
+            - "/opt/solr/contrib/prometheus-exporter/bin/solr-exporter"
+            - "-p"
+            - "9983"
+            - "-z"
+            - "solr-zookeeper:2181"
+            - "-n"
+            - "7"
+            - "-f"
+            - "/opt/solr/contrib/prometheus-exporter/conf/solr-exporter-config.xml"
+          livenessProbe:
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            httpGet:
+              path: "/metrics"
+              port: 9983
+          readinessProbe:
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            httpGet:
+              path: "/metrics"
+              port: 9983
+      initContainers:
+        - name: solr-init
+          image: "solr:8.4.1"
+          imagePullPolicy: Always
+          command:
+            - 'sh'
+            - '-c'
+            - |
+              PROTOCOL="http://"
+              COUNTER=0;
+              while [  $COUNTER -lt 30 ]; do
+                curl -k -s --connect-timeout 10 "${PROTOCOL}solr-svc:8983/solr/admin/info/system" && exit 0
+                sleep 2
+              done;
+              echo "Did NOT see a Running Solr instance after 60 secs!";
+              exit 1;
+
+
+---
+# Source: solr/templates/service-headless.yaml
+---
+
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "solr-headless"
+  namespace: solr
+  labels:
+    app: solr
+    chart: solr-1.0.0
+    release: solr
+    heritage: Tiller
+spec:
+  clusterIP: "None"
+  ports:
+  - port: 8983
+    name: "solr-headless"
+  selector:
+    app: "solr"
+    release: "solr"
+    component: "server"
+
+---
+# Source: solr/templates/service.yaml
+---
+
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "solr-svc"
+  namespace: solr
+  labels:
+    app: solr
+    chart: solr-1.0.0
+    release: solr
+    heritage: Tiller
+  annotations:
+    {}
+
+spec:
+  type: "ClusterIP"
+  ports:
+  - port: 8983
+    name: "solr-client"
+  selector:
+    app: "solr"
+    release: "solr"
+    component: "server"
+
