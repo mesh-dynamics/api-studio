@@ -23,8 +23,6 @@ import {
   Dropdown,
   MenuItem,
   Button,
-  FormGroup,
-  FormControl
 } from "react-bootstrap";
 import { v4 as uuidv4 } from "uuid";
 import _ from "lodash";
@@ -44,11 +42,10 @@ import EditableLabel from "./EditableLabel";
 import { updateGoldenName } from '../../services/golden.service';
 import { IApiCatalogState, IApiTrace, ICollectionDetails, ICubeState, IEventData, IHttpClientStoreState, IHttpClientTabDetails, IKeyValuePairs, IPayloadData, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
 import { IGetEventsApiResponse } from "../../apiResponse.types";
-import gcbrowseActions from "../../actions/gcBrowse.actions";
 import HistoryTabFilter from "../../components/HttpClient/HistoryTabFilter";
 import { sortApiTraceChildren } from "../../utils/http_client/httpClientUtils";
 import TabDataFactory from "../../utils/http_client/TabDataFactory";
-import commonUtils from "../../utils/commonUtils";
+import ExportImportCollectionModal from './ExportImportCollectionModal';
 
 interface ITreeNodeHeader<T> {
   node: T,
@@ -68,8 +65,6 @@ export interface ISideBarTabsState {
   showExportImportDialog: boolean,
   exportImportCollectionId: string,
   exportImportRecordingId: string,
-  modalImportMessage: string,
-  isError: boolean,
   itemToDelete: {
     requestType?: string;
     isParent?: boolean;
@@ -79,7 +74,6 @@ export interface ISideBarTabsState {
     isCubeHistory?: boolean;
   },
   collectionIdInEditMode: string,
-  importCollectionFile: FileList | null,
   editingCollectionName: string,
   loadingCollections: IKeyValuePairs<boolean>,
 }
@@ -97,9 +91,6 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
       showExportImportDialog: false,
       exportImportCollectionId: "",
       exportImportRecordingId: "",
-      importCollectionFile: null,
-      modalImportMessage: '',
-      isError: false,
     };
     this.currentSelectedTab = 1;
     this.onToggle = this.onToggle.bind(this);
@@ -146,89 +137,6 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     }
   };
 
-  exportCollection = async () => {
-    const {
-      cube: { selectedApp },
-      user,
-    } = this.props;
-    const apiEventURL = `${config.recordBaseUrl}/getEvents`;
-    let body = {
-      customerId: user.customer_name,
-      app: selectedApp,
-      eventTypes: [],
-      reqIds: [],
-      collection: this.state.exportImportCollectionId,
-    };
-    this.setState({ modalImportMessage: "Loading...", isError: false });
-    api.post(apiEventURL, body).then((response: unknown) => {
-      const result = response as IGetEventsApiResponse;
-      const jsonData: any[] = [];
-      if (result && result.numResults > 0) {
-        const httpRequests = result.objects.filter(u => u.eventType == "HTTPRequest").map(u => { u.collection = ''; return u; });
-        const httpResponses = result.objects.filter(u => u.eventType == "HTTPResponse").map(u => { u.collection = ''; return u; });
-        httpRequests.forEach(request => {
-          const response = httpResponses.filter(u => u.reqId == request.reqId);
-          if (response.length > 0) {
-            jsonData.push({ request, response: response[0] });
-          }
-        })
-      }
-      this.setState({ modalImportMessage: "File will be downloaded shortly", isError: false });
-      commonUtils.downloadAFileToClient(`Collection_${this.state.exportImportCollectionId}.json`, JSON.stringify(jsonData));
-
-    }).catch((error: any) => {
-      this.setState({ modalImportMessage: "Some error occurred while fetching data", isError: true });
-      console.error(error);
-    })
-  };
-
-  importCollection = async () => {
-    const fileList = this.state.importCollectionFile;
-    const recordingId = this.state.exportImportRecordingId;
-    const collectionId = this.state.exportImportCollectionId;
-    const that = this;
-    this.setState({ modalImportMessage: "In Progress", isError: false });
-    if (fileList && fileList.length > 0) {
-      const file = fileList[0];
-      var reader = new FileReader();
-
-      // This event listener will happen when the reader has read the file
-      reader.addEventListener('load', function () {
-        var result: any[] = JSON.parse(reader.result as string);
-        result.forEach((event) => {
-          event.request.collection = collectionId;
-          event.response.collection = collectionId;
-        });
-
-        cubeService.storeUserReqResponse(recordingId, result).then(
-          (serverRes) => {
-            that.refreshCollection(collectionId);
-            that.setState({
-              modalImportMessage: "Collection imported successfully",
-              isError: false,
-            });
-          },
-          (error) => {
-            that.setState({
-              modalImportMessage: "Collection imported failed",
-              isError: true,
-            });
-            console.error("error: ", error);
-          }
-        );
-
-      });
-
-      reader.readAsText(file);
-    } else {
-      this.setState({ modalImportMessage: "Please select a valid file", isError: true })
-    }
-  };
-
-  onFileChange = (event: React.ChangeEvent<FormControl & HTMLInputElement>) => {
-    const selectedFiles = event.target.files;
-    this.setState({ importCollectionFile: selectedFiles });
-  }
 
   onExportImportClick = (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
     event.stopPropagation();
@@ -238,10 +146,8 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
 
     this.setState({
       showExportImportDialog: true,
-      modalImportMessage: '',
       exportImportCollectionId: collectionId,
       exportImportRecordingId: id,
-      importCollectionFile: null
     });
   };
 
@@ -779,6 +685,8 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     //Remove unused vars
     const {
       httpClient: { cubeRunHistory, userCollections, sidebarTabActiveKey },
+      cube: { selectedApp: app },
+      user: { customer_name: customerId }
     } = this.props;
 
     const { showDeleteGoldenConfirmation, itemToDelete, showExportImportDialog } = this.state;
@@ -1001,47 +909,14 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           </Modal.Body>
         </Modal>
 
-        <Modal show={showExportImportDialog} onHide={this.hideExportImportDialog}>
-          <Modal.Header closeButton>
-            <Modal.Title>Import/Export Collection</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <div style={{ display: "block", justifyContent: "center" }}>
-              <div style={{ textAlign: 'center' }}>
-                <span className={this.state.isError ? "red" : "green"}>{this.state.modalImportMessage}</span>
-              </div>
-
-              <div style={{ display: "flex", flex: 1, alignItems: "flex-start", justifyContent: "space-between", marginBottom: '10px' }}>
-                <span>Click to export events </span>
-                <span
-                  className="cube-btn"
-                  onClick={() => this.exportCollection()}
-                >
-                  Export
-                </span>
-              </div>
-              <hr style={{ opacity: '0.5' }} />
-              <div style={{ display: "flex", flex: 1, alignItems: "flex-start", justifyContent: "space-between" }}>
-                <FormGroup controlId={"fileUploadSelect"}>
-                  <FormControl
-                    type="file"
-                    onChange={this.onFileChange}
-                    accept=".json"
-                  />
-                </FormGroup>
-                <span
-                  className="cube-btn"
-                  onClick={this.importCollection}
-                >
-                  Import
-                </span>
-              </div>
-            </div>
-          </Modal.Body>
-          <Modal.Footer>
-            <span onClick={this.hideExportImportDialog} className="cube-btn">Close</span>
-          </Modal.Footer>
-        </Modal>
+        <ExportImportCollectionModal showExportImportDialog={this.state.showExportImportDialog}
+          hideExportImportDialog={this.hideExportImportDialog}
+          isExportOnly={false}
+          exportImportRecordingId={this.state.exportImportRecordingId}
+          exportImportCollectionId={this.state.exportImportCollectionId}
+          app={app!}
+          customerId={customerId}
+          refreshCollection={this.refreshCollection} />
       </>
     );
   }

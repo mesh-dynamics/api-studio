@@ -21,11 +21,12 @@ import { apiCatalogActions } from '../../actions/api-catalog.actions';
 import classNames from 'classnames';
 import { GoldenCollectionBrowse } from "../../components/GoldenCollectionBrowse";
 import ConvertCollection from './ConvertCollection';
+import ExportCollection from './ExportCollection';
 import AppManager from '../Navigation/AppManager';
 import { findGoldenOrCollectionInSource } from '../../utils/api-catalog/api-catalog-utils';
-import { 
-    IApiCatalogCompareRequest, IApiCatalogState, ICubeState, 
-    IStoreState, ICollectionDetails, IGoldenCollectionBrowseState 
+import {
+    IApiCatalogCompareRequest, IApiCatalogState, ICubeState,
+    IStoreState, ICollectionDetails, IGoldenCollectionBrowseState
 } from '../../reducers/state.types';
 import { defaultCollectionItem } from '../../constants';
 
@@ -159,13 +160,13 @@ class APICatalogFilter extends Component<IAPICatalogFilterProps> {
         const { currentPage, cube, apiCatalog, gcBrowse: { userGoldens, actualGoldens } } = this.props;
         const { diffRequestLeft, diffRequestRight, compareRequests, selectedSource, selectedCollection, selectedGolden } = apiCatalog;
         const selectedItem: ICollectionDetails = findGoldenOrCollectionInSource({
-                                selectedSource, 
-                                selectedCollection, 
-                                selectedGolden, 
-                                userGoldens, 
-                                actualGoldens                               
-                            });
-                                
+            selectedSource,
+            selectedCollection,
+            selectedGolden,
+            userGoldens,
+            actualGoldens
+        });
+
         return (
             <div>
                 <AppManager />
@@ -194,6 +195,7 @@ class APICatalogFilter extends Component<IAPICatalogFilterProps> {
                                             />
                                         </div>
                                         <ConvertCollection />
+                                        <ExportCollection />
                                     </>}
 
                                 {selectedSource == "Capture" && <div>
