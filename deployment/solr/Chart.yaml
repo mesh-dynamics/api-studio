@@ -1,6 +1,0 @@
----
-
-apiVersion: "v1"
-name: "solr"
-version: "1.0.0"
-description: A helm chart to install solr

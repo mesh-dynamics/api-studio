@@ -19,8 +19,8 @@ $ brew install kubectl
 ## Usage
 
 
-1. Deploy cube Apps with Istio  
-This will first download and install Istio in istio namespace and then cube services in cube namespace.  
+1. Deploy cube Apps  
+This will cube services in cube namespace.  
 ```
 ./deploy.sh init
 ```
