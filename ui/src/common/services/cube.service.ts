@@ -20,7 +20,7 @@ import arrayToTree from "array-to-tree";
 import { stringify } from 'query-string'
 import { ITemplateSetNameLabel, IUserAuthDetails } from '../reducers/state.types';
 import { CancelToken } from 'axios';
-import { ICollectionListApiResponse, IReqRespMatchResultResponse } from '../apiResponse.types';
+import { ICollectionListApiResponse, IGetEventsApiResponse, IReqRespMatchResultResponse } from '../apiResponse.types';
 
 // TODO: replace console log statements with logging
 const fetchAppsList = async () => {
@@ -639,7 +639,7 @@ const fetchAPIEventData = async (customerId: string, app: string, reqIds: string
     }
 
     try {
-        return api.post(apiEventURL, body, apiConfig);
+        return (await api.post(apiEventURL, body, apiConfig)) as IGetEventsApiResponse;
     } catch (e) {
         console.error("Error fetching API Event data");
         throw e;

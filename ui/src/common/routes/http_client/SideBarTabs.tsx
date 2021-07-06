@@ -22,7 +22,7 @@ import {
   Modal,
   Dropdown,
   MenuItem,
-  Button
+  Button,
 } from "react-bootstrap";
 import { v4 as uuidv4 } from "uuid";
 import _ from "lodash";
@@ -42,10 +42,10 @@ import EditableLabel from "./EditableLabel";
 import { updateGoldenName } from '../../services/golden.service';
 import { IApiCatalogState, IApiTrace, ICollectionDetails, ICubeState, IEventData, IHttpClientStoreState, IHttpClientTabDetails, IKeyValuePairs, IPayloadData, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
 import { IGetEventsApiResponse } from "../../apiResponse.types";
-import gcbrowseActions from "../../actions/gcBrowse.actions";
 import HistoryTabFilter from "../../components/HttpClient/HistoryTabFilter";
 import { sortApiTraceChildren } from "../../utils/http_client/httpClientUtils";
 import TabDataFactory from "../../utils/http_client/TabDataFactory";
+import ExportImportCollectionModal from './ExportImportCollectionModal';
 
 interface ITreeNodeHeader<T> {
   node: T,
@@ -62,6 +62,9 @@ export interface ISideBarTabsProps {
 }
 export interface ISideBarTabsState {
   showDeleteGoldenConfirmation: boolean,
+  showExportImportDialog: boolean,
+  exportImportCollectionId: string,
+  exportImportRecordingId: string,
   itemToDelete: {
     requestType?: string;
     isParent?: boolean;
@@ -85,6 +88,9 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
       collectionIdInEditMode: "",
       editingCollectionName: "",
       loadingCollections: {},
+      showExportImportDialog: false,
+      exportImportCollectionId: "",
+      exportImportRecordingId: "",
     };
     this.currentSelectedTab = 1;
     this.onToggle = this.onToggle.bind(this);
@@ -95,13 +101,12 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     this.persistPanelState = {};
   }
 
-  componentDidUpdate(prevProps: ISideBarTabsProps){
-    if(prevProps.httpClient.collectionTabState.timeStamp != this.props.httpClient.collectionTabState.timeStamp){
-      Object.entries(this.persistPanelState).forEach(([key, value])=> {
-        if(value){
-          const collection = this.props.httpClient.userCollections.find( collection => collection.collec == key);
-          if(collection && !collection.apiTraces)
-          {
+  componentDidUpdate(prevProps: ISideBarTabsProps) {
+    if (prevProps.httpClient.collectionTabState.timeStamp != this.props.httpClient.collectionTabState.timeStamp) {
+      Object.entries(this.persistPanelState).forEach(([key, value]) => {
+        if (value) {
+          const collection = this.props.httpClient.userCollections.find(collection => collection.collec == key);
+          if (collection && !collection.apiTraces) {
             //This can be further improved to load data for multiple collections in single API call, depends on backend capability. 
             this.handlePanelClick(key, true);
           }
@@ -121,15 +126,29 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
 
   onPanelToggle = (isToggled: boolean, event: any) => {
     let parentElement: HTMLElement | null = event.target;
-    while(parentElement && !parentElement.classList.contains("panel-heading")){
+    while (parentElement && !parentElement.classList.contains("panel-heading")) {
       parentElement = parentElement.parentElement;
     }
-    if(parentElement){
+    if (parentElement) {
       const uniqueId = parentElement.getAttribute("data-unique-id");
-      if(uniqueId){
-          this.persistPanelState[uniqueId] = isToggled;
+      if (uniqueId) {
+        this.persistPanelState[uniqueId] = isToggled;
       }
-    }    
+    }
+  };
+
+
+  onExportImportClick = (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
+    event.stopPropagation();
+    const target = event.target as HTMLElement;
+    const collectionId = target.getAttribute("data-collection-collec")!;
+    const id = target.getAttribute("data-id")!;
+
+    this.setState({
+      showExportImportDialog: true,
+      exportImportCollectionId: collectionId,
+      exportImportRecordingId: id,
+    });
   };
 
   deleteItem = async () => {
@@ -194,9 +213,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     }
   }
 
-  onRefreshCollectionBtnClick = (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
-    event.stopPropagation();
-    const collectionId = (event.target as HTMLDivElement).getAttribute("data-collection-collec")!;
+  refreshCollection = (collectionId: string) => {
     let { httpClient: { userCollections }, dispatch } = this.props;
     let selectedCollection = _.find(userCollections, { collec: collectionId }) as ICollectionDetails;
     if (this.state.loadingCollections[selectedCollection.id]) {
@@ -205,6 +222,12 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     this.setState({ loadingCollections: { ...this.state.loadingCollections, [selectedCollection.id]: true } });
     dispatch(httpClientActions.addUserCollections(userCollections))
     this.handlePanelClick(collectionId, true)
+  }
+
+  onRefreshCollectionBtnClick = (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
+    event.stopPropagation();
+    const collectionId = (event.target as HTMLDivElement).getAttribute("data-collection-collec")!;
+    this.refreshCollection(collectionId);
   }
 
   onDeleteBtnClick = (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
@@ -334,7 +357,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 reqResPair.push({
                   customerId, app, service, instanceId, collection, traceId, parentSpanId,
                   runType, timestamp, reqId, apiPath, recordingType, runId, eventType: "HTTPResponse", metaData: {},
-                  payload: ["HTTPResponsePayload", responsePayload], payloadFields:[]
+                  payload: ["HTTPResponsePayload", responsePayload], payloadFields: []
                 });
               }
 
@@ -349,7 +372,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
               const collectionDetails = _.find(this.props.httpClient.userCollections, { collec: node.collectionIdAddedFromClient });
               const collectionName = collectionDetails?.name || "";
               const reqObject = new TabDataFactory(httpRequestEvent, httpResponseEvent).getReqObjectForSidebar(node, collectionName, appGrpcSchema);
-              if(this.currentSelectedTab === 1 && httpRequestEvent.metaData.httpResolvedURL){
+              if (this.currentSelectedTab === 1 && httpRequestEvent.metaData.httpResolvedURL) {
                 reqObject.httpURL = httpRequestEvent.metaData.httpResolvedURL;
               }
               //todo: Test below
@@ -359,13 +382,13 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 selectedApp!
               );
 
-              
+
               const outgoingEvents: IEventData[] = [];
               childReqIds.map(childReqId => {
-                  const outgoingReqResPair = result.objects.filter(eachReq => eachReq.reqId === childReqId);
-                  outgoingEvents.push(...outgoingReqResPair);
+                const outgoingReqResPair = result.objects.filter(eachReq => eachReq.reqId === childReqId);
+                outgoingEvents.push(...outgoingReqResPair);
               })
-              
+
               this.props.showOutgoingRequests(
                 savedTabId,
                 node.traceIdAddedFromClient,
@@ -385,7 +408,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
       ? !!(props.node.children && props.node.children.length > 0)
       : props.node.parentSpanId == "NA";
     return (
-      <div style={props.style.base} className="treeNodeItem">
+      <div style={props.style.base} className="treeNodeItem" >
         <div style={props.style.title}>
           <div
             style={{ paddingLeft: "9px", backgroundColor: "", display: "flex" }}
@@ -423,12 +446,12 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                   overflow: "hidden",
                 }}
               >
-                {(props.node.metaData?.name ||  props.node.name) +
+                {(props.node.metaData?.name || props.node.name) +
                   " " +
                   moment(props.node.reqTimestamp * 1000).format("hh:mm:ss")}
-                  {props.node.metaData?.isPollRequest == "true" && 
-                    <i className="fas fa-history" title="Poll request" style={{marginLeft:"5px", color: "black"}}></i>
-                  }
+                {props.node.metaData?.isPollRequest == "true" &&
+                  <i className="fas fa-history" title="Poll request" style={{ marginLeft: "5px", color: "black" }}></i>
+                }
               </span>
             </div>
             <div className="collection-options">
@@ -523,8 +546,8 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           {historyTabState.currentPage == 0 ? (
             <i className="fas fa-sync-alt"></i>
           ) : (
-              <i className="fas fa-step-backward"></i>
-            )}
+            <i className="fas fa-step-backward"></i>
+          )}
         </Button>
         <Button
           className="btn btn-sm cube-btn text-center"
@@ -611,8 +634,8 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           {collectionTabState.currentPage == 0 ? (
             <i className="fas fa-sync-alt"></i>
           ) : (
-              <i className="fas fa-step-backward"></i>
-            )}
+            <i className="fas fa-step-backward"></i>
+          )}
         </Button>
         <Button
           className="btn btn-sm cube-btn text-center"
@@ -645,24 +668,33 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     });
   }
 
+  hideExportImportDialog = () => {
+    this.setState({
+      showExportImportDialog: false,
+      exportImportCollectionId: '',
+    });
+  }
+
   handleSelectedTabChange = (changedKey: any) => {
-    const {dispatch} = this.props;
+    const { dispatch } = this.props;
     this.currentSelectedTab = changedKey;
-    dispatch(httpClientActions.setSidebarTabActiveKey(changedKey));  
+    dispatch(httpClientActions.setSidebarTabActiveKey(changedKey));
   }
 
   render() {
     //Remove unused vars
     const {
       httpClient: { cubeRunHistory, userCollections, sidebarTabActiveKey },
+      cube: { selectedApp: app },
+      user: { customer_name: customerId }
     } = this.props;
 
-    const { showDeleteGoldenConfirmation, itemToDelete } = this.state;
+    const { showDeleteGoldenConfirmation, itemToDelete, showExportImportDialog } = this.state;
 
     return (
       <>
-        <Tabs defaultActiveKey={1} 
-          id="uncontrolled-tab-example"  
+        <Tabs defaultActiveKey={1}
+          id="uncontrolled-tab-example"
           onSelect={this.handleSelectedTabChange}
           activeKey={sidebarTabActiveKey}
         >
@@ -671,7 +703,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
               <div className="value-n"></div>
             </div>
             <div className="margin-top-10">
-            <HistoryTabFilter />
+              <HistoryTabFilter />
               {Object.keys(cubeRunHistory).map((k, i) => {
                 return (
                   <Panel
@@ -781,6 +813,18 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                                   className="fas fa-edit pointer"
                                 /> Edit
                               </MenuItem>
+                              <MenuItem eventKey="3"
+                                data-id={eachCollec.id}
+                                data-name={eachCollec.name}
+                                data-collection-collec={eachCollec.collec}
+                                title="Export or Import Collection"
+                                data-type="collection"
+                                onClick={this.onExportImportClick}
+                              >
+                                <i
+                                  className="fas fa-trash pointer"
+                                /> Export/Import
+                              </MenuItem>
                               <MenuItem eventKey="2"
                                 data-id={eachCollec.id}
                                 data-name={eachCollec.name}
@@ -864,6 +908,15 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
             </div>
           </Modal.Body>
         </Modal>
+
+        <ExportImportCollectionModal showExportImportDialog={this.state.showExportImportDialog}
+          hideExportImportDialog={this.hideExportImportDialog}
+          isExportOnly={false}
+          exportImportRecordingId={this.state.exportImportRecordingId}
+          exportImportCollectionId={this.state.exportImportCollectionId}
+          app={app!}
+          customerId={customerId}
+          refreshCollection={this.refreshCollection} />
       </>
     );
   }

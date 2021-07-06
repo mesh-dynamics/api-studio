@@ -29,7 +29,7 @@ export const apiCatalogActions: IActionsType = {
     getDiffData: (app: string, requestIdLeft: string, requestIdRight: string) => async (dispatch:IDispatch, getState: GetStateAction) => {
         const { user: { customer_name: customerId } } = getState().authentication;
         try {
-            const data = await cubeService.fetchAPIEventData(customerId, app, [requestIdLeft, requestIdRight], [])  as any as IGetEventsApiResponse;
+            const data = await cubeService.fetchAPIEventData(customerId, app, [requestIdLeft, requestIdRight], []);
             if (data.numFound) {
                 const [requestLeft, requestRight] = data.objects.filter(obj => obj.eventType === "HTTPRequest");
                 const [responseLeft, responseRight] = data.objects.filter(obj => obj.eventType === "HTTPResponse");
