@@ -50,7 +50,7 @@ jobs:
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(git tag --sort=committerdate | tail -1)
+          version=$(git tag --sort=v:refname | tail -1)
           version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           TIMESTAMP=$(date "+%Y%m%d%H%M%S")
           BRANCH=${GITHUB_REF##*/}
@@ -73,7 +73,7 @@ jobs:
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(git tag --sort=committerdate | tail -1)
+          version=$(git tag --sort=v:refname | tail -1)
           echo $version
           npm install
           export RELEASE_TYPE=customer
@@ -122,7 +122,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(git tag --sort=committerdate | tail -1)
+          version=$(git tag --sort=v:refname | tail -1)
           echo "<settings><servers><server>\
           <id>github</id>\
           <username>x-access-token</username>\
@@ -139,7 +139,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(git tag --sort=committerdate | tail -1)
+          version=$(git tag --sort=v:refname | tail -1)
           IFS=$'\n'
           echo "<settings><servers><server>\
           <id>github</id>\
@@ -164,7 +164,7 @@ jobs:
         run: |
           sudo wget https://github.com/mikefarah/yq/releases/download/v4.6.0/yq_linux_386 -O /usr/bin/yq
           sudo chmod +x /usr/bin/yq
-          version=$(git tag --sort=committerdate | tail -1)
+          version=$(git tag --sort=v:refname | tail -1)
           version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           TIMESTAMP=$(date "+%Y%m%d%H%M%S")
           BRANCH=${GITHUB_REF##*/}
@@ -187,7 +187,7 @@ jobs:
         run: |
           sudo wget https://github.com/mikefarah/yq/releases/download/v4.6.0/yq_linux_386 -O /usr/bin/yq
           sudo chmod +x /usr/bin/yq
-          version=$(git tag --sort=committerdate | tail -1)
+          version=$(git tag --sort=v:refname | tail -1)
           npm install
           export RELEASE_TYPE=customer
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
@@ -227,7 +227,7 @@ jobs:
           $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.WIN_CSC_LINK }}")
           [IO.File]::WriteAllBytes("md-cert.pfx", $pfx_cert_byte)
           npm install
-          $version = $(git tag --sort=committerdate | tail -1)
+          $version = $(git tag --sort=v:refname | tail -1)
           $versionParts = $version.split('.')
           ([int]$versionParts[2])++
           $NEW_VERSION_NUMBER = $versionParts -join('.')
@@ -261,7 +261,7 @@ jobs:
           $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.WIN_CSC_LINK }}")
           [IO.File]::WriteAllBytes("md-cert.pfx", $pfx_cert_byte)
           npm install
-          $version = $(git tag --sort=committerdate | tail -1)
+          $version = $(git tag --sort=v:refname | tail -1)
           jq --arg version $version '.version = $version' package.json > .\tmp.txt
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
