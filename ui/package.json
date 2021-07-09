@@ -13,7 +13,7 @@
         "abort-controller": "^3.0.0",
         "ajv": "^6.12.3",
         "ajv-keywords": "^3.5.2",
-        "anyproxy": "git+https://github.com/cube-io-corp/anyproxy.git",
+        "anyproxy": "git+https://github.com/mesh-dynamics/anyproxy.git",
         "array-to-tree": "^3.3.2",
         "axios": "^0.20.0",
         "axios-auth-refresh": "^3.0.0",
