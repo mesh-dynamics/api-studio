@@ -24,7 +24,7 @@
 		<repository>
 			<id>github</id>
 			<name>GitHub OWNER Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/cube-io-corp/interceptor-framework</url>
+			<url>https://maven.pkg.github.com/mesh-dynamics/interceptor-framework</url>
 		</repository>
 	</repositories>
 	<dependencies>
