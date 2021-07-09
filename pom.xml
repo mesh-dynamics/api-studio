@@ -6,10 +6,10 @@
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.meshdynamics</groupId>
-  <artifactId>meshd-complete</artifactId>
+  <artifactId>api-studio</artifactId>
   <version>${revision}</version>
   <packaging>pom</packaging>
-  <name>meshd-complete</name>
+  <name>api-studio</name>
 
   <url>http://www.meshdynamics.io</url>
 

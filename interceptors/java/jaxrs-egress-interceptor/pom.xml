@@ -44,7 +44,7 @@
 		<repository>
 			<id>github</id>
 			<name>GitHub OWNER Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/cube-io-corp/agent</url>
+			<url>https://maven.pkg.github.com/mesh-dynamics/agent</url>
 		</repository>
 	</repositories>
 

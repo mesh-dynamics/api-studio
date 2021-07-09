@@ -14,7 +14,7 @@
   <properties>
     <maven.deploy.skip>true</maven.deploy.skip>
     <dockerfile-maven-version>1.4.13</dockerfile-maven-version>
-    <docker-registry>docker.pkg.github.com/cube-io-corp/meshd-complete</docker-registry>
+    <docker-registry>docker.pkg.github.com/mesh-dynamics/api-studio</docker-registry>
     <revision>1.0.0-SNAPSHOT</revision>
   </properties>
 
@@ -22,7 +22,7 @@
     <repository>
       <id>github</id>
       <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/cube-io-corp/meshd-complete</url>
+      <url>https://maven.pkg.github.com/mesh-dynamics/api-studio</url>
     </repository>
   </distributionManagement>
 
@@ -30,7 +30,7 @@
     <repository>
       <id>github</id>
       <name>Cubeio Maven Github</name>
-      <url>https://maven.pkg.github.com/cube-io-corp/meshd-complete</url>
+      <url>https://maven.pkg.github.com/mesh-dynamics/api-studio</url>
       <releases>
         <enabled>true</enabled>
         <updatePolicy>never</updatePolicy>

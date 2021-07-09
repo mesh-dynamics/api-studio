@@ -28,7 +28,7 @@
     <repository>
       <id>github</id>
       <name>GitHub CubeIO Apache Maven Packages</name>
-      <url>https://maven.pkg.github.com/cube-io-corp/cubeui-backend-personalEmailDomains</url>
+      <url>https://maven.pkg.github.com/mesh-dynamics/cubeui-backend-personalEmailDomains</url>
     </repository>
   </distributionManagement>
   <build>
